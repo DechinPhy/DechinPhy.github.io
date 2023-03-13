@@ -1,0 +1,15 @@
+<html>
+<head>
+  <script src="http://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+</head>
+<body>
+  <div id="viewer" style="width: 400px; height: 400px; position: relative;"></div>
+  <script>
+    var viewer = $3Dmol.createViewer("viewer", {defaultcolors: $3Dmol.rasmolElementColors});
+    viewer.addModel("C1=CC=CC=C1", "smiles"); //load benzene from smiles
+    viewer.setStyle({stick:{}}); //set stick style
+    viewer.zoomTo(); //zoom to fit
+    viewer.render(); //render
+  </script>
+</body>
+</html>
