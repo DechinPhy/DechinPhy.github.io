@@ -1,0 +1,28 @@
+<html>
+<body>
+<script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+<div id="container-01" class="mol-container"></div>
+
+<style>
+.mol-container {
+  width:    75%;
+  height:   400px;
+  position: relative;
+  margin: 0 auto;
+}
+</style>
+
+<script>
+$(function() {
+	let element = $('#container-01');
+	let config = { backgroundColor : 'white' };
+	let viewer = $3Dmol.createViewer( element, config );
+	viewer.addModel("3\n\nC 0 0 0\nO 1.16 0 0\nO -1.16 0 0", "xyz");
+	viewer.addUnitCell();
+	viewer.setStyle({}, {sphere : {}});
+	viewer.zoomTo();
+	viewer.render();
+});
+</script>
+</body>
+</html>
