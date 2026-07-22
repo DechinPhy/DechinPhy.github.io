@@ -690,7 +690,7 @@ pre {
 .giscus-recent-comment-item {
   padding: 8px 0;
   border-bottom: 1px dashed #eee;
-  font-size: 12px;
+  font-size: 14px;
 }
 .giscus-recent-comment-item:last-child {
   border-bottom: none;
@@ -704,7 +704,7 @@ pre {
 .giscus-comment-text {
   margin: 2px 0 0;
   color: #444;
-  line-height: 1.4;
+  line-height: 1.5;
   word-break: break-all;
 }
 .giscus-comment-text a {
