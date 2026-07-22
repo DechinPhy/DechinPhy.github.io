@@ -28,26 +28,83 @@ toggle.addEventListener('click', () => {
   html.dataset.dark = localStorage.dark;
 });</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Dechin's Blog</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title"><a href="/posts/91150512.html">python3使用myqr生成链接二维码</a></h1><div class="post-meta">2021-04-16<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>二维码技术在日常生活和工业应用中都担任着非常重要的角色，这里我们可以使用python的myqr来生成个性化的二维码，比如带图片背景的二维码，或者是动态背景的二维码。经过测试，用微信扫码都成功的识别了出来，也就是说这些二维码都是可以直接拿来使用的。当然，现在技术都已经非常成熟，所以有很多线上的免费的二维码生成器可以使用，配套的也有二维码解码器，可以将生成的二维码翻译成文字。</p></div><p class="readmore"><a href="/posts/91150512.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/34404667.html">MindSpore函数拟合</a></h1><div class="post-meta">2021-04-14<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 24</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>很多机器学习的算法的基础就是函数的拟合，这里我们考虑的是其中一种最简单也最常见的场景：线性函数的拟合，并且我们要通过mindspore来实现这个数据的训练。通过构造均方误差函数，配合前向传播网络与反向传播网络的使用，最终大体成功的拟合了给定的一个线性函数。文末我们还顺带介绍了使用matplotlib的animation来生成动态图的功能，可视化的展现了整个训练的过程。</p></div><p class="readmore"><a href="/posts/34404667.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/f4dfbd79.html">python3美化表格数据输出结果</a></h1><div class="post-meta">2021-04-14<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文介绍了两种表格数据的打印工具：tabulate和prettytable的安装与基本使用方法。由于表格数据本身是没有对输出格式进行规范化的，因此打印出来的数据会显得比较杂乱，不利于直观的阅读。因此引入这两种工具，加强了输出结果的可读性。这两者在使用上各有优劣，tabulate支持更多形式的表格样式，而prettytable则使用了更加接近于数据库的操作形式，对于部分用户而言有天然的生态优势。</p></div><p class="readmore"><a href="/posts/f4dfbd79.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/26c416c4.html">python3使用tracemalloc追踪mmap内存变化</a></h1><div class="post-meta">2021-04-09<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文介绍了用tracemalloc来进行python程序的内存追踪的技术，以及简单的文件映射技术mmap的使用方法介绍和演示。通过这些案例，我们了解到，对于小规模的计算场景，可以将整个的需要计算的元素包含在内存中，这比较方便也比较快速。而对于大规模的文件场景，还是使用内存映射技术更加的快速，这个速度在本文中介绍的几个案例的运行中也能够体会到。内存映射技术已经有很多应用场景，比如前面介绍过的vaex就是得益于内存映射技术。</p></div><p class="readmore"><a href="/posts/26c416c4.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/304f40ac.html">Manjaro Linux安装singularity-container</a></h1><div class="post-meta">2021-04-04<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 17</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>这篇文章主要介绍Singularity容器在Manjaro平台的安装，以及一些常见的使用场景：拉取沙箱制作容器镜像、远程制作容器镜像以及修改容器镜像的方法。总体而言Singularity是一个对非root用户非常友好的容器解决方案，在速度上没有实际测试过，只是在一些场景下可以看到比Docker性能要好一些。而且这个容器还支持非root的安装以及非root的使用方法，当然在基于RH的系统下有一些默认的配置项还是需要用root权限去修改后，才能够用非root的账户使用Singularity容器，最典型的就比如要将<code>/proc/sys/user/max_user_namespaces</code>这里面的对应参数配置为非零，否则使用会报错。</p></div><p class="readmore"><a href="/posts/304f40ac.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/c69b7255.html">python3使用diagrams生成架构图</a></h1><div class="post-meta">2021-04-04<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 4</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文中通过python库diagrams展示了基础的架构图绘制的方法，库中提供了常用的AWS和k8S等场景下常用的组件标签，使得我们用python代码也可以绘制精美清晰的架构图。这里组件之间的连接和耦合关系，也可以通过简单的符号进行实现，这也得益于python中所特有的魔法函数。</p></div><p class="readmore"><a href="/posts/c69b7255.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/99876989.html">python3使用kivy生成安卓程序</a></h1><div class="post-meta">2021-04-03<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 6.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 31</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>基于python也可以开发安卓APP，这需要使用到kivy库来进行开发，再通过buildozer来编译构建。这两个库的安装和使用方式都相对比较简单，我们推荐直接在本地的系统环境下直接部署使用，最大的困难其实在于部署的过程以及配置文件的修改，这也都是比较基础的操作了。最后我们演示了使用文本框和按钮事件，加上python的eval()函数和math数学仓库，实现了一个可以在移动端调用math库中的函数执行数学计算的简单APP，并提供了apk下载网盘地址。</p></div><p class="readmore"><a href="/posts/99876989.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/8107f7d8.html">python3使用cv2对图像进行基本操作</a></h1><div class="post-meta">2021-04-03<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 14</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文介绍了使用opencv-python对输入图像进行处理的基本操作，包括图像读取、图像变换等。有了这些基础的操作支撑后，我们可以执行跟高层次的图像处理，比如常用于深度学习的卷积和池化操作，这里我们也作了简单介绍，并给出了使用示例。</p></div><p class="readmore"><a href="/posts/8107f7d8.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/fdd828cb.html">使用python的虚拟环境virtualenv</a></h1><div class="post-meta">2021-04-01<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 8</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在前面几篇博客中我们介绍过docker等容器的编程环境解决方案，但是容器作为一个系统级的隔离方案，其实更加强调的是用户间的隔离，这一点也得益其对NameSpace技术的推广和使用。但是在一部分的场景下，比如快速构造一个纯净的python环境、轻量级的操作实现不同python包的共存，容器技术虽然也可以完成，但是功能显得过于冗余，这就需要使用到本文所介绍的virtualenv这样的一个python依赖管理解决方案。文中我们介绍了virtualenv的安装与基本的使用方法，做了一遍比较完整的演示。</p></div><p class="readmore"><a href="/posts/fdd828cb.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/51e2319d.html">为科学计算而生的Julia——基于Manjaro Linux的安装与入门</a></h1><div class="post-meta">2021-03-31<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 5.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 27</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在这篇文章中我们介绍了julia编程语言的一些基本特点，这是一门兼顾了高性能与高效开发的编程语言，而且开源免费。不仅具备有python的便捷性，还有接近于C语言的高性能特性，是一门为科学计算而生的编程语言。我们介绍了其在Manjaro Linux平台下的安装方法，及其基本使用方法，如变量定义、函数定义和调用、包的管理以及与python编程语言的协同工作。</p></div><p class="readmore"><a href="/posts/51e2319d.html">阅读全文</a></p></div><nav class="page-navigator"><a class="extend prev" rel="prev" href="/page/25/">上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="page-number" href="/page/25/">25</a><span class="page-number current">26</span><a class="page-number" href="/page/27/">27</a><a class="page-number" href="/page/28/">28</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/27/">下一页</a></nav></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
   const container = document.getElementById('giscus-recent-comments');
+  const repo = 'DechinPhy/DechinPhy.github.io';
+  const categoryId = 'NaN';
+  const count = parseInt('5') || 5;
   
   try {
-    const response = await fetch('/data/recent_comments.json');
-    const comments = await response.json();
+    const [owner, name] = repo.split('/');
+    const discussionsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions?category_id=' + categoryId + '&per_page=20';
     
-    if (!comments || comments.length === 0) {
+    const discussionsResponse = await fetch(discussionsUrl, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'giscus-recent-comments-widget'
+      }
+    });
+    const discussions = await discussionsResponse.json();
+    
+    if (!discussions || discussions.length === 0) {
       container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
       return;
     }
     
-    function truncateText(text, maxLength) {
+    let allComments = [];
+    for (const discussion of discussions) {
+      const commentsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions/' + discussion.number + '/comments?per_page=5';
+      const commentsResponse = await fetch(commentsUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'giscus-recent-comments-widget'
+        }
+      });
+      const comments = await commentsResponse.json();
+      const postPath = discussion.title;
+      const postUrl = '/posts/' + postPath.replace('posts/', '') + '.html#giscus';
+      for (const comment of comments) {
+        allComments.push({
+          body: comment.body,
+          createdAt: comment.created_at,
+          author: comment.user?.login || 'Anonymous',
+          postUrl: postUrl
+        });
+      }
+    }
+    
+    allComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    allComments = allComments.slice(0, count);
+    
+    if (allComments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function cleanText(text) {
       if (!text) return '';
+      text = text.replace(/<[^>]*>/g, '');
+      text = text.replace(/^1\s+/gm, '');
+      text = text.replace(/^[-*+]\s+/gm, '');
+      text = text.replace(/^>.*$/gm, '');
+      text = text.replace(/----.*$/gm, '');
       text = text.replace(/\s+/g, ' ').trim();
+      return text;
+    }
+    
+    function truncateText(text, maxLength) {
+      text = cleanText(text);
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
     
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    
     let html = '<ul class="giscus-recent-comments-list">';
-    comments.forEach((comment) => {
-      html += '<li class="giscus-recent-comment-item">';
+    allComments.forEach((comment) => {
+      html += '<li class="giscus-comment-item">';
       html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<span class="giscus-comment-date">' + formatDate(comment.createdAt) + '</span>';
       html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
       html += '</li>';
     });
@@ -56,7 +113,25 @@ toggle.addEventListener('click', () => {
     container.innerHTML = html;
   } catch (error) {
     console.error('Failed to fetch recent comments:', error);
-    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    try {
+      const response = await fetch('/data/recent_comments.json');
+      const comments = await response.json();
+      if (comments && comments.length > 0) {
+        let html = '<ul class="giscus-recent-comments-list">';
+        comments.forEach((comment) => {
+          html += '<li class="giscus-comment-item">';
+          html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+          html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + comment.body.substring(0, 50) + '...</a></p>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      }
+    } catch (fallbackError) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    }
   }
 })();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
 if (search_path.length == 0) {

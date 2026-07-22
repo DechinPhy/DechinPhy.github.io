@@ -28,26 +28,83 @@ toggle.addEventListener('click', () => {
   html.dataset.dark = localStorage.dark;
 });</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Dechin's Blog</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title"><a href="/posts/1a9a2a2b.html">PyVista：一款Python的三维可视化软件</a></h1><div class="post-meta">2021-07-23<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 6.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 35</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文通过对pyvista这一相对“冷门”的python三维可视化工具的摸索，总结了安装与基本的使用示例，包括单模块、多模块、静态图、动态画板、gif和mp4视频的导出等。总体来说pyvista是一款渲染效果很棒的可视化软件，但是性能相对来说没有那么可观，对于规模不大的体系还是一个非常好用的工具，推荐使用。</p></div><p class="readmore"><a href="/posts/1a9a2a2b.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/c1cee38d.html">增强采样软件PLUMED的安装与使用</a></h1><div class="post-meta">2021-07-12<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 19</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文作为一个入门级的文章，主要介绍了分子动力学模拟中增强采样的基本概念与相应工具的安装和使用。PLUMED是业界比较出名的一款增强采样开源软件，能够对接多个分子动力学模拟软件，如GROMACS等，并利用这些软件生成的路径信息来进行采样。并且为了可以在python上也能看到路径信息等重要数据，可以考虑使用mdconvert将路径数据转化成python上常用的hdf5格式并用h5py进行读写。</p></div><p class="readmore"><a href="/posts/c1cee38d.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/be4fd5d6.html">MindInsight:一款基于MindSpore框架的训练可视化插件</a></h1><div class="post-meta">2021-07-06<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>可视化可以说在所有的研究领域中都是要仔细斟酌的问题，一个好的可视化工具不仅可以为工作的开展带来极大的便捷，在一些特殊的场景下还可以辅助人们进行一些重要的决策。比如在物理学领域中，最开始寻找相变点的技巧其实也是依赖于实验数据的可视化来实现的。而在深度学习领域，可视化模型、可视化训练过程、可视化参数以及可视化的总结，可以让我们迅速的得到模型好坏的结论，这一点我们在本文中通过研究MindInsight的一些安装与使用技巧来进行实现。</p></div><p class="readmore"><a href="/posts/be4fd5d6.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/cc86b3ca.html">分子动力学模拟之周期性边界处理</a></h1><div class="post-meta">2021-06-29<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文从分子动力学模拟中的周期性边界处理角度出发，介绍了无符号整数和带符号整数的一些应用的技巧，使用这些格式转换的技术有可能在程序的性能优化中带来一定的效果。同时为了更加直观的展示分子模拟的效果，我们用animation展示了一个简单的动态图绘制的案例，其中还包含了多个子图的绘图技术。</p></div><p class="readmore"><a href="/posts/cc86b3ca.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/b49ba215.html">MindSpore自定义模型损失函数</a></h1><div class="post-meta">2021-06-21<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 17</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在不同的训练场景中，我们时常需要使用不同的损失函数来衡量一个模型的计算结果的优劣，本文重点介绍了在MindSpore中如何去自定义一个损失函数。基于MindSpore中的Loss类，我们可以通过继承该类后，再重写construct函数和get_loss函数来实现全面自定义的损失函数形式与内容。</p></div><p class="readmore"><a href="/posts/b49ba215.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/43bca7ba.html">从零开始制作PyTorch的Singularity容器镜像</a></h1><div class="post-meta">2021-06-15<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>这篇文章主要介绍Facebook所主导的机器学习框架PyTorch的容器化安装方法，基于HPC环境常用的Singularity高性能容器，并且兼容与结合了Docker容器镜像的生态，非常的友好。在容器化的编程环境中，我们不仅可以避免不同框架对于python库或者系统软件版本的依赖冲突，还可以很大程度上解决因为没有root权限以及网络外访权限的环境下所带来的极大的麻烦，故推荐使用这种方案进行安装和运行。</p></div><p class="readmore"><a href="/posts/43bca7ba.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/f9f9daae.html">Python实现GPU加速的基本操作</a></h1><div class="post-meta">2021-06-10<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文针对于Python中使用Numba的GPU加速程序的一些基本概念和实现的方法，比如GPU中的线程和模块的概念，以及给出了一个矢量加法的代码案例，进一步说明了GPU加速的效果。需要注意的是，由于Python中的Numba实现是一种即时编译的技术，因此第一次运算时的时间会明显较长，所以我们一般说GPU加速是指从第二步开始的运行时间。对于一些工业和学界常见的场景，比如分子动力学模拟中的系统演化，或者是深度学习与量子计算中的参数优化，都是相同维度参数多步运算的一个过程，非常适合使用即时编译的技术，配合以GPU高度并行化的加速效果，能够在实际工业和学术界的各种场景下发挥巨大的作用。</p></div><p class="readmore"><a href="/posts/f9f9daae.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/7e2c5785.html">用华为MindSpore进行分布式训练</a></h1><div class="post-meta">2021-06-08<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 12</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>这篇文章我们主要探讨如何去部署一个基于MindSpore框架的分布式训练环境，在MindSpore环境已经配置好的情况下，我们只需要安装好openmpi和nccl这两个工具就可以实现分布式的训练，在文中我们已经给出了相应的示例。虽然分布式与并行技术的目的是为了提升性能，但不是说对所有的场景都能够起到加速的作用，比如文章中的案例就没有加速的效果。这其实是因为我们的用例场景太简单了，纵观整个训练过程，GPU的使用率不到10%，在这种情况下还要考虑上通信的开销，自然是没有放在同一个卡上去训练来得快。这也给我们一个启发，考虑使用分布式和并行计算的技术时，一定也要先评估好问题本身是否适用于并行化的处理，否则是达不到预期的加速的目的的。</p></div><p class="readmore"><a href="/posts/7e2c5785.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/42c703a6.html">用华为MindSpore框架训练数据库类型的数据集</a></h1><div class="post-meta">2021-06-01<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文按照数据流的顺序，分别介绍了：使用sqlite3数据库存储数据、从sqlite3数据库中读取数据、使用从sqlite3数据库中的数据构造MindSpore可识别的训练数据集。对于输入的数据量比较大的场景，我们不太可能将全部的数据都加载到内存中，这就要考虑各种可以快速存储和读取的方案，数据库就是一种比较常见的方案。而sqlite3作为一款非常轻量级的数据库，在大部分的Python3中都是内置的，省去了很多编译安装的繁琐。当然性能表现可能不如其他的数据库，但是在我们这边给定的场景下，表现还是非常优秀的！</p></div><p class="readmore"><a href="/posts/42c703a6.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/2ac5b69b.html">MindSpore激活函数总结与测试</a></h1><div class="post-meta">2021-05-26<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 17</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>这篇文章主要介绍了Softplus、Sigmoid、Softmax和Tanh这4种激活函数，激活函数在机器学习领域中主要起到的是一个决策性质的作用，在分类器中有重要的应用价值。而除了这4种激活函数之外，MindSpore还实现了Softsign的激活函数，但是目前只能在昇腾平台上使用，其他的除了Softplus只能在GPU和昇腾平台运行之外，都是全平台支持的（CPU、GPU、昇腾）。</p></div><p class="readmore"><a href="/posts/2ac5b69b.html">阅读全文</a></p></div><nav class="page-navigator"><a class="extend prev" rel="prev" href="/page/22/">上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/21/">21</a><a class="page-number" href="/page/22/">22</a><span class="page-number current">23</span><a class="page-number" href="/page/24/">24</a><a class="page-number" href="/page/25/">25</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/24/">下一页</a></nav></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
   const container = document.getElementById('giscus-recent-comments');
+  const repo = 'DechinPhy/DechinPhy.github.io';
+  const categoryId = 'NaN';
+  const count = parseInt('5') || 5;
   
   try {
-    const response = await fetch('/data/recent_comments.json');
-    const comments = await response.json();
+    const [owner, name] = repo.split('/');
+    const discussionsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions?category_id=' + categoryId + '&per_page=20';
     
-    if (!comments || comments.length === 0) {
+    const discussionsResponse = await fetch(discussionsUrl, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'giscus-recent-comments-widget'
+      }
+    });
+    const discussions = await discussionsResponse.json();
+    
+    if (!discussions || discussions.length === 0) {
       container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
       return;
     }
     
-    function truncateText(text, maxLength) {
+    let allComments = [];
+    for (const discussion of discussions) {
+      const commentsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions/' + discussion.number + '/comments?per_page=5';
+      const commentsResponse = await fetch(commentsUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'giscus-recent-comments-widget'
+        }
+      });
+      const comments = await commentsResponse.json();
+      const postPath = discussion.title;
+      const postUrl = '/posts/' + postPath.replace('posts/', '') + '.html#giscus';
+      for (const comment of comments) {
+        allComments.push({
+          body: comment.body,
+          createdAt: comment.created_at,
+          author: comment.user?.login || 'Anonymous',
+          postUrl: postUrl
+        });
+      }
+    }
+    
+    allComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    allComments = allComments.slice(0, count);
+    
+    if (allComments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function cleanText(text) {
       if (!text) return '';
+      text = text.replace(/<[^>]*>/g, '');
+      text = text.replace(/^1\s+/gm, '');
+      text = text.replace(/^[-*+]\s+/gm, '');
+      text = text.replace(/^>.*$/gm, '');
+      text = text.replace(/----.*$/gm, '');
       text = text.replace(/\s+/g, ' ').trim();
+      return text;
+    }
+    
+    function truncateText(text, maxLength) {
+      text = cleanText(text);
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
     
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    
     let html = '<ul class="giscus-recent-comments-list">';
-    comments.forEach((comment) => {
-      html += '<li class="giscus-recent-comment-item">';
+    allComments.forEach((comment) => {
+      html += '<li class="giscus-comment-item">';
       html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<span class="giscus-comment-date">' + formatDate(comment.createdAt) + '</span>';
       html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
       html += '</li>';
     });
@@ -56,7 +113,25 @@ toggle.addEventListener('click', () => {
     container.innerHTML = html;
   } catch (error) {
     console.error('Failed to fetch recent comments:', error);
-    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    try {
+      const response = await fetch('/data/recent_comments.json');
+      const comments = await response.json();
+      if (comments && comments.length > 0) {
+        let html = '<ul class="giscus-recent-comments-list">';
+        comments.forEach((comment) => {
+          html += '<li class="giscus-comment-item">';
+          html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+          html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + comment.body.substring(0, 50) + '...</a></p>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      }
+    } catch (fallbackError) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    }
   }
 })();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
 if (search_path.length == 0) {

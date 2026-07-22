@@ -28,26 +28,83 @@ toggle.addEventListener('click', () => {
   html.dataset.dark = localStorage.dark;
 });</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Dechin's Blog</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title"><a href="/posts/9d228d11.html">蛋白质基础组成结构</a></h1><div class="post-meta">2022-05-06<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文通过对Xponge+VMD的工具对蛋白质进行建模，然后总结了20种氨基酸的具体信息，也就是蛋白质的基本组成单元。通过对这些氨基酸的组合，就可以得到一个具有生物活性的蛋白质。同时本文还介绍了常用的存储蛋白质结构的文件格式pdb的具体格式化定义，总体来说是一个总结性的文章。</p></div><p class="readmore"><a href="/posts/9d228d11.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/23730d69.html">Linux系统创建可执行文件软链接</a></h1><div class="post-meta">2022-05-06<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>编译安装源代码为可执行文件时，有时候会遇到想把可执行文件放在特定的路径下的问题，比如放到<code>/usr/bin</code>目录下，这样可以全局可调用，又不需要手动添加各种乱七八糟的系统路径。这就需要使用到Linux中的软链接的功能，通常使用<code>ln -s</code>的指令即可。本文顺带介绍了蛋白质结构评分软件TMalign的源码下载和安装使用的基本方法，编译成一个可执行文件后，可以建立一个软链接，在系统各处都可以使用，是一个比较基础的操作。</p></div><p class="readmore"><a href="/posts/23730d69.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/56e8137e.html">MindSpore尝鲜之爱因斯坦求和</a></h1><div class="post-meta">2022-05-05<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 5</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>张量网络计算，已经在众多的领域中得到了应用，不仅仅是传统的计算化学，当下医药研发领域的分子动力学模拟、计算化学和材料模拟，甚至是未来的量子计算，张量网络技术都在当中发挥重要作用。本文介绍的是MindSpore最新对张量网络计算的支持的第一步：用爱因斯坦求和计算张量网络缩并。</p></div><p class="readmore"><a href="/posts/56e8137e.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/5b33df24.html">将python脚本打包为exe可执行文件</a></h1><div class="post-meta">2022-04-20<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 5</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在完成一个软件或者程序的实现之后，最后的一步就是发布，发布的目的是为了让更多的人来使用这个项目，而大部分的人是没有相应的编程环境的，因此我们必须考虑将代码编译成各个平台的可执行文件，再发布给用户去使用。本文主要介绍通过pyinstaller在linux和windows上分别打包python脚本为可执行文件，想要跨平台的编译软件就目前而言实现起来还比较困难，博主本地使用的是Win11+WSL2 Ubuntu Linux的环境，能够在一定的程度上解决跨平台发布的问题。</p></div><p class="readmore"><a href="/posts/5b33df24.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/8282060a.html">控制Python浮点数输出位数</a></h1><div class="post-meta">2022-04-06<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 5</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在python的输出结果中，尤其是浮点数的输出，当我们需要写入文本文件时，最好是采用统一的输出格式，这样也能够增强结果的可读性。而对于浮点数输出位数的控制，可以通过{:.4f}、%.4f来指定打印或者输出时的字符串占据空间，也可以通过round函数来对输出前的结果进行转化。而如果是取有效数字，需要用到{:.4}，这几种方法没有优劣，只有看不同的场景，选取不同的精度控制方案。</p></div><p class="readmore"><a href="/posts/8282060a.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/1c1daea1.html">二次量子化与量子计算化学</a></h1><div class="post-meta">2022-04-05<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 4.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 18</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>量子计算机，是由基本单元量子比特所组成的新型计算体系，通过量子叠加和量子纠缠的特性，来完成对量子态的操纵，最终再通过量子测量获得到想要的计算结果。而在量子计算机上面执行量子化学的任务，被认为是一个非常promising的应用场景，不论是从最初费曼的想法与设计，还是这几年所发展起来的近期量子计算（NISQ）的技术，都对量子计算化学这一新兴研究方向进行了阐述。本文通过最基础的谐振波，讲解到薛定谔方程和动量算符的由来，最终介绍了两种量子化的变换。其实所谓的量子化，都是对表征体系进行了调整。一次量子化将哈密顿量从电子的粒子性带到了量子力学中的波粒二象性，引入了动量算符。二次量子化将动量表象和位置表象变换到粒子数表象，通过统计平均的方法去研究电子在不同轨道之间跃迁时的能量吸收与产生，用于表示体系总能量。</p></div><p class="readmore"><a href="/posts/1c1daea1.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/17236dfa.html">量子计算基础——量子测量</a></h1><div class="post-meta">2022-04-02<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>量子的世界与经典的世界存在着信息的隔阂，我们可以通过多个量子比特所构成的量子态去存储大量的信息，以及进行规模大到经典计算机所无法执行的运算。但是毕竟我们还依然生活在经典的世界中，最终我们还是需要将量子态坍缩到经典比特再进行读取，而这个使得量子态坍缩的过程，就是一种量子测量的方法。通过大量的量子测量，我们就可以近似的获得到量子态矢量中所存储的信息。</p></div><p class="readmore"><a href="/posts/17236dfa.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/79bdb623.html">Python3通过字符串访问与修改局部变量</a></h1><div class="post-meta">2022-04-01<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>Python本身是一门比较灵活便捷的编程语言，但是便捷往往有可能伴随着一些风险，比如exec和eval等内置函数的实现，有可能导致sandbox escaping的问题。而有时候我们又需要一些批量化的操作，比如批量化的创建或者修改局部、全局或者是成员变量，这样就需要我们首先要把所有的变量名存成字符串，在需要的时候再作为变量名去调用。在这篇文章中，我们介绍了一系列非exec和eval的操作（并不是说没有风险，也引用了ctype和sys定义的数据帧），来查看和定义、修改所需的各种变量。</p></div><p class="readmore"><a href="/posts/79bdb623.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/e5803016.html">为R Markdown配置TinyTex编译环境</a></h1><div class="post-meta">2022-03-30<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 862</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 3</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>上一篇博客《通过R Studio用Markdown写Beamer》的最后遗留了一个问题，那就是如何在本地win11的系统环境下快捷方便的构建一个pdflatex的环境。常规方案都是安装一个TexLive和下载一大堆的扩展文件，或者用Docker的方案去构建一个完整的环境，但是都很费时间精力。偶然的情况下看到了益辉大神基于TexLive修改了一个R的扩展包TinyTex。经过测试，这毫无疑问是目前在本地构建R Markdown完整环境的最佳解决方案。</p></div><p class="readmore"><a href="/posts/e5803016.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/89a01b1.html">量子计算基础——矩阵语言</a></h1><div class="post-meta">2022-03-29<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 15</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>量子计算是一门当下非常火热的技术，抛开个别企业对量子计算的过分吹嘘不谈，其本身是一门非常有意义的跨学科研究领域。本文仅从非物理科班专业的角度——用矩阵的语言去描述量子计算的基础单元和基础操作，包含量子态的含义、单比特量子门操作以及两比特量子门操作的矩阵形式。并且附带一定的物理图像，这一点其实非常重要，如果不断的推导公式，最终有可能迷失了其物理图像，这就脱离了我们做研究的初衷。</p></div><p class="readmore"><a href="/posts/89a01b1.html">阅读全文</a></p></div><nav class="page-navigator"><a class="extend prev" rel="prev" href="/page/18/">上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><a class="page-number" href="/page/18/">18</a><span class="page-number current">19</span><a class="page-number" href="/page/20/">20</a><a class="page-number" href="/page/21/">21</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/20/">下一页</a></nav></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
   const container = document.getElementById('giscus-recent-comments');
+  const repo = 'DechinPhy/DechinPhy.github.io';
+  const categoryId = 'NaN';
+  const count = parseInt('5') || 5;
   
   try {
-    const response = await fetch('/data/recent_comments.json');
-    const comments = await response.json();
+    const [owner, name] = repo.split('/');
+    const discussionsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions?category_id=' + categoryId + '&per_page=20';
     
-    if (!comments || comments.length === 0) {
+    const discussionsResponse = await fetch(discussionsUrl, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'giscus-recent-comments-widget'
+      }
+    });
+    const discussions = await discussionsResponse.json();
+    
+    if (!discussions || discussions.length === 0) {
       container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
       return;
     }
     
-    function truncateText(text, maxLength) {
+    let allComments = [];
+    for (const discussion of discussions) {
+      const commentsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions/' + discussion.number + '/comments?per_page=5';
+      const commentsResponse = await fetch(commentsUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'giscus-recent-comments-widget'
+        }
+      });
+      const comments = await commentsResponse.json();
+      const postPath = discussion.title;
+      const postUrl = '/posts/' + postPath.replace('posts/', '') + '.html#giscus';
+      for (const comment of comments) {
+        allComments.push({
+          body: comment.body,
+          createdAt: comment.created_at,
+          author: comment.user?.login || 'Anonymous',
+          postUrl: postUrl
+        });
+      }
+    }
+    
+    allComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    allComments = allComments.slice(0, count);
+    
+    if (allComments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function cleanText(text) {
       if (!text) return '';
+      text = text.replace(/<[^>]*>/g, '');
+      text = text.replace(/^1\s+/gm, '');
+      text = text.replace(/^[-*+]\s+/gm, '');
+      text = text.replace(/^>.*$/gm, '');
+      text = text.replace(/----.*$/gm, '');
       text = text.replace(/\s+/g, ' ').trim();
+      return text;
+    }
+    
+    function truncateText(text, maxLength) {
+      text = cleanText(text);
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
     
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    
     let html = '<ul class="giscus-recent-comments-list">';
-    comments.forEach((comment) => {
-      html += '<li class="giscus-recent-comment-item">';
+    allComments.forEach((comment) => {
+      html += '<li class="giscus-comment-item">';
       html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<span class="giscus-comment-date">' + formatDate(comment.createdAt) + '</span>';
       html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
       html += '</li>';
     });
@@ -56,7 +113,25 @@ toggle.addEventListener('click', () => {
     container.innerHTML = html;
   } catch (error) {
     console.error('Failed to fetch recent comments:', error);
-    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    try {
+      const response = await fetch('/data/recent_comments.json');
+      const comments = await response.json();
+      if (comments && comments.length > 0) {
+        let html = '<ul class="giscus-recent-comments-list">';
+        comments.forEach((comment) => {
+          html += '<li class="giscus-comment-item">';
+          html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+          html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + comment.body.substring(0, 50) + '...</a></p>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      }
+    } catch (fallbackError) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    }
   }
 })();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
 if (search_path.length == 0) {

@@ -28,26 +28,83 @@ toggle.addEventListener('click', () => {
   html.dataset.dark = localStorage.dark;
 });</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Dechin's Blog</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title"><a href="/posts/3104573c.html">通过R Studio用Markdown写Beamer</a></h1><div class="post-meta">2022-03-29<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>虽说在科研和工程中，最重要的还应该聚焦于研究的内容本身，但是如何去更好更严肃的展示自己的研究成果，并且不耗费太多的时间成本，这也是一个长期被讨论的话题。本文中介绍了R Markdown这样的一个解决方案，可以用于构建Beamer演示文档，用更少的工作量去构建一个效果更好的演示文档，对科学研究而言也是一个值得称道的工作。</p></div><p class="readmore"><a href="/posts/3104573c.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/ba224995.html">Python中将字典转为成员变量</a></h1><div class="post-meta">2022-03-28<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 5</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文所解决的问题场景是这样的：如果给定一个字典，比如一般从json文件或者npz文件中加载出来的数据都是字典的数据结构，如果我们希望把这个字典赋值给一个类，且使得字典的key和value分别作为类的成员变量名和成员变量值，那么该如何实现呢？对于一个展平的字典而言（没有嵌套字典），我们直接使用update就可以将字典中的所有key和value转变为当前类的成员变量。比较麻烦的是包含有嵌套字典的层级结构字典，此时我们只能使用循环，并且递归的对类的成员变量进行赋值。</p></div><p class="readmore"><a href="/posts/ba224995.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/458c1678.html">MindSpore尝鲜之Vmap功能</a></h1><div class="post-meta">2022-03-24<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文介绍了华为推出的深度学习框架MindSpore中最新支持的vmap功能函数，可以用于向量化的计算，本质上的主要作用是替代并加速python中的for循环的操作。最早是在numba和pytroch、jax中对vmap功能进行了支持，其实numpy中的底层计算也用到了向量化的运算，因此速度才如此之快。vmap在python中更多的是与即时编译功能jit一同使用，能够起到简化编程的同时对性能进行极大程度的优化，尤其是python中的for循环的优化。但是对于一些numpy、jax或者MindSpore中已有的算子而言，还是建议直接使用其已经实现的算子，而不是vmap再手写一个。</p></div><p class="readmore"><a href="/posts/458c1678.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/a3b9c672.html">python中的super是什么？</a></h1><div class="post-meta">2022-03-22<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 4</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文通过一个python的实际案例的设计，来讲解python面向对象的技术——类的继承中必用的super函数的逻辑。其实我们可以把python中类的继承理解成这样的一个过程：当我们在括号中明确了父类时，其实已经引用了父类的成员函数，但是并没有执行父类的初始化函数。在执行子类的初始化函数的同时，会检查是否重载了父类的成员函数，如果重载则会直接覆盖。而只有在执行了super之后，才相当于执行了父类的初始化函数，此时才可以访问父类的成员变量。</p></div><p class="readmore"><a href="/posts/a3b9c672.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/b8400afc.html">从经典动力学理解勒让德变换</a></h1><div class="post-meta">2022-03-21<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 16</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>为了通过一些实际问题来理解勒让德变换，我们假定了这样的一个场景：一个叫勒让德的人在足球场边上被不知来源的球砸中了脑袋，只能够判断足球砸到脑袋的一瞬间的速度方向。而通过勒让德变换的函数值，结合足球旋转的角速度，我们就可以得出足球的真实来源。同时，通过勒让德变换，我们还可以从拉格朗日力学推导到哈密顿力学。而且勒让德变换在热力学系统也有非常重要的应用场景。</p></div><p class="readmore"><a href="/posts/b8400afc.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/5d21718a.html">分子动力学模拟算法框架</a></h1><div class="post-meta">2022-03-17<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>分子动力学模拟是一个跨越众多学科领域的强大工具，从物理学的角度来看分子动力学模拟的话，其基于量子力学（量子化学）构建模型，通过牛顿力学进行演化迭代，最后能够在时间平均上等同于统计力学的系综平均，是一个堪比复变函数欧拉公式的优美过程。本文就当前分子动力学模拟的框架进行了整体介绍，其中并不展开讲解各项技术内容，但是也为感兴趣的研究人员提供一个简单的入口。</p></div><p class="readmore"><a href="/posts/5d21718a.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/54f050f2.html">从刘维尔方程到Velocity-Verlet算法</a></h1><div class="post-meta">2022-03-15<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 15</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>本文延续历史上分子动力学模拟演化算法的发展顺序，分别讲述了Verlet、LeapFrog和Velocity-Verlet三个算法的形式，并且结合刘维尔方程，推导了Velocity-Verlet算法中的三个演化步骤的内在含义。三种不同的演化算法，都有不同的初始依赖，而对于计算过程而言，越多的初始依赖，就会涉及到越多的参数存储问题。一个好的演化算法，只需要依赖于少量的参数，而具备较高的精度。</p></div><p class="readmore"><a href="/posts/54f050f2.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/37351de5.html">SETTLE约束算法的批量化处理</a></h1><div class="post-meta">2022-03-09<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 15</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>在前一篇文章中介绍了SETTLE约束算法在分子动力学模拟中的应用，本文通过用Jax的Vmap功能对SETTLE函数进行了扩维，使得其可以批量的计算多分子体系的约束条件。这里采用的案例是一个含有16个水分子（48原子）的小体系，从结果中可以看到，在随机移动和批量SETTLE的作用下，所有的水分子都保留了原始的键长和键角，简单理解这个过程就是一个刚体三角形的平移和旋转的过程。</p></div><p class="readmore"><a href="/posts/37351de5.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/60f64850.html">Scipy和Numpy的插值对比</a></h1><div class="post-meta">2022-03-08<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 5</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>线性插值和三次样条插值都是非常常用的插值算法，使用插值法，可以帮助我们对离散的样本信息进行扩展，得到样本信息中所不包含的样本点的信息。插值法有着非常广泛的应用场景，就比如某手机厂商所号称的x千万像素拍照，其中插值法就发挥了重要作用。在python的scipy这个库中实现了线性插值算法和三次样条插值算法，而numpy库中实现了线性插值的算法，我们通过这两者的不同使用方式，来看下所得到的插值的结果。</p></div><p class="readmore"><a href="/posts/60f64850.html">阅读全文</a></p></div><div class="post"><h1 class="post-title"><a href="/posts/e34d7a27.html">分子动力学模拟之SETTLE约束算法</a></h1><div class="post-meta">2022-03-02<span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 32</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="post-content"><p>继上一篇文章介绍了分子动力学模拟中常用的LINCS约束算法之后，本文再介绍一种SETTLE约束算法，及其基于Jax的实现方案。LINCS约束算法相对来说比较通用，更适合于成键关系比较复杂的通用的体系，而SETTLE算法更加适用于三原子轴对称体系，比如水分子。SETTLE算法结合velocity-verlet算法，可以确保一个分子只进行整体的旋转运动，互相之间的距离又保持不变。比较关键的是，SETTLE算法所依赖的参数较少，也不需要微分，因此在性能上十分有优势。</p></div><p class="readmore"><a href="/posts/e34d7a27.html">阅读全文</a></p></div><nav class="page-navigator"><a class="extend prev" rel="prev" href="/page/19/">上一页</a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="page-number" href="/page/19/">19</a><span class="page-number current">20</span><a class="page-number" href="/page/21/">21</a><a class="page-number" href="/page/22/">22</a><span class="space">&hellip;</span><a class="page-number" href="/page/31/">31</a><a class="extend next" rel="next" href="/page/21/">下一页</a></nav></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
   const container = document.getElementById('giscus-recent-comments');
+  const repo = 'DechinPhy/DechinPhy.github.io';
+  const categoryId = 'NaN';
+  const count = parseInt('5') || 5;
   
   try {
-    const response = await fetch('/data/recent_comments.json');
-    const comments = await response.json();
+    const [owner, name] = repo.split('/');
+    const discussionsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions?category_id=' + categoryId + '&per_page=20';
     
-    if (!comments || comments.length === 0) {
+    const discussionsResponse = await fetch(discussionsUrl, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'giscus-recent-comments-widget'
+      }
+    });
+    const discussions = await discussionsResponse.json();
+    
+    if (!discussions || discussions.length === 0) {
       container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
       return;
     }
     
-    function truncateText(text, maxLength) {
+    let allComments = [];
+    for (const discussion of discussions) {
+      const commentsUrl = 'https://api.github.com/repos/' + owner + '/' + name + '/discussions/' + discussion.number + '/comments?per_page=5';
+      const commentsResponse = await fetch(commentsUrl, {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'giscus-recent-comments-widget'
+        }
+      });
+      const comments = await commentsResponse.json();
+      const postPath = discussion.title;
+      const postUrl = '/posts/' + postPath.replace('posts/', '') + '.html#giscus';
+      for (const comment of comments) {
+        allComments.push({
+          body: comment.body,
+          createdAt: comment.created_at,
+          author: comment.user?.login || 'Anonymous',
+          postUrl: postUrl
+        });
+      }
+    }
+    
+    allComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    allComments = allComments.slice(0, count);
+    
+    if (allComments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function cleanText(text) {
       if (!text) return '';
+      text = text.replace(/<[^>]*>/g, '');
+      text = text.replace(/^1\s+/gm, '');
+      text = text.replace(/^[-*+]\s+/gm, '');
+      text = text.replace(/^>.*$/gm, '');
+      text = text.replace(/----.*$/gm, '');
       text = text.replace(/\s+/g, ' ').trim();
+      return text;
+    }
+    
+    function truncateText(text, maxLength) {
+      text = cleanText(text);
       return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
     
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    
     let html = '<ul class="giscus-recent-comments-list">';
-    comments.forEach((comment) => {
-      html += '<li class="giscus-recent-comment-item">';
+    allComments.forEach((comment) => {
+      html += '<li class="giscus-comment-item">';
       html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<span class="giscus-comment-date">' + formatDate(comment.createdAt) + '</span>';
       html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
       html += '</li>';
     });
@@ -56,7 +113,25 @@ toggle.addEventListener('click', () => {
     container.innerHTML = html;
   } catch (error) {
     console.error('Failed to fetch recent comments:', error);
-    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    try {
+      const response = await fetch('/data/recent_comments.json');
+      const comments = await response.json();
+      if (comments && comments.length > 0) {
+        let html = '<ul class="giscus-recent-comments-list">';
+        comments.forEach((comment) => {
+          html += '<li class="giscus-comment-item">';
+          html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+          html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + comment.body.substring(0, 50) + '...</a></p>';
+          html += '</li>';
+        });
+        html += '</ul>';
+        container.innerHTML = html;
+      } else {
+        container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      }
+    } catch (fallbackError) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+    }
   }
 })();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
 if (search_path.length == 0) {
