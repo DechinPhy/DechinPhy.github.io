@@ -703,16 +703,16 @@ pre {
 
 .giscus-comment-text {
   margin: 2px 0 0;
-  color: #444;
+  color: #6E7173;
   line-height: 1.5;
   word-break: break-all;
 }
 .giscus-comment-text a {
-  color: #444;
+  color: #6E7173;
   text-decoration: none;
 }
 .giscus-comment-text a:hover {
-  color: #01579f;
+  color: #444;
 }
 
 /* back-to-top rocket*/
