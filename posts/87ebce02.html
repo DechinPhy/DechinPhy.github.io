@@ -1,0 +1,276 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/87ebce02.html"><meta property="og:type" content="article"><meta property="og:title" content="Ubuntu Linux部署DeepSeek"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/87ebce02.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2025-02-05T07:34:18.000Z"><meta property="article:modified_time" content="2025-02-08T07:18:00.000Z"><title>Ubuntu Linux部署DeepSeek | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Ubuntu Linux部署DeepSeek</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Ubuntu Linux部署DeepSeek</h1><div class="post-meta">2025-02-05<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">安装Ollama</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">下载DeepSeek模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">安装Chatbox</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">远程部署</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">资源占用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了通过Ollama在Ubuntu Linux平台上部署DeepSeek本地大模型的方法，并且可以使用ChatBox调用本地Ollama API进行本地对话或者是远程对话。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>DeepSeek是这段时间最热门的话题之一，其蒸馏模型可以实现低成本而高质量的推理，使得我们现在可以在本地小型化的硬件上也用上大模型这一AI利器。本文主要介绍通过Ollama来部署DeepSeek R1模型的方法，由于网络环境的问题，过程相比于普通的安装方案可能略有改动。</p>
+<h1>安装Ollama</h1>
+<p>以下是DeepSeek生成的关于Ollama的介绍的一个片段：</p>
+<blockquote>
+<p>Ollama 是一个开源工具，专门用于在本地运行、管理和部署大型语言模型（LLMs，Large Language Models）。它简化了 LLMs 的安装、配置和运行流程，支持多种流行的开源模型（如 LLaMA、Mistral、DeepSeek 等），适合开发者和研究人员在本地环境中快速实验和开发。</p>
+</blockquote>
+<p>Ollama的官网地址为：<a target="_blank" rel="noopener" href="https://ollama.com">https://ollama.com</a>，可以先尝试一下直接从官网下载适合自己本地环境的版本，Linux、Windows和MacOS都有相应的支持。如果按照官网的Linux下载方式有类似于这样的报错信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">curl: (22) The requested URL returned error: 403<br></code></pre></td></tr></table></figure>
+<p>则可以按照本章节的方案试一试，如果没有出现报错，那就直接跳到下一个章节即可。这里我们将Ollama的下载和执行脚本分开进行，首先用curl下载一个安装脚本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ curl -fsSL https://ollama.com/install.sh -o ollama_install.sh<br></code></pre></td></tr></table></figure>
+<p>然后为该脚本加上一个可执行的权限：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">chmod</span> +x ollama_install.sh<br></code></pre></td></tr></table></figure>
+<p>使用如下指令，把默认的Ollama下载地址指向Github下载地址：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ sed -i <span class="hljs-string">&#x27;s|https://ollama.com/download/|https://github.com/ollama/ollama/releases/download/v0.5.7/|&#x27;</span> ollama_install.sh<br></code></pre></td></tr></table></figure>
+<p>这里版本号是写这篇文章时最新的版本号，读者可以自行搜索最新版本的地址进行修改，然后执行该脚本文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ sh ollama_install.sh<br>&gt;&gt;&gt; Installing ollama to /usr/local<br>&gt;&gt;&gt; Downloading Linux amd64 bundle<br><span class="hljs-comment">##############################################                                     57.7%</span><br></code></pre></td></tr></table></figure>
+<p>这就开始下载了，速度也蛮快。对于Github访问有困难的选手来说，你可能需要这个：<a target="_blank" rel="noopener" href="https://github.moeyy.xyz/%E3%80%82%E5%A6%82%E6%9E%9C%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B%E6%B2%A1%E6%9C%89%E4%BB%BB%E4%BD%95%E7%9A%84%E6%8A%A5%E9%94%99%EF%BC%8C%E9%82%A3%E7%95%8C%E9%9D%A2%E8%BE%93%E5%87%BA%E5%A4%A7%E6%A6%82%E6%98%AF%E8%BF%99%E6%A0%B7%E7%9A%84%EF%BC%9A">https://github.moeyy.xyz/。如果安装过程没有任何的报错，那界面输出大概是这样的：</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ sh ollama_install.sh<br>&gt;&gt;&gt; Installing ollama to /usr/local<br>&gt;&gt;&gt; Downloading Linux amd64 bundle<br><span class="hljs-comment">################################################################################# 100.0%</span><br>&gt;&gt;&gt; Creating ollama user...<br>&gt;&gt;&gt; Adding ollama user to render group...<br>&gt;&gt;&gt; Adding ollama user to video group...<br>&gt;&gt;&gt; Adding current user to ollama group...<br>&gt;&gt;&gt; Creating ollama systemd service...<br>&gt;&gt;&gt; Enabling and starting ollama service...<br>Created symlink /etc/systemd/system/default.target.wants/ollama.service → /etc/systemd/system/ollama.service.<br>&gt;&gt;&gt; NVIDIA GPU installed.<br></code></pre></td></tr></table></figure>
+<p>可以验证一下安装结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama --<span class="hljs-built_in">help</span><br>Large language model runner<br><br>Usage:<br>  ollama [flags]<br>  ollama [<span class="hljs-built_in">command</span>]<br><br>Available Commands:<br>  serve       Start ollama<br>  create      Create a model from a Modelfile<br>  show        Show information <span class="hljs-keyword">for</span> a model<br>  run         Run a model<br>  stop        Stop a running model<br>  pull        Pull a model from a registry<br>  push        Push a model to a registry<br>  list        List models<br>  ps          List running models<br>  <span class="hljs-built_in">cp</span>          Copy a model<br>  <span class="hljs-built_in">rm</span>          Remove a model<br>  <span class="hljs-built_in">help</span>        Help about any <span class="hljs-built_in">command</span><br><br>Flags:<br>  -h, --<span class="hljs-built_in">help</span>      <span class="hljs-built_in">help</span> <span class="hljs-keyword">for</span> ollama<br>  -v, --version   Show version information<br><br>Use <span class="hljs-string">&quot;ollama [command] --help&quot;</span> <span class="hljs-keyword">for</span> more information about a <span class="hljs-built_in">command</span>.<br></code></pre></td></tr></table></figure>
+<p>这就说明Ollama安装成功了。</p>
+<h1>下载DeepSeek模型</h1>
+<p>Ollama拉取和使用模型的操作跟Docker很像，所以如果有过使用容器的经验的话，用起来会非常顺手。首先我们访问以下Ollama官方的模型库中的DeepSeek-R1：<a target="_blank" rel="noopener" href="https://ollama.com/library/deepseek-r1%EF%BC%8C%E9%80%89%E6%8B%A9%E4%B8%80%E4%B8%AA%E9%80%82%E5%90%88%E8%87%AA%E5%B7%B1%E6%9C%AC%E5%9C%B0%E7%A1%AC%E4%BB%B6%E6%9D%A1%E4%BB%B6%E7%9A%84%E7%89%88%E6%9C%AC%EF%BC%8C%E7%84%B6%E5%90%8E%E4%BD%BF%E7%94%A8%E5%A6%82%E4%B8%8B%E6%8C%87%E4%BB%A4%E8%BF%9B%E8%A1%8C%E6%8B%89%E5%8F%96%EF%BC%9A">https://ollama.com/library/deepseek-r1，选择一个适合自己本地硬件条件的版本，然后使用如下指令进行拉取：</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama pull deepseek-r1:14b<br></code></pre></td></tr></table></figure>
+<p>然后就是漫长的等待，最终成功的示例大概是这样子：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama pull deepseek-r1:14b<br>pulling manifest<br>pulling 6e9f90f02bb3... 100% ▕██████████████████████████▏ 9.0 GB<br>pulling 369ca498f347... 100% ▕██████████████████████████▏  387 B<br>pulling 6e4c38e1172f... 100% ▕██████████████████████████▏ 1.1 KB<br>pulling f4d24e9138dd... 100% ▕██████████████████████████▏  148 B<br>pulling 3c24b0c80794... 100% ▕██████████████████████████▏  488 B<br>verifying sha256 digest<br>writing manifest<br>success<br></code></pre></td></tr></table></figure>
+<p>好在ollama支持断点续传，所以即时中途中断了，也是可以重新pull的。pull完成之后，就可以直接run开始启动对话了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama run deepseek-r1:14b<br>&gt;&gt;&gt; <span class="hljs-built_in">who</span> are you?<br>&lt;think&gt;<br><br>&lt;/think&gt;<br><br>Greetings! I<span class="hljs-string">&#x27;m DeepSeek-R1, an artificial intelligence assistant created by</span><br><span class="hljs-string">DeepSeek. I&#x27;</span>m at your service and would be delighted to assist you with any<br>inquiries or tasks you may have.<br><br>&gt;&gt;&gt; 今天是几月几号？<br>&lt;think&gt;<br>今天是几月几号？<br><br>&lt;/think&gt;<br><br>您好，建议您联网获取时效性较强的信息；如果还有其他问题需要帮助，请随时告诉我！<br><br>&gt;&gt;&gt; 你支持联网获取信息吗？<br>&lt;think&gt;<br>嗯，用户问我是否支持联网获取信息。让我仔细想想。<br><br>首先，回顾一下对话历史，用户之前问了我是谁，我介绍了自己是DeepSeek-R1。接着他问今天<br>是几月几号，我解释说无法提供时效性信息，并建议他联网。现在他进一步确认我是否支持联网<br>。<br><br>这可能意味着他对我的功能有更深的了解需求。也许他想测试我的能力或者想知道我能做什么。<br>需要明确告诉他我不具备联网的能力，但可以处理其他问题。<br><br>同时，我要确保语气友好，让他知道尽管不能联网，但我会尽力帮助他解决其他问题。这样他可<br>能会继续提出其他请求。<br>&lt;/think&gt;<br><br>目前我无法联网获取实时信息或最新的互联网内容。如果您有任何问题或需要帮助，请告诉我，<br>我会尽力为您解答！<br><br>&gt;&gt;&gt; 你能读取本地文件信息吗？<br>&lt;think&gt;<br>今天用户问我是否能读取本地文件信息。<br><br>回顾之前的对话，用户之前询问了日期和联网功能，现在继续测试我的功能边界。可能他想了解<br>我能做什么，以便判断如何与我交互。<br><br>明确告诉他无法访问本地文件，这样他就能知道数据来源仅限于已知的信息库。同时，保持友好<br>态度，邀请他提出其他问题。<br><br>这样有助于用户明确我的能力，避免后续的混淆或失望。<br>&lt;/think&gt;<br><br>很抱歉，目前我还不支持读取本地文件信息或上传文件的功能。如果您有任何其他问题，请随时<br>告诉我！<br></code></pre></td></tr></table></figure>
+<p>中英文都可以输入。</p>
+<h1>安装Chatbox</h1>
+<p>Chatbox是一个对话工具，可以导入各种大模型平台的API，或者本地部署模型的API也都是可以的，其主页地址为：<a target="_blank" rel="noopener" href="https://www.chatboxai.app/zh">https://www.chatboxai.app/zh</a>，可以在这里下载对应于自己本地操作系统的桌面应用。如果是Windows系统，下载之后是一个安装工具，按照提示进行安装即可。如果是Linux平台，下载下来是一个APPImage的文件，其实就是一个可执行文件，免安装的，但是下载之后需要手动配置一个可执行的选项：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165008405.png" alt=""></p>
+<p>安装好Chatbox之后，打开就可以配置本地ollama API下的deepseek模型了：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165008444.png" alt=""></p>
+<p>然后就可以启动对话：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165008485.png" alt=""></p>
+<p>还可以解析一些静态网页，例如我的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18687146/sponge-ext">上一篇博客</a>，把这个链接丢进去，是可以被解析的。但是如果是一个有递归目录的，或者是有JS的网页，可能就解析不了。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165008534.png" alt=""></p>
+<p>至于其他格式的文件，还有待考察。</p>
+<h1>远程部署</h1>
+<p>假如我们在远程的电脑上部署了一个ollama+deepseek，想在本地电脑用chatbox调用远程ollama的API，这个也是支持的，但是要在远程电脑上进行相应的配置。先暂停ollama服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> systemctl stop ollama<br></code></pre></td></tr></table></figure>
+<p>修改配置文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> vi /etc/systemd/system/ollama.service<br></code></pre></td></tr></table></figure>
+<p>在配置文件的<code>[Service]</code>下加上这么两句：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">Environment=<span class="hljs-string">&quot;OLLAMA_HOST=0.0.0.0&quot;</span><br>Environment=<span class="hljs-string">&quot;OLLAMA_ORIGINS=*&quot;</span><br></code></pre></td></tr></table></figure>
+<p>如果不知道上面这一串怎么执行，可以直接使用以下脚本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> sed -i <span class="hljs-string">&#x27;/\[Service\]/a Environment=&quot;OLLAMA_HOST=0.0.0.0&quot;\nEnvironment=&quot;OLLAMA_ORIGINS=*&quot;&#x27;</span> /etc/systemd/system/ollama.service<br></code></pre></td></tr></table></figure>
+<p>如果是担心文件被覆盖，可以先把<code>-i</code>选项去掉：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> sed <span class="hljs-string">&#x27;/\[Service\]/a Environment=&quot;OLLAMA_HOST=0.0.0.0&quot;\nEnvironment=&quot;OLLAMA_ORIGINS=*&quot;&#x27;</span> /etc/systemd/system/ollama.service<br></code></pre></td></tr></table></figure>
+<p>该操作会把修改后的配置文件打印输出在屏幕上，确认无误之后可以把<code>-i</code>配置加上，把修改同步到文件中，然后重新加载ollama服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ systemctl daemon-reload<br>$ systemctl restart ollama<br></code></pre></td></tr></table></figure>
+<p>然后就可以在本地配置一个远程的ip地址和相应端口进行访问了。</p>
+<h1>资源占用</h1>
+<p>DeepSeek的一大优势就是对于资源的消耗没有那么高，就算是这个14b的模型，在两张显卡上面运行也没有什么压力，每张卡大概会占用6G不到的显存：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">Thu Feb  6 09:25:54 2025       <br>+---------------------------------------------------------------------------------------+<br>| NVIDIA-SMI 535.183.01             Driver Version: 535.183.01   CUDA Version: 12.2     |<br>|-----------------------------------------+----------------------+----------------------+<br>| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |<br>| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |<br>|                                         |                      |               MIG M. |<br>|=========================================+======================+======================|<br>|   0  xxxxxxxxxxxxxxx                Off | 00000000:03:00.0  On |                  N/A |<br>| 30%   56C    P0              99W / 125W |   6800MiB /  8192MiB |     38%      Default |<br>|                                         |                      |                  N/A |<br>+-----------------------------------------+----------------------+----------------------+<br>|   1  xxxxxxxxxxxxxxx                Off | 00000000:A6:00.0 Off |                  N/A |<br>| 30%   49C    P0              63W / 125W |   5716MiB /  8192MiB |     38%      Default |<br>|                                         |                      |                  N/A |<br>+-----------------------------------------+----------------------+----------------------+<br></code></pre></td></tr></table></figure>
+<p>如果不配置显卡，用CPU似乎也是可以进行推理的，但是这里就不进行测试了。</p>
+<h1>总结概要</h1>
+<p>本文介绍了通过Ollama在Ubuntu Linux平台上部署DeepSeek本地大模型的方法，并且可以使用ChatBox调用本地Ollama API进行本地对话或者是远程对话。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/deepseek.html">https://www.cnblogs.com/dechinphy/p/deepseek.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://chatboxai.app/zh/help-center/connect-chatbox-remote-ollama-service-guide">https://chatboxai.app/zh/help-center/connect-chatbox-remote-ollama-service-guide</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/87ebce02.html">https://dechin-phy.asia/posts/87ebce02.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2025-02-05</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-02-08</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/9f6d24fb.html">Windows11本地部署DeepSeek加速</a><a class="next" href="/posts/3c8ca09b.html">使用SpongeExt快捷完成CudaSPONGE结合PySAGES的增强采样</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

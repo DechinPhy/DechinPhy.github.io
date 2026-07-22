@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/5a03f105.html"><meta property="og:type" content="article"><meta property="og:title" content="在CentOS上安装Singularity高性能容器"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/5a03f105.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-01-14T01:17:23.000Z"><meta property="article:modified_time" content="2021-02-01T11:42:00.000Z"><title>在CentOS上安装Singularity高性能容器 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">在CentOS上安装Singularity高性能容器</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">在CentOS上安装Singularity高性能容器</h1><div class="post-meta">2021-01-14<span> | </span><span class="category"><a href="/categories/%E5%AE%B9%E5%99%A8/">容器</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">什么是singularity容器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">环境准备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">安装配置epel扩展源</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">配置epel国内镜像源</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">使用yum安装singularity</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">singualrity的基本使用方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>基于CentOS的singularity容器二进制安装方案</p>
+<span id="more"></span>
+<h1>什么是singularity容器</h1>
+<p>Singularity是劳伦斯伯克利国家实验室专门为大规模、跨节点HPC和DL工作负载而开发的容器化技术。具备轻量级、快速部署、方便迁移等诸多优势，且支持从Docker镜像格式转换为Singularity镜像格式。除了兼容docker的镜像之外，singularity还有一个不太明显的优势：可以通过非root帐号来拉起容器，这样对于某些安全性要求比较高的场景来说还是有用途的。</p>
+<h1>环境准备</h1>
+<p>目前singularity支持了redhat系列Linux发行版的二进制安装，这里我们使用的基础系统是CentOS：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# <span class="hljs-built_in">cat</span> /etc/redhat-release <br>CentOS Linux release 8.3.2011<br></code></pre></td></tr></table></figure>
+<h1>安装配置epel扩展源</h1>
+<p>首先我们需要更新所有的系统软件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# yum update -y           <br>CentOS Linux 8 - AppStream                                                                                                                                                                                  1.1 MB/s | 6.3 MB     00:05    <br>CentOS Linux 8 - BaseOS                                                                                                                                                                                     1.7 MB/s | 2.3 MB     00:01    <br>Dependencies resolved.<br>Nothing to <span class="hljs-keyword">do</span>.<br>Complete!<br></code></pre></td></tr></table></figure>
+<p>安装epel扩展源：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# yum install -y epel-release<br>Last metadata expiration check: 0:00:22 ago on Wed 13 Jan 2021 09:24:36 AM UTC.<br>Dependencies resolved.<br>============================================================================================================================================================================================================================================<br> Package                                                      Architecture                                           Version                                                   Repository                                              Size<br>============================================================================================================================================================================================================================================<br>Installing:<br> epel-release                                                 noarch                                                 8-8.el8                                                   extras                                                  23 k<br><br>Transaction Summary<br>============================================================================================================================================================================================================================================<br>Install  1 Package<br><br>Total download size: 23 k<br>Installed size: 32 k<br>Downloading Packages:<br>epel-release-8-8.el8.noarch.rpm                                                                                                                                                                             140 kB/s |  23 kB     00:00    <br>--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br>Total                                                                                                                                                                                                        34 kB/s |  23 kB     00:00     <br>Running transaction check<br>Transaction check succeeded.<br>Running transaction <span class="hljs-built_in">test</span><br>Transaction <span class="hljs-built_in">test</span> succeeded.<br>Running transaction<br>  Preparing        :                                                                                                                                                                                                                    1/1 <br>  Installing       : epel-release-8-8.el8.noarch                                                                                                                                                                                        1/1 <br>  Running scriptlet: epel-release-8-8.el8.noarch                                                                                                                                                                                        1/1 <br>  Verifying        : epel-release-8-8.el8.noarch                                                                                                                                                                                        1/1 <br><br>Installed:<br>  epel-release-8-8.el8.noarch                                                                                                                                                                                                               <br><br>Complete!<br></code></pre></td></tr></table></figure>
+<p>安装好epel源之后，需要再次更新系统软件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# yum update -y<br>Extra Packages <span class="hljs-keyword">for</span> Enterprise Linux Modular 8 - x86_64                                                                                                                                                      9.2 kB/s | 527 kB     00:57    <br>Extra Packages <span class="hljs-keyword">for</span> Enterprise Linux 8 - x86_64                                                                                                                                                               10 kB/s | 8.8 MB     14:46    <br>Last metadata expiration check: 0:00:19 ago on Wed 13 Jan 2021 09:26:09 AM UTC.<br>Dependencies resolved.<br>============================================================================================================================================================================================================================================<br> Package                                                      Architecture                                           Version                                                     Repository                                            Size<br>============================================================================================================================================================================================================================================<br>Upgrading:<br> epel-release                                                 noarch                                                 8-10.el8                                                    epel                                                  22 k<br><br>Transaction Summary<br>============================================================================================================================================================================================================================================<br>Upgrade  1 Package<br><br>Total download size: 22 k<br>Downloading Packages:<br>epel-release-8-10.el8.noarch.rpm                                                                                                                                                                            7.8 kB/s |  22 kB     00:02    <br>--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br>Total                                                                                                                                                                                                       6.1 kB/s |  22 kB     00:03     <br>warning: /var/cache/dnf/epel-05da96c052a128d8/packages/epel-release-8-10.el8.noarch.rpm: Header V4 RSA/SHA256 Signature, key ID 2f86d6a1: NOKEY<br>Extra Packages <span class="hljs-keyword">for</span> Enterprise Linux 8 - x86_64                                                                                                                                                              1.6 MB/s | 1.6 kB     00:00    <br>Importing GPG key 0x2F86D6A1:<br> Userid     : <span class="hljs-string">&quot;Fedora EPEL (8) &lt;epel@fedoraproject.org&gt;&quot;</span><br> Fingerprint: 94E2 79EB 8D8F 25B2 1810 ADF1 21EA 45AB 2F86 D6A1<br> From       : /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-8<br>Key imported successfully<br>Running transaction check<br>Transaction check succeeded.<br>Running transaction <span class="hljs-built_in">test</span><br>Transaction <span class="hljs-built_in">test</span> succeeded.<br>Running transaction<br>  Preparing        :                                                                                                                                                                                                                    1/1 <br>  Running scriptlet: epel-release-8-10.el8.noarch                                                                                                                                                                                       1/1 <br>  Upgrading        : epel-release-8-10.el8.noarch                                                                                                                                                                                       1/2 <br>  Cleanup          : epel-release-8-8.el8.noarch                                                                                                                                                                                        2/2 <br>  Running scriptlet: epel-release-8-8.el8.noarch                                                                                                                                                                                        2/2 <br>  Verifying        : epel-release-8-10.el8.noarch                                                                                                                                                                                       1/2 <br>  Verifying        : epel-release-8-8.el8.noarch                                                                                                                                                                                        2/2 <br><br>Upgraded:<br>  epel-release-8-10.el8.noarch                                                                                                                                                                                                              <br><br>Complete!<br></code></pre></td></tr></table></figure>
+<h1>配置epel国内镜像源</h1>
+<p>使用默认的源地址去下载软件的话，有可能会导致下载速度缓慢甚至下载失败。这里推荐使用华为的国内镜像源地址，配置方法如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# sed -i <span class="hljs-string">&quot;s/#baseurl/baseurl/g&quot;</span> /etc/yum.repos.d/epel.repo<br>[root@centos /]# sed -i <span class="hljs-string">&quot;s/metalink/#metalink/g&quot;</span> /etc/yum.repos.d/epel.repo<br>[root@centos /]# sed -i <span class="hljs-string">&quot;s@https\?://download.fedoraproject.org/pub@https://mirrors.huaweicloud.com@g&quot;</span> /etc/yum.repos.d/epel.repo<br></code></pre></td></tr></table></figure>
+<p>再次更新所有源：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# yum update -y<br>Extra Packages <span class="hljs-keyword">for</span> Enterprise Linux 8 - x86_64                                                                                                                                                              5.9 MB/s | 8.8 MB     00:01    <br>Last metadata expiration check: 0:00:02 ago on Wed 13 Jan 2021 09:55:51 AM UTC.<br>Dependencies resolved.<br>Nothing to <span class="hljs-keyword">do</span>.<br>Complete!<br></code></pre></td></tr></table></figure>
+<h1>使用yum安装singularity</h1>
+<p>到这里为止，基本的环境配置就完成了，可以正式开始singularity的安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# yum install -y singularity<br>Last metadata expiration check: 0:00:59 ago on Wed 13 Jan 2021 09:55:51 AM UTC.<br>Dependencies resolved.<br>============================================================================================================================================================================================================================================<br> Package                                                     Architecture                                           Version                                                      Repository                                            Size<br>============================================================================================================================================================================================================================================<br>Installing:<br> singularity                                                 x86_64                                                 3.7.0-1.el8                                                  epel                                                  42 M<br><br>Transaction Summary<br>============================================================================================================================================================================================================================================<br>Install  1 Package<br><br>Total download size: 42 M<br>Installed size: 138 M<br>Downloading Packages:<br>singularity-3.7.0-1.el8.x86_64.rpm                                                                                                                                                                          3.4 MB/s |  42 MB     00:12    <br>--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------<br>Total                                                                                                                                                                                                       3.4 MB/s |  42 MB     00:12     <br>Running transaction check<br>Transaction check succeeded.<br>Running transaction <span class="hljs-built_in">test</span><br>Transaction <span class="hljs-built_in">test</span> succeeded.<br>Running transaction<br>  Preparing        :                                                                                                                                                                                                                    1/1 <br>  Installing       : singularity-3.7.0-1.el8.x86_64                                                                                                                                                                                     1/1 <br>  Running scriptlet: singularity-3.7.0-1.el8.x86_64                                                                                                                                                                                     1/1 <br>  Verifying        : singularity-3.7.0-1.el8.x86_64                                                                                                                                                                                     1/1 <br><br>Installed:<br>  singularity-3.7.0-1.el8.x86_64                                                                                                                                                                                                            <br><br>Complete!<br></code></pre></td></tr></table></figure>
+<p>可以通过如下方式来验证singularity是否安装成功，并且查看版本号：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# singularity --version<br>singularity version 3.7.0-1.el8<br></code></pre></td></tr></table></figure>
+<h1>singualrity的基本使用方法</h1>
+<p>首先我们可以通过软件自身的help来查看软件支持的功能：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# singularity --<span class="hljs-built_in">help</span><br><br>Linux container platform optimized <span class="hljs-keyword">for</span> High Performance Computing (HPC) and<br>Enterprise Performance Computing (EPC)<br><br>Usage:<br>  singularity [global options...]<br><br>Description:<br>  Singularity containers provide an application virtualization layer enabling<br>  mobility of compute via both application and environment portability. With<br>  Singularity one is capable of building a root file system that runs on any <br>  other Linux system <span class="hljs-built_in">where</span> Singularity is installed.<br><br>Options:<br>  -c, --config string   specify a configuration file (<span class="hljs-keyword">for</span> root or<br>                        unprivileged installation only) (default<br>                        <span class="hljs-string">&quot;/etc/singularity/singularity.conf&quot;</span>)<br>  -d, --debug           <span class="hljs-built_in">print</span> debugging information (highest verbosity)<br>  -h, --<span class="hljs-built_in">help</span>            <span class="hljs-built_in">help</span> <span class="hljs-keyword">for</span> singularity<br>      --nocolor         <span class="hljs-built_in">print</span> without color output (default False)<br>  -q, --quiet           suppress normal output<br>  -s, --silent          only <span class="hljs-built_in">print</span> errors<br>  -v, --verbose         <span class="hljs-built_in">print</span> additional information<br>      --version         version <span class="hljs-keyword">for</span> singularity<br><br>Available Commands:<br>  build       Build a Singularity image<br>  cache       Manage the <span class="hljs-built_in">local</span> cache<br>  capability  Manage Linux capabilities <span class="hljs-keyword">for</span> <span class="hljs-built_in">users</span> and <span class="hljs-built_in">groups</span><br>  config      Manage various singularity configuration (root user only)<br>  delete      Deletes requested image from the library<br>  <span class="hljs-built_in">exec</span>        Run a <span class="hljs-built_in">command</span> within a container<br>  <span class="hljs-built_in">help</span>        Help about any <span class="hljs-built_in">command</span><br>  inspect     Show metadata <span class="hljs-keyword">for</span> an image<br>  instance    Manage containers running as services<br>  key         Manage OpenPGP keys<br>  oci         Manage OCI containers<br>  plugin      Manage Singularity plugins<br>  pull        Pull an image from a URI<br>  push        Upload image to the provided URI<br>  remote      Manage singularity remote endpoints, keyservers and OCI/Docker registry credentials<br>  run         Run the user-defined default <span class="hljs-built_in">command</span> within a container<br>  run-help    Show the user-defined <span class="hljs-built_in">help</span> <span class="hljs-keyword">for</span> an image<br>  search      Search a Container Library <span class="hljs-keyword">for</span> images<br>  shell       Run a shell within a container<br>  sif         siftool is a program <span class="hljs-keyword">for</span> Singularity Image Format (SIF) file manipulation<br>  sign        Attach digital signature(s) to an image<br>  <span class="hljs-built_in">test</span>        Run the user-defined tests within a container<br>  verify      Verify cryptographic signatures attached to an image<br>  version     Show the version <span class="hljs-keyword">for</span> Singularity<br><br>Examples:<br>  $ singularity <span class="hljs-built_in">help</span> &lt;<span class="hljs-built_in">command</span>&gt; [&lt;subcommand&gt;]<br>  $ singularity <span class="hljs-built_in">help</span> build<br>  $ singularity <span class="hljs-built_in">help</span> instance start<br><br><br>For additional <span class="hljs-built_in">help</span> or support, please visit https://www.sylabs.io/docs/<br></code></pre></td></tr></table></figure>
+<p>这里可以看到跟docker的接口还是有较大区别的，但是容器的本质还是基于namespace和cgroup的隔离方案，这点上都是大同小异。由于本文的主要目的在于介绍singularity的安装，这里不详细展开singularity的使用介绍，仅简单介绍一个使用的案例：适用singularity搭建一个ubuntu的容器环境。</p>
+<ul>
+<li>首先我们创建一个容器沙箱，这里用的基础镜像还是从dockerhub获取的ubuntu基础镜像</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# singularity build --sandbox ubuntu docker://ubuntu<br>INFO:    Starting build...<br>Getting image <span class="hljs-built_in">source</span> signatures<br>Copying blob da7391352a9b <span class="hljs-keyword">done</span>  <br>Copying blob 14428a6d4bcd skipped: already exists  <br>Copying blob 2c2d948710f2 [--------------------------------------] 0.0b / 0.0b<br>Copying config aa23411143 <span class="hljs-keyword">done</span>  <br>Writing manifest to image destination<br>Storing signatures<br>2021/01/14 01:20:39  info unpack layer: sha256:da7391352a9bb76b292a568c066aa4c3cbae8d494e6a3c68e3c596d34f7c75f8<br>2021/01/14 01:20:39  info unpack layer: sha256:14428a6d4bcdba49a64127900a0691fb00a3f329aced25eb77e3b65646638f8d<br>2021/01/14 01:20:39  info unpack layer: sha256:2c2d948710f21ad82dce71743b1654b45acb5c059cf5c19da491582cef6f2601<br>INFO:    Creating sandbox directory...<br>INFO:    Build complete: ubuntu<br></code></pre></td></tr></table></figure>
+<ul>
+<li>在执行结束后可以在当期目录下生成一个名为<code>ubuntu</code>的目录，通过拉起该目录为容器，可以修改镜像配置，制作自己的容器镜像</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# singularity shell -w ubuntu<br></code></pre></td></tr></table></figure>
+<ul>
+<li>修改完配置之后，可以将该沙箱<code>build</code>成一个镜像文件</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[root@centos /]# singularity build ubuntu-base.sif ubuntu/<br>INFO:    Starting build...<br>INFO:    Creating SIF file...<br>INFO:    Build complete: ubuntu-base.sif<br></code></pre></td></tr></table></figure>
+<ul>
+<li>创建好<code>sif</code>镜像之后，会在本地生成一个sif文件，可通过该sif文件拉起一个容器，这里我们可以用一个非root帐号来拉起</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@centos /]# singularity shell ubuntu.sif<br></code></pre></td></tr></table></figure>
+<p>这里我们不过多赘述容器的使用方法，后续会出一些源码安装的方案以及更多的使用和配置场景。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/singularity-install.html">https://www.cnblogs.com/dechinphy/p/singularity-install.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://hpc.pku.edu.cn/_book/guide/soft_env/Singularity.html">北大超算集群使用教程</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/hpcng/singularity">singularity开源地址</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/5a03f105.html">https://dechin-phy.asia/posts/5a03f105.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-01-14</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-02-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/2e0e14c.html">Python模块化编程与装饰器</a><a class="next" href="/posts/3ff8743a.html">在Linux系统下限制指定目录的大小以及文件/文件夹数量</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

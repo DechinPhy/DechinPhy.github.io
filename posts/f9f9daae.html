@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/f9f9daae.html"><meta property="og:type" content="article"><meta property="og:title" content="Python实现GPU加速的基本操作"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/f9f9daae.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-06-10T07:34:00.000Z"><meta property="article:modified_time" content="2021-08-31T08:09:00.000Z"><title>Python实现GPU加速的基本操作 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Python实现GPU加速的基本操作</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Python实现GPU加速的基本操作</h1><div class="post-meta">2021-06-10<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">CUDA的线程与块</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8GPU%E6%89%93%E5%8D%B0%E7%BA%BF%E7%A8%8B%E7%BC%96%E5%8F%B7"><span class="toc-number">2.1.</span> <span class="toc-text">用GPU打印线程编号</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8GPU%E6%89%93%E5%8D%B0%E5%9D%97%E7%BC%96%E5%8F%B7"><span class="toc-number">2.2.</span> <span class="toc-text">用GPU打印块编号</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8GPU%E6%89%93%E5%8D%B0%E5%9D%97%E7%9A%84%E7%BB%B4%E5%BA%A6"><span class="toc-number">2.3.</span> <span class="toc-text">用GPU打印块的维度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8GPU%E6%89%93%E5%8D%B0%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%BB%B4%E5%BA%A6"><span class="toc-number">2.4.</span> <span class="toc-text">用GPU打印线程的维度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">2.5.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">GPU所支持的最大并行度</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">GPU的加速效果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文针对于Python中使用Numba的GPU加速程序的一些基本概念和实现的方法，比如GPU中的线程和模块的概念，以及给出了一个矢量加法的代码案例，进一步说明了GPU加速的效果。需要注意的是，由于Python中的Numba实现是一种即时编译的技术，因此第一次运算时的时间会明显较长，所以我们一般说GPU加速是指从第二步开始的运行时间。对于一些工业和学界常见的场景，比如分子动力学模拟中的系统演化，或者是深度学习与量子计算中的参数优化，都是相同维度参数多步运算的一个过程，非常适合使用即时编译的技术，配合以GPU高度并行化的加速效果，能够在实际工业和学术界的各种场景下发挥巨大的作用。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>之前写过一篇讲述如何使用pycuda来在Python上写CUDA程序的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pycuda.html">博客</a>。这个方案的特点在于完全遵循了CUDA程序的写法，只是支持了一些常用函数的接口，如果你需要自己写CUDA算子，那么就只能使用非常不Pythonic的写法。还有一种常见的方法是用cupy来替代numpy，相当于一个GPU版本的numpy。那么本文要讲述的是用numba自带的装饰器，来写一个非常Pythonic的CUDA程序。</p>
+<h1>CUDA的线程与块</h1>
+<p>GPU从计算逻辑来讲，可以认为是一个高并行度的计算阵列，我们可以想象成一个二维的像围棋棋盘一样的网格，每一个格子都可以执行一个单独的任务，并且所有的格子可以同时执行计算任务，这就是GPU加速的来源。那么刚才所提到的棋盘，每一列都认为是一个线程，并有自己的线程编号；每一行都是一个块，有自己的块编号。我们可以通过一些简单的程序来理解这其中的逻辑：</p>
+<h2 id="用GPU打印线程编号">用GPU打印线程编号</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;threadIdx:&#x27;</span>, cuda.threadIdx.x)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>,<span class="hljs-number">4</span>]()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">threadIdx: 0<br>threadIdx: 1<br>threadIdx: 2<br>threadIdx: 3<br>threadIdx: 0<br>threadIdx: 1<br>threadIdx: 2<br>threadIdx: 3<br></code></pre></td></tr></table></figure>
+<h2 id="用GPU打印块编号">用GPU打印块编号</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;blockIdx:&#x27;</span>, cuda.blockIdx.x)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>,<span class="hljs-number">4</span>]()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">blockIdx: 0<br>blockIdx: 0<br>blockIdx: 0<br>blockIdx: 0<br>blockIdx: 1<br>blockIdx: 1<br>blockIdx: 1<br>blockIdx: 1<br></code></pre></td></tr></table></figure>
+<h2 id="用GPU打印块的维度">用GPU打印块的维度</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;blockDim:&#x27;</span>, cuda.blockDim.x)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>,<span class="hljs-number">4</span>]()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">blockDim: 4<br>blockDim: 4<br>blockDim: 4<br>blockDim: 4<br>blockDim: 4<br>blockDim: 4<br>blockDim: 4<br>blockDim: 4<br></code></pre></td></tr></table></figure>
+<h2 id="用GPU打印线程的维度">用GPU打印线程的维度</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;gridDim:&#x27;</span>, cuda.gridDim.x)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>,<span class="hljs-number">4</span>]()<br></code></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">gridDim: 2<br>gridDim: 2<br>gridDim: 2<br>gridDim: 2<br>gridDim: 2<br>gridDim: 2<br>gridDim: 2<br>gridDim: 2<br></code></pre></td></tr></table></figure>
+<h2 id="总结">总结</h2>
+<p>我们可以用如下的一张图来总结刚才提到的GPU网格的概念，在上面的测试案例中，我们在GPU上划分一块2*4大小的阵列用于我们自己的计算，每一行都是一个块，每一列都是一个线程，所有的网格是同时执行计算的内容的（如果没有逻辑上的依赖的话）。
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164713568.png" alt=""></p>
+<h1>GPU所支持的最大并行度</h1>
+<p>我们可以用几个简单的程序来测试一下GPU的并行度，因为每一个GPU上的网格都可以独立的执行一个任务，因此我们认为可以分配多少个网格，就有多大的并行度。本机的最大并行应该是在<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mn>4</mn></msup><mn>0</mn></mrow><annotation encoding="application/x-tex">2^40</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141079999999999em;vertical-align:0em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">4</span></span></span></span></span></span></span></span><span class="mord">0</span></span></span></span>，因此假设我们给GPU分配<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mn>5</mn></msup><mn>0</mn></mrow><annotation encoding="application/x-tex">2^50</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141079999999999em;vertical-align:0em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">5</span></span></span></span></span></span></span></span><span class="mord">0</span></span></span></span>大小的网格，程序就会报错：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>**<span class="hljs-number">50</span>,<span class="hljs-number">1</span>]()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Running Success!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;numba_cuda_test.py&quot;</span>, line 10, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    gpu[2**50,1]()<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/compiler.py&quot;</span>, line 822, <span class="hljs-keyword">in</span> __call__<br>    self.stream, self.sharedmem)<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/compiler.py&quot;</span>, line 966, <span class="hljs-keyword">in</span> call<br>    kernel.launch(args, griddim, blockdim, stream, sharedmem)<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/compiler.py&quot;</span>, line 699, <span class="hljs-keyword">in</span> launch<br>    cooperative=self.cooperative)<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/cudadrv/driver.py&quot;</span>, line 2100, <span class="hljs-keyword">in</span> launch_kernel<br>    None)<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/cudadrv/driver.py&quot;</span>, line 300, <span class="hljs-keyword">in</span> safe_cuda_api_call<br>    self._check_error(fname, retcode)<br>  File <span class="hljs-string">&quot;/home/dechin/.local/lib/python3.7/site-packages/numba/cuda/cudadrv/driver.py&quot;</span>, line 335, <span class="hljs-keyword">in</span> _check_error<br>    raise CudaAPIError(retcode, msg)<br>numba.cuda.cudadrv.driver.CudaAPIError: [1] Call to cuLaunchKernel results <span class="hljs-keyword">in</span> CUDA_ERROR_INVALID_VALUE<br></code></pre></td></tr></table></figure>
+<p>而如果我们分配一个额定大小之内的网格，程序就可以正常的运行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>**<span class="hljs-number">30</span>,<span class="hljs-number">1</span>]()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Running Success!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>这里加了一个打印输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">Running Success!<br></code></pre></td></tr></table></figure>
+<p>需要注意的是，两个维度上的可分配大小是不一致的，比如本机的上限是分配2^30*2^10大小的空间用于计算：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>**<span class="hljs-number">30</span>,<span class="hljs-number">2</span>**<span class="hljs-number">10</span>]()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Running Success!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>同样的，只要在允许的范围内都是可以执行成功的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">Running Success!<br></code></pre></td></tr></table></figure>
+<p>如果在本机上有多块GPU的话，还可以通过<code>select_device</code>的指令来选择执行指令的GPU编号：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># numba_cuda_test.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br>cuda.select_device(<span class="hljs-number">1</span>)<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>():<br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    gpu[<span class="hljs-number">2</span>**<span class="hljs-number">30</span>,<span class="hljs-number">2</span>**<span class="hljs-number">10</span>]()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Running Success!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>如果两块GPU的可分配空间一致的话，就可以运行成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">Running Success!<br></code></pre></td></tr></table></figure>
+<h1>GPU的加速效果</h1>
+<p>前面我们经常提到一个词叫GPU加速，GPU之所以能够实现加速的效果，正源自于GPU本身的高度并行性。这里我们直接用一个数组求和的案例来说明GPU的加速效果，这个案例需要得到的结果是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>j</mi></msub><mo>=</mo><msub><mi>a</mi><mi>j</mi></msub><mo>+</mo><msub><mi>b</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">b_j=a_j+b_j</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.311664em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.8694379999999999em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.311664em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.980548em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathnormal">b</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.311664em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span></span></span></span>，将求和后的值赋值在其中的一个输入数组之上，以节省一些内存空间。当然，如果这个数组还有其他的用途的话，是不能这样操作的。具体代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># gpu_add.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br>cuda.select_device(<span class="hljs-number">1</span>)<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu</span>(<span class="hljs-params">a,b,DATA_LENGHTH</span>):<br>    idx = cuda.threadIdx.x + cuda.blockIdx.x * cuda.blockDim.x<br>    <span class="hljs-keyword">if</span> idx &lt; DATA_LENGHTH:<br>        b[idx] += a[idx]<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    DATA_EXP_LENGTH = <span class="hljs-number">20</span><br>    DATA_DIMENSION = <span class="hljs-number">2</span>**DATA_EXP_LENGTH<br>    np_time = <span class="hljs-number">0.0</span><br>    nb_time = <span class="hljs-number">0.0</span><br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">100</span>):<br>        a = np.random.randn(DATA_DIMENSION).astype(np.float32)<br>        b = np.random.randn(DATA_DIMENSION).astype(np.float32)<br>        a_cuda = cuda.to_device(a)<br>        b_cuda = cuda.to_device(b)<br>        time0 = time.time()<br>        gpu[DATA_DIMENSION,<span class="hljs-number">4</span>](a_cuda,b_cuda,DATA_DIMENSION)<br>        time1 = time.time()<br>        c = b_cuda.copy_to_host()<br>        time2 = time.time()<br>        d = np.add(a,b)<br>        time3 = time.time()<br>        <span class="hljs-keyword">if</span> i == <span class="hljs-number">0</span>:<br>            <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The error between numba and numpy is: &#x27;</span>, <span class="hljs-built_in">sum</span>(c-d))<br>            <span class="hljs-keyword">continue</span><br>        np_time += time3 - time2<br>        nb_time += time1 - time0<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost of numba is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(nb_time))<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost of numpy is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(np_time))<br></code></pre></td></tr></table></figure>
+<p>需要注意的是，基于Numba实现的Python的GPU加速程序，采用的jit即时编译的模式，也就是说，在运行调用到相关函数时，才会对其进行编译优化。换句话说，第一次执行这一条指令的时候，事实上达不到加速的效果，因为这个运行的时间包含了较长的一段编译时间。但是从第二次运行调用开始，就不需要重新编译，这时候GPU加速的效果就体现出来了，运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 gpu_add.py The error between numba and numpy is:  0.0<br>The <span class="hljs-keyword">time</span> cost of numba is: 0.018711328506469727s<br>The <span class="hljs-keyword">time</span> cost of numpy is: 0.09502553939819336s<br></code></pre></td></tr></table></figure>
+<p>可以看到，即使是相比于Python中优化程度十分强大的的Numpy实现，我们自己写的GPU加速的程序也能够达到5倍的加速效果（在前面一篇博客中，针对于特殊计算场景，加速效果可达1000倍以上），而且可定制化程度非常之高。</p>
+<h1>总结概要</h1>
+<p>本文针对于Python中使用Numba的GPU加速程序的一些基本概念和实现的方法，比如GPU中的线程和模块的概念，以及给出了一个矢量加法的代码案例，进一步说明了GPU加速的效果。需要注意的是，由于Python中的Numba实现是一种即时编译的技术，因此第一次运算时的时间会明显较长，所以我们一般说GPU加速是指从第二步开始的运行时间。对于一些工业和学界常见的场景，比如分子动力学模拟中的系统演化，或者是深度学习与量子计算中的参数优化，都是相同维度参数多步运算的一个过程，非常适合使用即时编译的技术，配合以GPU高度并行化的加速效果，能够在实际工业和学术界的各种场景下发挥巨大的作用。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/nbc.html">https://www.cnblogs.com/dechinphy/p/nbc.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/f9f9daae.html">https://dechin-phy.asia/posts/f9f9daae.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-06-10</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-08-31</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/43bca7ba.html">从零开始制作PyTorch的Singularity容器镜像</a><a class="next" href="/posts/7e2c5785.html">用华为MindSpore进行分布式训练</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

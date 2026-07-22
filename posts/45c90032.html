@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/45c90032.html"><meta property="og:type" content="article"><meta property="og:title" content="解决MindSpore-2.4-GPU版本的安装问题"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/45c90032.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-11-18T01:59:32.000Z"><meta property="article:modified_time" content="2024-11-18T02:54:00.000Z"><title>解决MindSpore-2.4-GPU版本的安装问题 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">解决MindSpore-2.4-GPU版本的安装问题</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">解决MindSpore-2.4-GPU版本的安装问题</h1><div class="post-meta">2024-11-18<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 12</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">问题背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Pip安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">version XXX not found</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">cannot open shared object file</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">Unsupported device target GPU</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了在Ubuntu-20.04系统下安装最新的MindSpore-2.4-for-GPU版本的方法，以及安装过程中有可能出现的一些问题。虽然在MindSpore的正式版本中已经不再支持GPU硬件后端，但是开发版本目前还是持续在支持的，并且其中包含了2.3和2.4版本的新特性，只是算子层面没有更新和优化。对于GPU后端的MindSpore用户来说，也算是一个好消息。</p>
+<span id="more"></span>
+<h1>问题背景</h1>
+<p>虽说在MindSpore-2.3之后的版本中不在正式的发行版中支持GPU硬件后端，但其实在开发分支版本中对GPU后端是有支持的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170841582.png" alt=""></p>
+<p>但是在安装的过程中可能会遇到一些问题或者报错，这里复现一下我的Ubuntu-20.04环境下的安装过程。</p>
+<h1>Pip安装</h1>
+<p>基本的安装流程是这样的，首先使用anaconda创建一个python-3.9的虚拟环境，因为在MindSpore-2.4版本之后不再支持python-3.7：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ conda create -n mindspore-master python=3.9<br></code></pre></td></tr></table></figure>
+<p>然后根据自己的本地环境，执行相应的pip安装指令，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install mindspore-dev -i https://pypi.tuna.tsinghua.edu.cn/simple<br></code></pre></td></tr></table></figure>
+<p>如果pip安装期间出现超时的问题，重新执行一遍上述流程即可。安装之后，执行如下指令对安装好的MindSpore进行校验：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python -c <span class="hljs-string">&quot;import mindspore;mindspore.set_context(device_target=&#x27;GPU&#x27;);mindspore.run_check()&quot;</span><br></code></pre></td></tr></table></figure>
+<p>接下来就是处理各种问题的时刻。</p>
+<h1>version XXX not found</h1>
+<p>第一个可能出现的问题类型是各种编译工具版本不匹配的问题，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python -c <span class="hljs-string">&quot;import mindspore;mindspore.set_context(device_target=&#x27;GPU&#x27;);mindspore.run_check()&quot;</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;&lt;string&gt;&quot;</span>, line 1, <span class="hljs-keyword">in</span> &lt;module&gt;<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/__init__.py&quot;</span>, line 18, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from mindspore.run_check import run_check<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/__init__.py&quot;</span>, line 17, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from ._check_version import check_version_and_env_config<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/_check_version.py&quot;</span>, line 28, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from mindspore._c_expression import MSContext, ms_ctx_param<br>ImportError: /home/dechin/anaconda3/envs/mindspore-master/bin/../lib/libstdc++.so.6: version `CXXABI_1.3.8<span class="hljs-string">&#x27; not found (required by /home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/_c_expression.cpython-39-x86_64-linux-gnu.so)</span><br></code></pre></td></tr></table></figure>
+<p>这种情况下就是找不到<code>CXXABI_1.3.8</code>这个软件版本。但是如果检查一下系统里面的软件版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ strings /usr/lib/x86_64-linux-gnu/libstdc++.so.6 | grep CXXABI<br>CXXABI_1.3<br>CXXABI_1.3.1<br>CXXABI_1.3.2<br>CXXABI_1.3.3<br>CXXABI_1.3.4<br>CXXABI_1.3.5<br>CXXABI_1.3.6<br>CXXABI_1.3.7<br>CXXABI_1.3.8<br>CXXABI_1.3.9<br>CXXABI_1.3.10<br>CXXABI_1.3.11<br>CXXABI_1.3.12<br>CXXABI_TM_1<br>CXXABI_FLOAT128<br></code></pre></td></tr></table></figure>
+<p>我们发现<code>CXXABI_1.3.8</code>是存在的，而之所以有这样的报错，是因为在anaconda创建的这个mindspore虚拟环境中不存在该版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ strings /home/dechin/anaconda3/envs/mindspore-master/lib/libstdc++.so.6 | grep CXXABICXXABI_1.3<br>CXXABI_1.3.1<br>CXXABI_1.3.2<br>CXXABI_1.3.3<br>CXXABI_1.3.4<br>CXXABI_1.3.5<br>CXXABI_1.3.6<br>CXXABI_1.3.7<br>CXXABI_TM_1<br></code></pre></td></tr></table></figure>
+<p>那么解决的方案是这样的，我们可以直接把mindspore虚拟环境下的这个动态链接库做一个软连接，链接到系统库里面的对应动态链接库上：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">ln</span> -sf /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /home/dechin/anaconda3/envs/mindspore-master/lib/libstdc++.so.6<br></code></pre></td></tr></table></figure>
+<p>再重新运行即可解决当前问题，类似的报错还有：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -c <span class="hljs-string">&quot;import mindspore;mindspore.set_context(device_target=&#x27;GPU&#x27;);mindspore.run_check()&quot;</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;&lt;string&gt;&quot;</span>, line 1, <span class="hljs-keyword">in</span> &lt;module&gt;<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/__init__.py&quot;</span>, line 18, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from mindspore.run_check import run_check<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/__init__.py&quot;</span>, line 17, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from ._check_version import check_version_and_env_config<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/_check_version.py&quot;</span>, line 28, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    from mindspore._c_expression import MSContext, ms_ctx_param<br>ImportError: /home/dechin/anaconda3/envs/mindspore-master/bin/../lib/libgomp.so.1: version `GOMP_4.0<span class="hljs-string">&#x27; not found (required by /home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/lib/libmindspore_backend.so)</span><br></code></pre></td></tr></table></figure>
+<p>也可以用相同的方法来处理。</p>
+<h1>cannot open shared object file</h1>
+<p>配置好上述环境之后，还有可能出现这样的报错信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -c <span class="hljs-string">&quot;import mindspore;mindspore.set_context(device_target=&#x27;GPU&#x27;);mindspore.run_check()&quot;</span><br>[WARNING] ME(232647,7ff51906b4c0,python3):2024-11-18-09:54:31.123.673 [mindspore/ccsrc/runtime/hardware/device_context_manager.cc:65] GetNvccRealPath] Invalid environment variable CUDA_HOME [/home], can not find nvcc file [/home/bin/nvcc], please check the CUDA_HOME.<br>/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/train/metrics/hausdorff_distance.py:20: UserWarning: A NumPy version &gt;=1.22.4 and &lt;2.3.0 is required <span class="hljs-keyword">for</span> this version of SciPy (detected version 1.22.3)<br>  from scipy.ndimage import morphology<br>[ERROR] ME(232647:140690663584960,MainProcess):2024-11-18-09:54:32.148.524 [mindspore/run_check/_check_version.py:218] libcuda.so (need by mindspore-gpu) is not found. Please confirm that libmindspore_gpu.so is <span class="hljs-keyword">in</span> directory:/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/../lib/plugin and the correct cuda version has been installed, you can refer to the installation guidelines: https://www.mindspore.cn/install<br>[ERROR] ME(232647:140690663584960,MainProcess):2024-11-18-09:54:32.148.726 [mindspore/run_check/_check_version.py:218] libcudnn.so (need by mindspore-gpu) is not found. Please confirm that libmindspore_gpu.so is <span class="hljs-keyword">in</span> directory:/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/run_check/../lib/plugin and the correct cuda version has been installed, you can refer to the installation guidelines: https://www.mindspore.cn/install<br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;&lt;string&gt;&quot;</span>, line 1, <span class="hljs-keyword">in</span> &lt;module&gt;<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/_checkparam.py&quot;</span>, line 1367, <span class="hljs-keyword">in</span> wrapper<br>    <span class="hljs-built_in">return</span> func(*args, **kwargs)<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/context.py&quot;</span>, line 1861, <span class="hljs-keyword">in</span> set_context<br>    ctx.set_device_target(kwargs[<span class="hljs-string">&#x27;device_target&#x27;</span>])<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/context.py&quot;</span>, line 495, <span class="hljs-keyword">in</span> set_device_target<br>    self.set_param(ms_ctx_param.device_target, target)<br>  File <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/context.py&quot;</span>, line 187, <span class="hljs-keyword">in</span> set_param<br>    self._context_handle.set_param(param, value)<br>RuntimeError: Unsupported device target GPU. This process only supports one of the [<span class="hljs-string">&#x27;CPU&#x27;</span>]. Please check whether the GPU environment is installed and configured correctly, and check whether current mindspore wheel package was built with <span class="hljs-string">&quot;-e GPU&quot;</span>. For details, please refer to <span class="hljs-string">&quot;Device load error message&quot;</span>.<br><br>----------------------------------------------------<br>- Device load error message:<br>----------------------------------------------------<br>Load dynamic library: libmindspore_ascend.so.2 failed. libge_runner.so: cannot open shared object file: No such file or directory<br>Load dynamic library: libmindspore_gpu.so.11.6 failed. libcublas.so.11: cannot open shared object file: No such file or directory<br>Load dynamic library: libmindspore_gpu.so.11.1 failed. libcublas.so.11: cannot open shared object file: No such file or directory<br>Load dynamic library: libmindspore_gpu.so.10.1 failed. libcudnn.so.7: cannot open shared object file: No such file or directory<br><br>----------------------------------------------------<br>- C++ Call Stack: (For framework developers)<br>----------------------------------------------------<br>mindspore/core/utils/ms_context.cc:287 SetDeviceTargetFromInner<br></code></pre></td></tr></table></figure>
+<p>这里的提示是找不到<code>libmindspore_gpu.so.11.6</code>等等动态链接库的地址。那么解决的方案是这样的，我们先去系统里面搜索一下这几个库，如果有存在相应的版本号，我们把所在位置的<code>lib</code>路径配置到<code>LD_LIBRARY_PATH</code>中即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> find / -name libcublas.so*<br>/home/dechin/anaconda3/envs/mindspore-latest/lib/libcublas.so<br>/home/dechin/anaconda3/envs/mindspore-latest/lib/libcublas.so.11.3.0.106<br>/home/dechin/anaconda3/envs/mindspore-latest/lib/libcublas.so.11<br>/home/dechin/anaconda3/envs/mindsponge/lib/libcublas.so<br>/home/dechin/anaconda3/envs/mindsponge/lib/libcublas.so.11.3.0.106<br>/home/dechin/anaconda3/envs/mindsponge/lib/libcublas.so.11<br>/home/dechin/anaconda3/envs/mindspore-master/lib/libcublas.so<br>/home/dechin/anaconda3/envs/mindspore-master/lib/libcublas.so.10<br>/home/dechin/anaconda3/envs/mindspore-master/lib/libcublas.so.10.2.2.89<br>/usr/lib/x86_64-linux-gnu/libcublas.so.10.2.1.243<br>/usr/lib/x86_64-linux-gnu/libcublas.so.10.1.0.105<br>/usr/lib/x86_64-linux-gnu/stubs/libcublas.so<br>/usr/lib/x86_64-linux-gnu/libcublas.so<br>/usr/lib/x86_64-linux-gnu/libcublas.so.10<br></code></pre></td></tr></table></figure>
+<p>这里我们发现在我们新建的<code>mindspore-master</code>环境中确实没有相应的动态链接库版本，但是反而是旧版的mindspore环境下有相应的这几个动态链接库，于是我的解决方案是把旧版的mindspore环境中的<code>lib</code>配置到环境变量中，即可解决该问题：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">export</span> LD_LIBRARY_PATH=/home/dechin/anaconda3/envs/mindspore-master/lib:/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/lib:/home/dechin/anaconda3/envs/mindsponge/lib<br></code></pre></td></tr></table></figure>
+<p>再次运行测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -c <span class="hljs-string">&quot;import mindspore;mindspore.set_context(device_target=&#x27;GPU&#x27;);mindspore.run_check()&quot;</span><br>[WARNING] ME(232736,7f562eca06c0,python3):2024-11-18-09:55:58.717.253 [mindspore/ccsrc/runtime/hardware/device_context_manager.cc:65] GetNvccRealPath] Invalid environment variable CUDA_HOME [/home], can not find nvcc file [/home/bin/nvcc], please check the CUDA_HOME.<br>/home/dechin/anaconda3/envs/mindspore-master/lib/python3.9/site-packages/mindspore/train/metrics/hausdorff_distance.py:20: UserWarning: A NumPy version &gt;=1.22.4 and &lt;2.3.0 is required <span class="hljs-keyword">for</span> this version of SciPy (detected version 1.22.3)<br>  from scipy.ndimage import morphology<br>MindSpore version:  2.4.0.dev20241103<br>The result of multiplication calculation is correct, MindSpore has been installed on platform [GPU] successfully!<br></code></pre></td></tr></table></figure>
+<p>可以看到，虽然有一些告警信息，但是最终的运行结果是正确的，需要忽略告警信息的话可以运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">export</span> GLOG_v=4<br></code></pre></td></tr></table></figure>
+<p>来配置mindspore日志等级。</p>
+<p>这里有个问题是，如果用户的环境中没有安装旧版本的MindSpore。那么我个人认为比较方便的一个方案是，如果系统环境中有其他的<code>libcublas</code>，例如Jax或者Torch等框架环境下也会有这些相关的软件版本，可以把他们的所在路径直接配置到环境变量中即可。如果什么环境都没有，那我的建议是先另建一个虚拟环境，安装一个旧版本的MindSpore，例如<code>mindspore-gpu-2.2</code>，确保成功安装后，再将这个旧版的lib路径配置到新版本下的环境变量中。</p>
+<h1>Unsupported device target GPU</h1>
+<p>如果在运行的过程中有出现<code>Unsupported device target GPU</code>的话，并且自动去索引Ascend后端的动态链接库，这种情况发生的原因是没有配置<code>CUDA_HOME</code>这个环境变量。应该是，新版本mindspore底层判断硬件平台的逻辑是通过获取环境变量来的，所以需要手动配置一个<code>CUDA_HOME</code>参数即可，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">export</span> CUDA_HOME=/home<br></code></pre></td></tr></table></figure>
+<p>虽然这样随意配置有可能导致一些告警信息，但并不影响程序的正确运行结果。</p>
+<h1>总结概要</h1>
+<p>本文介绍了在Ubuntu-20.04系统下安装最新的MindSpore-2.4-for-GPU版本的方法，以及安装过程中有可能出现的一些问题。虽然在MindSpore的正式版本中已经不再支持GPU硬件后端，但是开发版本目前还是持续在支持的，并且其中包含了2.3和2.4版本的新特性，只是算子层面没有更新和优化。对于GPU后端的MindSpore用户来说，也算是一个好消息。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindspore-2-4.html">https://www.cnblogs.com/dechinphy/p/mindspore-2-4.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.mindspore.cn/install/">https://www.mindspore.cn/install/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/45c90032.html">https://dechin-phy.asia/posts/45c90032.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-11-18</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-11-18</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/645b16f0.html">MindSpore-2.4版本中的一些新特性</a><a class="next" href="/posts/df4b3089.html">OpenMM的安装与使用</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

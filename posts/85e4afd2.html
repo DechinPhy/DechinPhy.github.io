@@ -1,0 +1,250 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/85e4afd2.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSpore简要性能分析"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/85e4afd2.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2023-09-11T02:55:53.000Z"><meta property="article:modified_time" content="2023-09-12T08:54:00.000Z"><title>MindSpore简要性能分析 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSpore简要性能分析</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSpore简要性能分析</h1><div class="post-meta">2023-09-11<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">MindInsight的安装与启动</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">使用Profiler分析算子性能</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">MindInsight性能分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">MindInsight查看计算图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>当我们需要优化程序性能的时候，首先我们就需要了解程序的主要耗时模块在哪里，也就是通常所谓的决速步，或者瓶颈模块，这样就可以有针对性的去进行优化。在MindSpore相关的程序中，我们可以使用MindInsight这一强力的性能分析可视化工具来进行分析。该工具会给出每个算子的调用次数以及总耗时等参数，能够给性能优化带来不少重要的参考。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在之前的一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/msinsight.html">博客</a>中，我们介绍过MindInsight的安装与使用。不过在前面的文章中，我们主要介绍的是MindInsight与SummaryCollector的配合使用，更多的是用于对结果进行回溯。这篇文章我们简要的从性能分析的角度，来介绍一下MindInsight的一些使用方法。</p>
+<h1>MindInsight的安装与启动</h1>
+<p>这部分内容在前面的博客中已经介绍过一次，这里简单的重复一下相关的内容。安装我们还是推荐使用pip进行安装和管理：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install mindinsight<br></code></pre></td></tr></table></figure>
+<p>启动的方法很简单，就是在指定的目录下运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">mindinsight start<br></code></pre></td></tr></table></figure>
+<p>如果在terminal里面显示如下内容，则表示安装成功。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">Web address: http://127.0.0.1:8080<br>service start state: success<br></code></pre></td></tr></table></figure>
+<h1>使用Profiler分析算子性能</h1>
+<p>当我们构建好相关的网络之后，类似于CPU中的line_profiler，这里我们可以用MindSpore中所支持的Profiler来直接进行网络性能评估。这里的Profiler主要以算子为单位进行统计，最终会输出每一个算子的调用次数以及相关的占用时长。使用方法非常简单，就是在代码的开头写一句：<code>profiler = ms.Profiler(start_profile=True)</code>，以及在结尾处写一句：<code>profiler.analyse()</code>即可。</p>
+<p>下面这个案例是MindSponge的一个能量极小化的案例。MindSponge是一个基于MindSpore框架开发的分子动力学模拟框架，更多的介绍和相关信息可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/collections/5620">MindSponge教程系列博客</a>。简单来说，这里我们只是模拟几百个水分子的动力学演化过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs python3">import os<br>os.environ[&#x27;GLOG_v&#x27;]=&#x27;4&#x27;<br>os.environ[&#x27;MS_JIT_MODULES&#x27;]=&#x27;sponge&#x27;<br>import mindspore as ms<br>from mindspore import context<br>from mindspore.nn import Adam<br><br><br>if __name__ == &quot;__main__&quot;:<br><br>    import sys<br>    sys.path.insert(0, &#x27;..&#x27;)<br><br>    from sponge import Sponge, Molecule, ForceField, WithEnergyCell<br>    from sponge.callback import RunInfo<br>    context.set_context(mode=context.GRAPH_MODE, device_target=&#x27;GPU&#x27;, device_id=1)<br><br>    profiler = ms.Profiler(start_profile=True)<br>    system = Molecule(template=&#x27;water.tip3p.yaml&#x27;)<br>    system.set_pbc_box([0.4, 0.4, 0.4])<br>    system.repeat_box([5, 5, 5])<br><br>    potential = ForceField(system, parameters=[&#x27;TIP3P&#x27;], use_pme=False)<br><br>    opt = Adam(system.trainable_params(), 1e-3)<br><br>    sim = WithEnergyCell(system, potential)<br>    mini = Sponge(sim, optimizer=opt)<br><br>    run_info = RunInfo(10)<br>    mini.run(200, callbacks=[run_info])<br><br>    profiler.analyse()<br></code></pre></td></tr></table></figure>
+<p>该模拟过程的输出如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs bash">[MindSPONGE] Started simulation at 2023-09-11 10:57:03<br>[MindSPONGE] Compilation Time: 2.49s<br>[MindSPONGE] Step: 0, E_pot: 11003.434, Time: 2494.60ms<br>[MindSPONGE] Step: 10, E_pot: 9931.012, Time: 55.70ms<br>[MindSPONGE] Step: 20, E_pot: 9860.436, Time: 51.15ms<br>[MindSPONGE] Step: 30, E_pot: 9833.985, Time: 50.74ms<br>[MindSPONGE] Step: 40, E_pot: 9820.092, Time: 52.73ms<br>[MindSPONGE] Step: 50, E_pot: 9805.144, Time: 48.95ms<br>[MindSPONGE] Step: 60, E_pot: 9781.4375, Time: 47.87ms<br>[MindSPONGE] Step: 70, E_pot: 9740.486, Time: 48.46ms<br>[MindSPONGE] Step: 80, E_pot: 9684.311, Time: 48.67ms<br>[MindSPONGE] Step: 90, E_pot: 9619.269, Time: 52.02ms<br>[MindSPONGE] Step: 100, E_pot: 9555.06, Time: 51.39ms<br>[MindSPONGE] Step: 110, E_pot: 9498.154, Time: 47.72ms<br>[MindSPONGE] Step: 120, E_pot: 9450.13, Time: 49.52ms<br>[MindSPONGE] Step: 130, E_pot: 9408.7705, Time: 48.77ms<br>[MindSPONGE] Step: 140, E_pot: 9370.615, Time: 50.83ms<br>[MindSPONGE] Step: 150, E_pot: 9332.237, Time: 48.89ms<br>[MindSPONGE] Step: 160, E_pot: 9290.162, Time: 49.57ms<br>[MindSPONGE] Step: 170, E_pot: 9240.263, Time: 52.04ms<br>[MindSPONGE] Step: 180, E_pot: 9177.134, Time: 51.12ms<br>[MindSPONGE] Step: 190, E_pot: 9094.976, Time: 53.40ms<br>[MindSPONGE] Finished simulation at 2023-09-11 10:57:15<br>[MindSPONGE] Simulation <span class="hljs-keyword">time</span>: 11.91 seconds.<br>--------------------------------------------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>运行结束后，会在路径下生成一个<code>data/profiler/</code>的目录，里面存放有我们所需的性能分析相关信息。但是需要注意的是，profiler本身也会占用很多的运行时间，所以使用profiler和不使用profiler的运行时间会有比较大的差别。我们如果只是希望对算法代码进行优化，只要保持在同一个条件（使用或不使用profiler）下进行分析即可。</p>
+<h1>MindInsight性能分析</h1>
+<p>如果在前面代码运行的路径下直接启动MindInsight，然后把<code>http://127.0.0.1:8080</code>复制到浏览器里面打开，就可以看到对应的性能数据，如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125392.png" alt=""></p>
+<p>除了图形化的数据展示之外，还可以在列表中逐项展开，去查看每一个Operator的占用时间：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125438.png" alt=""></p>
+<p>在这个结果中我们发现，由于使用了太多的Cast，有可能导致整体代码运行速度低下。如此一来，我们就可以挨个去查找代码中所用到的Cast算子，然后有针对性的进行优化：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ grep -n -r <span class="hljs-string">&quot;Cast&quot;</span> ~/projects/gitee/dechin/mindsponge/sponge/<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/potential/energy/coulomb.py:399:        self.cast = ops.Cast()<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/potential/energy/coulomb.py:490:        self.cast = ops.Cast()<br>$ grep -n -r <span class="hljs-string">&quot;F.cast&quot;</span> ~/projects/gitee/dechin/mindsponge/sponge/<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/fullconnect.py:75:            fc_idx = nrange + F.cast(no_idx &lt;= nrange, ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/distance.py:142:        max_neighbours = ops.count_nonzero(F.cast(mask, ms.float16), -1, dtype=ms.float16) - 1<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/distance.py:143:        <span class="hljs-built_in">return</span> F.cast(ops.reduce_max(max_neighbours), ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/distance.py:239:            distances = F.cast(distances, ms.float16)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/distance.py:242:            distances = F.cast(distances, ms.float32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/grids.py:324:        sorted_grid_idx, sort_arg = self.sort(F.cast(atom_grid_idx, ms.float16))<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/grids.py:325:        sorted_grid_idx = F.cast(sorted_grid_idx, ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/grids.py:356:        grid_neigh_atoms, _ = self.sort(F.cast(grid_neigh_atoms, ms.float16))<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/grids.py:357:        grid_neigh_atoms = F.cast(grid_neigh_atoms, ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/partition/grids.py:360:        max_neighbours = F.cast(msnp.amax(F.cast(max_neighbours, ms.float32)), ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/metrics/metrics.py:455:        classes_w_tensor = F.cast(classes_w_t2, mstype.float32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/metrics/metrics.py:482:        classes_num = F.cast(classes_num, mstype.float32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/metrics/metrics.py:541:        target = F.cast(target, mstype.float32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/metrics/metrics.py:542:        probs = F.cast(prediction, mstype.float32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/function/operations.py:295:                n = func.keepdims_sum(F.cast(mask, ms.int32), -2)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/function/functions.py:618:    <span class="hljs-built_in">return</span> F.cast(image, ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/function/functions.py:1409:        value = F.cast(value, dtype)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/function/functions.py:1441:        value = F.cast(value, dtype)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/system/residue/residue.py:262:        self.natom_tensor = msnp.sum(F.cast(self.atom_mask, ms.float32), -1, keepdims=True)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/system/residue/residue.py:572:            F.cast(self.atom_mask, ms.int32), -1, keepdims=True)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/system/molecule/molecule.py:633:        self.system_natom = msnp.sum(F.cast(self.atom_mask, ms.float32), -1, keepdims=True)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/sampling/bias/metad.py:191:        cutoff_bins = F.cast(cutoff_bins, ms.int32)<br>/home/dechin/projects/gitee/dechin/mindsponge/sponge/sampling/bias/metad.py:398:        <span class="hljs-built_in">return</span> F.cast(nearest_grid, ms.int32)<br></code></pre></td></tr></table></figure>
+<p>这里优化的思路和过程我们暂时就不做展示了，本文主要介绍的是一个性能优化的思路：<code>先用profiler定位到性能决速步，然后有针对性的进行优化</code>。</p>
+<h1>MindInsight查看计算图</h1>
+<p>在使用AI框架进行计算的时候，我们的各种算子会被编译成一张大的计算图，使用MindInsight就可以对这个计算图进行可视化。使用方法也很简单，在设置context的时候多加上两项配置即可：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">1</span>,)<br>                    save_graphs=<span class="hljs-literal">True</span>, save_graphs_path=<span class="hljs-string">&#x27;./graphs/&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>需要留意的是，这个<code>save_graphs_path</code>一定要配置上，否则输出的一大堆文件在当前目录下，直接没眼看。接下来同样的运行代码，会在当前目录下生成一个<code>graphs/</code>文件夹。此时刷新一下MindInsight的页面，点击最上面的<code>训练列表</code>，这个时候就会看到有两个数据列：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125479.png" alt=""></p>
+<p>其中<code>graphs</code>这个数据列就是计算图的内容，点进去以后的界面如下所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125527.png" alt=""></p>
+<p>如果我们比较关注计算图的话，就可以点进计算图的界面：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125570.png" alt=""></p>
+<p>这个计算图的界面是根据右边的目录展开而展开的，如果我们想关注某一个模块的细节，就可以点进目录树：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164125612.png" alt=""></p>
+<p>这样的计算图结构，便于大家对整体的性能进行调节和优化。</p>
+<h1>总结概要</h1>
+<p>当我们需要优化程序性能的时候，首先我们就需要了解程序的主要耗时模块在哪里，也就是通常所谓的决速步，或者瓶颈模块，这样就可以有针对性的去进行优化。在MindSpore相关的程序中，我们可以使用MindInsight这一强力的性能分析可视化工具来进行分析。该工具会给出每个算子的调用次数以及总耗时等参数，能够给性能优化带来不少重要的参考。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/optimize.html">https://www.cnblogs.com/dechinphy/p/optimize.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/85e4afd2.html">https://dechin-phy.asia/posts/85e4afd2.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2023-09-11</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2023-09-12</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/4aaaa1f0.html">Jupyter Notebook报错'500 : Internal Server Error'的解决方法</a><a class="next" href="/posts/60209023.html">MindSponge分子动力学模拟——定义Collective Variables（2024.02）</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

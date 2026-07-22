@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/ec1d8020.html"><meta property="og:type" content="article"><meta property="og:title" content="使用ProjectQ生成量子算法指令集"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/ec1d8020.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-05-15T02:59:51.000Z"><meta property="article:modified_time" content="2021-05-18T07:00:00.000Z"><title>使用ProjectQ生成量子算法指令集 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用ProjectQ生成量子算法指令集</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用ProjectQ生成量子算法指令集</h1><div class="post-meta">2021-05-15<span> | </span><span class="category"><a href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">输出算法操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">封装的操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">含时演化算符的分解</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">QFT的分解</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文主要从工程实现的角度，讲解在ProjectQ开源量子计算模拟器框架中，实现量子门操作分解与输出的方法。通过这个方法，可以限制量子指令集的范围，将量子算法中不被支持的量子门操作等价（或近似地）变化到量子硬件体系所支持的量子指令集上。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>所谓的指令集，按照字面意思来理解就是计算机底层允许使用的操作指令的集合。在量子计算机领域，由于实现方案的不同，在不同的体系内的指令集其实是不一样的，并不是说OpenQASM里面的所有指令都会被支持。但是这也没有关系，因为本文将要介绍的开源量子计算模拟器框架ProjectQ可以支持将输入的量子算法分解到对应的指令集中。</p>
+<h1>输出算法操作</h1>
+<p>首先介绍一个最基本的使用方法，就是使用ProjectQ来打印量子算法中所输入的量子门操作，这里使用到了ProjectQ中的<code>DummyEngine</code>后端用于保存操作的指令。比如最简单的一个Bell State的制备，可以通过如下代码实现，并且打印出所保存的基本操作：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.cengines <span class="hljs-keyword">import</span> DummyEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, CX, All, Measure<br><br>backend = DummyEngine(save_commands=<span class="hljs-literal">True</span>)<br>eng = MainEngine(backend=backend)<br><br>qureg = eng.allocate_qureg(<span class="hljs-number">2</span>)<br>H | qureg[<span class="hljs-number">0</span>]<br>CX | (qureg[<span class="hljs-number">0</span>], qureg[<span class="hljs-number">1</span>])<br><br>All(Measure) | qureg<br>eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br><br><span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> backend.received_commands:<br>    <span class="hljs-built_in">print</span> (cmd)<br></code></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">Allocate | Qureg[0]<br>H | Qureg[0]<br>Allocate | Qureg[1]<br>CX | ( Qureg[0], Qureg[1] )<br>Measure | Qureg[0]<br>Measure | Qureg[1]<br>Deallocate | Qureg[0]<br>Deallocate | Qureg[1]<br></code></pre></td></tr></table></figure>
+<p>这里有一点需要注意的是，如果是单次运算，我们到Measure就可以结束了。但是如果同一个线程的任务还没有结束的话，需要在Measure之后加上一个<code>deallocate_qubits=True</code>的配置项，用于解除当前分配的量子比特所占用的内存。</p>
+<h1>封装的操作</h1>
+<p>在量子算法的实现中，我们可以用一些函数或者类来封装一部分的量子算法操作指令，但是这可能会导致一个问题，那就是在ProjectQ上打印出来的操作指令没有把封装的模块的内容输出出来，比如如下的案例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.cengines <span class="hljs-keyword">import</span> DummyEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, CX, All, Measure, TimeEvolution, QubitOperator<br><br>backend = DummyEngine(save_commands=<span class="hljs-literal">True</span>)<br>eng = MainEngine(backend=backend)<br><br>qureg = eng.allocate_qureg(<span class="hljs-number">3</span>)<br>H | qureg[<span class="hljs-number">0</span>]<br>CX | (qureg[<span class="hljs-number">0</span>], qureg[<span class="hljs-number">1</span>])<br>TimeEvolution(<span class="hljs-number">1</span>, QubitOperator(<span class="hljs-string">&#x27;X2 X1&#x27;</span>)) | qureg<br><br>All(Measure) | qureg<br>eng.flush()<br><br><span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> backend.received_commands:<br>    <span class="hljs-built_in">print</span> (cmd)<br></code></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">Allocate | Qureg[0]<br>H | Qureg[0]<br>Allocate | Qureg[1]<br>CX | ( Qureg[0], Qureg[1] )<br>Measure | Qureg[0]<br>Allocate | Qureg[2]<br>exp(-1j * (1.0 X0 X1)) | Qureg[1-2]<br>Measure | Qureg[1]<br>Measure | Qureg[2]<br></code></pre></td></tr></table></figure>
+<p>我们发现这里的含时演化的操作算符没有被分解，而是直接打印输出了出来。但是如果在硬件系统中，只能够识别支持的指令操作，这里的含时演化操作可能并未在量子硬件体系中被实现，因此我们就需要在将指令发送给量子硬件之前，就对其进行分解。</p>
+<h1>含时演化算符的分解</h1>
+<p>这里我们直接调用ProjectQ的配置中的<code>restrictedgateset</code>方法进行操作分解，我们将单比特门操作的范围放宽到所有的操作，但是双比特操作只允许CX操作，并将这个配置作为engin_list配置到ProjectQ的MainEngine中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.cengines <span class="hljs-keyword">import</span> DummyEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, CX, All, Measure, TimeEvolution, QubitOperator<br><span class="hljs-keyword">from</span> projectq.setups <span class="hljs-keyword">import</span> restrictedgateset<br><br>engine_list = restrictedgateset.get_engine_list(one_qubit_gates=<span class="hljs-string">&quot;any&quot;</span>,two_qubit_gates=(CX,))<br>backend = DummyEngine(save_commands=<span class="hljs-literal">True</span>)<br>eng = MainEngine(backend=backend,engine_list=engine_list)<br><br>qureg = eng.allocate_qureg(<span class="hljs-number">3</span>)<br>H | qureg[<span class="hljs-number">0</span>]<br>CX | (qureg[<span class="hljs-number">0</span>], qureg[<span class="hljs-number">1</span>])<br>TimeEvolution(<span class="hljs-number">1</span>, QubitOperator(<span class="hljs-string">&#x27;X2 X1&#x27;</span>)) | qureg<br><br>All(Measure) | qureg<br>eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br><br><span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> backend.received_commands:<br>    <span class="hljs-built_in">print</span> (cmd)<br></code></pre></td></tr></table></figure>
+<p>打印输出的结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">Allocate | Qureg[0]<br>H | Qureg[0]<br>Allocate | Qureg[1]<br>CX | ( Qureg[0], Qureg[1] )<br>Measure | Qureg[0]<br>Allocate | Qureg[2]<br>H | Qureg[2]<br>H | Qureg[1]<br>CX | ( Qureg[1], Qureg[2] )<br>Rz(2.0) | Qureg[2]<br>CX | ( Qureg[1], Qureg[2] )<br>H | Qureg[1]<br>Measure | Qureg[1]<br>H | Qureg[2]<br>Measure | Qureg[2]<br>Deallocate | Qureg[0]<br>Deallocate | Qureg[1]<br>Deallocate | Qureg[2]<br></code></pre></td></tr></table></figure>
+<p>可以看到含时演化算符已经被分解并输出了出来。由于已知单比特量子门加上一个CX是一个完备的量子门集合，因此一般我们可以直接使用这个集合来进行量子门操作指令集的限制。</p>
+<h1>QFT的分解</h1>
+<p>QFT是ProjectQ中所自带支持的量子傅里叶变换的量子门操作封装，跟上一个章节中所介绍的含时演化算符类似的，我们可以用<code>restrictedgateset</code>来具体分解QFT算符：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.cengines <span class="hljs-keyword">import</span> DummyEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, CX, All, Measure, TimeEvolution, QubitOperator, QFT<br><span class="hljs-keyword">from</span> projectq.setups <span class="hljs-keyword">import</span> restrictedgateset<br><br>engine_list = restrictedgateset.get_engine_list(one_qubit_gates=<span class="hljs-string">&quot;any&quot;</span>,two_qubit_gates=(CX,))<br>backend = DummyEngine(save_commands=<span class="hljs-literal">True</span>)<br>eng = MainEngine(backend=backend,engine_list=engine_list)<br><br>qureg = eng.allocate_qureg(<span class="hljs-number">3</span>)<br>H | qureg[<span class="hljs-number">0</span>]<br>CX | (qureg[<span class="hljs-number">0</span>], qureg[<span class="hljs-number">1</span>])<br>QFT | qureg<br><br>All(Measure) | qureg<br>eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br><br><span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> backend.received_commands:<br>    <span class="hljs-built_in">print</span> (cmd)<br></code></pre></td></tr></table></figure>
+<p>输出的结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs bash">Allocate | Qureg[2]<br>Allocate | Qureg[1]<br>H | Qureg[2]<br>Rz(0.785398163398) | Qureg[2]<br>Allocate | Qureg[0]<br>H | Qureg[0]<br>CX | ( Qureg[0], Qureg[1] )<br>R(0.785398163398) | Qureg[1]<br>CX | ( Qureg[1], Qureg[2] )<br>Rz(11.780972450962) | Qureg[2]<br>CX | ( Qureg[1], Qureg[2] )<br>R(0.392699081698) | Qureg[0]<br>Rz(0.392699081698) | Qureg[2]<br>CX | ( Qureg[0], Qureg[2] )<br>H | Qureg[1]<br>Rz(12.173671532661) | Qureg[2]<br>CX | ( Qureg[0], Qureg[2] )<br>R(0.785398163398) | Qureg[0]<br>Rz(0.785398163398) | Qureg[1]<br>CX | ( Qureg[0], Qureg[1] )<br>Rz(11.780972450962) | Qureg[1]<br>CX | ( Qureg[0], Qureg[1] )<br>H | Qureg[0]<br>Measure | Qureg[0]<br>Measure | Qureg[1]<br>Measure | Qureg[2]<br>Deallocate | Qureg[1]<br>Deallocate | Qureg[2]<br>Deallocate | Qureg[0]<br></code></pre></td></tr></table></figure>
+<p>如果2比特门操作也不加以限制的化，ProjectQ中会自动选取最简易的分解形式：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.cengines <span class="hljs-keyword">import</span> DummyEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, CX, All, Measure, TimeEvolution, QubitOperator, QFT<br><span class="hljs-keyword">from</span> projectq.setups <span class="hljs-keyword">import</span> restrictedgateset<br><br>engine_list = restrictedgateset.get_engine_list(one_qubit_gates=<span class="hljs-string">&quot;any&quot;</span>,two_qubit_gates=<span class="hljs-string">&quot;any&quot;</span>)<br>backend = DummyEngine(save_commands=<span class="hljs-literal">True</span>)<br>eng = MainEngine(backend=backend,engine_list=engine_list)<br><br>qureg = eng.allocate_qureg(<span class="hljs-number">3</span>)<br>H | qureg[<span class="hljs-number">0</span>]<br>CX | (qureg[<span class="hljs-number">0</span>], qureg[<span class="hljs-number">1</span>])<br>QFT | qureg<br><br>All(Measure) | qureg<br>eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br><br><span class="hljs-keyword">for</span> cmd <span class="hljs-keyword">in</span> backend.received_commands:<br>    <span class="hljs-built_in">print</span> (cmd)<br></code></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs bash">Allocate | Qureg[0]<br>Allocate | Qureg[1]<br>H | Qureg[0]<br>CX | ( Qureg[0], Qureg[1] )<br>Allocate | Qureg[2]<br>H | Qureg[2]<br>CR(1.570796326795) | ( Qureg[1], Qureg[2] )<br>CR(0.785398163397) | ( Qureg[0], Qureg[2] )<br>H | Qureg[1]<br>CR(1.570796326795) | ( Qureg[0], Qureg[1] )<br>H | Qureg[0]<br>Measure | Qureg[0]<br>Measure | Qureg[1]<br>Measure | Qureg[2]<br>Deallocate | Qureg[1]<br>Deallocate | Qureg[2]<br>Deallocate | Qureg[0]<br></code></pre></td></tr></table></figure>
+<p>可以发现使用了CR来替代CX之后，分解出来的线路会更加的简短。</p>
+<h1>总结概要</h1>
+<p>本文主要从工程实现的角度，讲解在ProjectQ开源量子计算模拟器框架中，实现量子门操作分解与输出的方法。通过这个方法，可以限制量子指令集的范围，将量子算法中不被支持的量子门操作等价（或近似地）变化到量子硬件体系所支持的量子指令集上。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/circuit_decomposition.html">https://www.cnblogs.com/dechinphy/p/circuit_decomposition.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a>
+我的博客即将同步至腾讯云+社区，邀请大家一同入驻：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/support-plan?invite_code=22ywvcg3x8e84">https://cloud.tencent.com/developer/support-plan?invite_code=22ywvcg3x8e84</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/ec1d8020.html">https://dechin-phy.asia/posts/ec1d8020.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-05-15</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-05-18</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/a13e05c4.html">MindSpore保存与加载模型</a><a class="next" href="/posts/8af8e068.html">使用MindSpore的线性神经网络拟合非线性函数</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

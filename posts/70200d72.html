@@ -1,0 +1,248 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/70200d72.html"><meta property="og:type" content="article"><meta property="og:title" content="Python3基础之构建setup.py"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/70200d72.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-30T04:15:56.000Z"><meta property="article:modified_time" content="2021-03-30T05:17:00.000Z"><title>Python3基础之构建setup.py | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Python3基础之构建setup.py</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Python3基础之构建setup.py</h1><div class="post-meta">2021-03-30<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">python项目示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8-init-py%E6%96%87%E4%BB%B6%E6%9E%84%E9%80%A0%E7%9A%84%E7%AE%80%E5%8D%95%E9%A1%B9%E7%9B%AE"><span class="toc-number">2.1.</span> <span class="toc-text">用__init__.py文件构造的简单项目</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9E%84%E9%80%A0setup%E6%96%87%E4%BB%B6"><span class="toc-number">2.2.</span> <span class="toc-text">构造setup文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BE%9D%E8%B5%96%E5%8C%85%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.3.</span> <span class="toc-text">依赖包配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E5%AE%89%E8%A3%85"><span class="toc-number">2.4.</span> <span class="toc-text">执行安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BD%AF%E4%BB%B6%E5%8C%85%E5%8A%9F%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">2.5.</span> <span class="toc-text">软件包功能测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E5%8C%85%E7%9A%84%E5%88%A0%E9%99%A4"><span class="toc-number">2.6.</span> <span class="toc-text">安装包的删除</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>一个完善的python项目，不仅需要梳理好核心代码的软件架构，还需要定义好依赖文件、编译构建文件、API接口文档、编码规范门禁等。这里我们介绍了如何用setup.py文件来完善一个最简单的python项目，这也是每一个python开源项目所必须要具备的条件。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在上一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pyinstaller.html">博客</a>中，我们介绍了如何使用pyinstaller将python项目打包成一个可执行文件，并且放在系统目录下，让系统用户可以直接识别到我们构造的项目。而python项目中常见的<code>setup.py</code>其实也是在执行类似的构建的功能，通过setup.py文件可以将python包按照指定的方案进行构建，构建出来的可执行文件是一个<code>egg</code>文件。最后将这个egg文件转移到python包的统一管理路径下，这样我们就可以在系统内任一位置的python文件中调用我们构建好的这个python库。</p>
+<h1>python项目示例</h1>
+<p>首先我们构造一个大概的目录结构，项目的路径如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ tree<br>.<br>├── requirements.txt<br>├── setup.py<br>└── ts<br>    └── __init__.py<br><br>1 directory, 3 files<br></code></pre></td></tr></table></figure>
+<p>在一个名为<code>test_setup</code>的路径下，作为我们最上层的项目根目录。然后在根目录下有需求配置文件<code>requirements.txt</code>，我们可以在这个文件中添加我们的python库所依赖的其他python库，如<code>numpy</code>、<code>scipy</code>等。而<code>setup.py</code>就是我们这里的安装文件，在后面的章节中会着重提到。最后是我们的项目的核心路径<code>ts</code>，里面包含了我们的核心代码。</p>
+<h2 id="用-init-py文件构造的简单项目">用__init__.py文件构造的简单项目</h2>
+<p>在一个普通的python项目中，我们可以用<code>目录.模块名.函数名</code>的形式来构造python项目的引用方法。但是对于一些比较简单的库而言，比如定义一个<a target="_blank" rel="noopener" href="https://github.com/joowani/binarytree">二叉树的数据结构</a>这种简单的项目，我们可以直接在<code>__init__.py</code>文件里面直接定义好所有的项目函数及内容。当然，对于一些比较大型的比较规范的项目而言，也会用<code>__init__.py</code>文件作为一个统一的函数入口，以提升模块化项目的可用性。在本测试用例中，我们也定义了一个简单的py核心代码文件如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">[dechin@dechin-manjaro test_setup]$ cat ts/__init__.py <br><span class="hljs-comment"># __init__.py</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">p2</span>(<span class="hljs-params">number</span>):<br>    <span class="hljs-keyword">return</span> number ** <span class="hljs-number">2</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">p3</span>(<span class="hljs-params">number</span>):<br>    <span class="hljs-keyword">return</span> number ** <span class="hljs-number">3</span><br></code></pre></td></tr></table></figure>
+<p>这个名为<code>ts</code>的项目具有两个函数功能：<code>p2</code>用于计算输入参数的平方，以及<code>p3</code>用于计算输入参数的立方。</p>
+<h2 id="构造setup文件">构造setup文件</h2>
+<p>我们主要是基于setuptools来实现一个python项目的构建，以下直接展示本项目的构建方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># setup.py</span><br><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">from</span> setuptools <span class="hljs-keyword">import</span> setup, find_packages<br><br>__version__ = <span class="hljs-string">&#x27;1.0&#x27;</span> <span class="hljs-comment"># 版本号</span><br>requirements = <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;requirements.txt&#x27;</span>).readlines() <span class="hljs-comment"># 依赖文件</span><br><br>setup(<br>    name = <span class="hljs-string">&#x27;ts&#x27;</span>, <span class="hljs-comment"># 在pip中显示的项目名称</span><br>    version = __version__,<br>    author = <span class="hljs-string">&#x27;Dechin&#x27;</span>,<br>    author_email = <span class="hljs-string">&#x27;dechin.phy@gmail.com&#x27;</span>,<br>    url = <span class="hljs-string">&#x27;&#x27;</span>,<br>    description = <span class="hljs-string">&#x27;ts: Test Setup&#x27;</span>,<br>    packages = find_packages(exclude=[<span class="hljs-string">&quot;tests&quot;</span>]), <span class="hljs-comment"># 项目中需要拷贝到指定路径的文件夹</span><br>    python_requires = <span class="hljs-string">&#x27;&gt;=3.5.0&#x27;</span>,<br>    install_requires = requirements <span class="hljs-comment"># 安装依赖</span><br>        )<br></code></pre></td></tr></table></figure>
+<p>在这个构建方法中，我们配置了项目的版本号（版本管理）、依赖库、项目名称以及需要进行构建的文件夹。比如这里我们加了一个<code>exclude</code>的选项排除了<code>tests</code>目录（虽然本项目中并没有这个目录，但是一般我们都要剔除测试目录）。当然我们也可以用指定目录进行构建的方法，但是这里不做过多的赘述。</p>
+<h2 id="依赖包配置文件">依赖包配置文件</h2>
+<p>python之所以这么火，很大程度上就得益于其强大的生态，而这些生态都是靠别人搭建好的轮子来支撑起来的。因此大部分的python项目都会依赖于第三方的python包，在安装的时候我们可以仅用一个文件就进行配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ <span class="hljs-built_in">cat</span> requirements.txt <br>numpy==1.20.1<br></code></pre></td></tr></table></figure>
+<p>在<code>requirements.txt</code>的配置文件中，我们最好是能够指定一个固定的版本号，这样可以确保软件的兼容性。</p>
+<h2 id="执行安装">执行安装</h2>
+<p>按照上述的方法对我们的python项目进行编写后，就可以开始执行构建，如果需要测试编译可以先运行<code>python3 setup.py build</code>来进行测试，在安装成功后再执行<code>install</code>指令，当然我们也可以直接一步执行<code>python3 setup.py install</code>指令来进行安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ python3 setup.py install<br>running install<br>running bdist_egg<br>running egg_info<br>writing ts.egg-info/PKG-INFO<br>writing dependency_links to ts.egg-info/dependency_links.txt<br>writing requirements to ts.egg-info/requires.txt<br>writing top-level names to ts.egg-info/top_level.txt<br>reading manifest file <span class="hljs-string">&#x27;ts.egg-info/SOURCES.txt&#x27;</span><br>writing manifest file <span class="hljs-string">&#x27;ts.egg-info/SOURCES.txt&#x27;</span><br>installing library code to build/bdist.linux-x86_64/egg<br>running install_lib<br>running build_py<br>creating build/lib<br>creating build/lib/ts<br>copying ts/__init__.py -&gt; build/lib/ts<br>creating build/bdist.linux-x86_64/egg<br>creating build/bdist.linux-x86_64/egg/ts<br>copying build/lib/ts/__init__.py -&gt; build/bdist.linux-x86_64/egg/ts<br>byte-compiling build/bdist.linux-x86_64/egg/ts/__init__.py to __init__.cpython-38.pyc<br>creating build/bdist.linux-x86_64/egg/EGG-INFO<br>copying ts.egg-info/PKG-INFO -&gt; build/bdist.linux-x86_64/egg/EGG-INFO<br>copying ts.egg-info/SOURCES.txt -&gt; build/bdist.linux-x86_64/egg/EGG-INFO<br>copying ts.egg-info/dependency_links.txt -&gt; build/bdist.linux-x86_64/egg/EGG-INFO<br>copying ts.egg-info/requires.txt -&gt; build/bdist.linux-x86_64/egg/EGG-INFO<br>copying ts.egg-info/top_level.txt -&gt; build/bdist.linux-x86_64/egg/EGG-INFO<br>zip_safe flag not <span class="hljs-built_in">set</span>; analyzing archive contents...<br>creating <span class="hljs-string">&#x27;dist/ts-1.0-py3.8.egg&#x27;</span> and adding <span class="hljs-string">&#x27;build/bdist.linux-x86_64/egg&#x27;</span> to it<br>removing <span class="hljs-string">&#x27;build/bdist.linux-x86_64/egg&#x27;</span> (and everything under it)<br>Processing ts-1.0-py3.8.egg<br>Copying ts-1.0-py3.8.egg to /home/dechin/anaconda3/lib/python3.8/site-packages<br>Adding ts 1.0 to easy-install.pth file<br><br>Installed /home/dechin/anaconda3/lib/python3.8/site-packages/ts-1.0-py3.8.egg<br>Processing dependencies <span class="hljs-keyword">for</span> ts==1.0<br>Searching <span class="hljs-keyword">for</span> numpy==1.20.1<br>Best match: numpy 1.20.1<br>Adding numpy 1.20.1 to easy-install.pth file<br>Installing f2py script to /home/dechin/anaconda3/bin<br>Installing f2py3 script to /home/dechin/anaconda3/bin<br>Installing f2py3.8 script to /home/dechin/anaconda3/bin<br><br>Using /home/dechin/anaconda3/lib/python3.8/site-packages<br>Finished processing dependencies <span class="hljs-keyword">for</span> ts==1.0<br></code></pre></td></tr></table></figure>
+<p>安装完成后，我们可以在pip的管理包目录下找到我们所构建的python包：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ python3 -m pip list<br>Package                            Version<br>---------------------------------- -------------------<br>ts                                 1.0<br></code></pre></td></tr></table></figure>
+<p>同时在执行完build指令之后，本地目录下会生成一系列的编译构建目录，如build和dist等：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ tree<br>.<br>├── build<br>│   └── bdist.linux-x86_64<br>├── dist<br>│   └── ts-1.0-py3.8.egg<br>├── requirements.txt<br>├── setup.py<br>├── ts<br>│   ├── __init__.py<br>│   └── __pycache__<br>│       └── __init__.cpython-38.pyc<br>└── ts.egg-info<br>    ├── dependency_links.txt<br>    ├── PKG-INFO<br>    ├── requires.txt<br>    ├── SOURCES.txt<br>    └── top_level.txt<br><br>6 directories, 10 files<br></code></pre></td></tr></table></figure>
+<p>而dist目录下的egg文件在执行完install指令之后，会被拷贝到系统指定的python包管理路径下，我们可以在系统中搜索到这个文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root test_setup]# find / -name *ts-1.0-py3.8.egg<br>/home/dechin/anaconda3/lib/python3.8/site-packages/ts-1.0-py3.8.egg<br>/home/dechin/projects/2021-python/setup/test_setup/dist/ts-1.0-py3.8.egg<br></code></pre></td></tr></table></figure>
+<p>这里我们可以看到第一个路径就是python包管理路径。</p>
+<h2 id="软件包功能测试">软件包功能测试</h2>
+<p>在安装完成后，我们可以在任意的路径下引用到我们构建好的<code>ts</code>项目，比如这里我们可以用ipython来测试一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python">[dechin@dechin-manjaro test_setup]$ ipython<br>Python <span class="hljs-number">3.8</span><span class="hljs-number">.5</span> (default, Sep  <span class="hljs-number">4</span> <span class="hljs-number">2020</span>, 07:<span class="hljs-number">30</span>:<span class="hljs-number">14</span>) <br><span class="hljs-type">Type</span> <span class="hljs-string">&#x27;copyright&#x27;</span>, <span class="hljs-string">&#x27;credits&#x27;</span> <span class="hljs-keyword">or</span> <span class="hljs-string">&#x27;license&#x27;</span> <span class="hljs-keyword">for</span> more information<br>IPython <span class="hljs-number">7.19</span><span class="hljs-number">.0</span> -- An enhanced Interactive Python. <span class="hljs-type">Type</span> <span class="hljs-string">&#x27;?&#x27;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.<br><br>In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">from</span> ts <span class="hljs-keyword">import</span> p2, p3<br><br>In [<span class="hljs-number">2</span>]: p2(<span class="hljs-number">4</span>)<br>Out[<span class="hljs-number">2</span>]: <span class="hljs-number">16</span><br><br>In [<span class="hljs-number">3</span>]: p3(<span class="hljs-number">4</span>)<br>Out[<span class="hljs-number">3</span>]: <span class="hljs-number">64</span><br></code></pre></td></tr></table></figure>
+<p>测试结果表明，我们成功的从编译构建好的ts项目中引用了平方和立方的计算函数。</p>
+<h2 id="安装包的删除">安装包的删除</h2>
+<p>跟其他的python包一样，我们可以用pip来统一管理，也可以用pip来直接删除我们自己安装的ts项目：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro test_setup]$ python3 -m pip uninstall ts<br>Found existing installation: ts 1.0<br>Uninstalling ts-1.0:<br>  Would remove:<br>    /home/dechin/anaconda3/lib/python3.8/site-packages/ts-1.0-py3.8.egg<br>Proceed (y/n)? y<br>  Successfully uninstalled ts-1.0<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>一个完善的python项目，不仅需要梳理好核心代码的软件架构，还需要定义好依赖文件、编译构建文件、API接口文档、编码规范门禁等。这里我们介绍了如何用setup.py文件来完善一个最简单的python项目，这也是每一个python开源项目所必须要具备的条件。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/setup.html">https://www.cnblogs.com/dechinphy/p/setup.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/70200d72.html">https://dechin-phy.asia/posts/70200d72.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-30</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-30</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/a51a388b.html">Python基础之告警定义与告警抑制</a><a class="next" href="/posts/69c54f76.html">Manjaro Linux平台用pyinstaller打包python可执行文件</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

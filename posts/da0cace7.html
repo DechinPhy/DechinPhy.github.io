@@ -1,0 +1,251 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/da0cace7.html"><meta property="og:type" content="article"><meta property="og:title" content="PySAGES结合CUDA SPONGE增强采样"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/da0cace7.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-12-18T09:44:14.000Z"><meta property="article:modified_time" content="2025-01-23T06:49:00.000Z"><title>PySAGES结合CUDA SPONGE增强采样 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">PySAGES结合CUDA SPONGE增强采样</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">PySAGES结合CUDA SPONGE增强采样</h1><div class="post-meta">2024-12-18<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">耦合框架</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">PySAGES与CUDA SPONGE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">完整示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">特别注意</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文探索并梳理了一下CUDA SPONGE高性能分子模拟采样软件，和PySAGES高性能增强采样软件，这两者强强联合的MD模拟新范式。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18569710/pysages">一篇博客</a>中，我们介绍过PySAGES这个增强采样软件的基本安装和使用方法。该软件类似于Plumed是一个外挂增强采样软件，但是PySAGES是基于Python语言和Jax框架来实现的，在性能上有一定的优势。这里我们结合PySAGES的易开发特性，和<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18572403/cudasponge">CUDA SPONGE</a>的高性能特性，做一个简单的扩展将二者联合起来进行分子动力学模拟与增强采样。</p>
+<h1>耦合框架</h1>
+<p>在前面的文章中我们介绍过SPONGE的Python接口以及调用模式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164402405.png" alt=""></p>
+<p>这里再总结一个PySAGES的基本调用模式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164402431.png" alt=""></p>
+<p>目前PySAGES已经集成了一些MD Backend，例如前面介绍过的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18545566/openmm">OpenMM</a>，以及基于Jax框架开发的Jax-MD等等。这些框架都可以通过Extension模块跟PySAGES进行对接，其中Jax-MD的Extension是在PySAGES中直接定义的，因为两者都基于Jax，底层兼容性较好。而OpenMM的Extension单独出来一个叫openmm_dlext的扩展包，这是因为其底层基于cupy开发，需要通过dlpack这个标准化工具在GPU上进行免拷贝操作。比较遗憾的是，目前MindSpore暂不支持dlpack。</p>
+<p>PySAGES大概的模拟流程是这样的，先在MD Backend中定义好力场和积分器，将输入坐标传递给Extension再到PySAGES中构建SnapShot、SnapShot Method和Helper。然后在PySAGES中定义增强采样Method，例如MetaDynamics Method，传入构建好的SnapShot和Helper，就可以得到一个用于更新的函数Update Function和一个State增强采样状态参量。到这里PySAGES的初始化就结束了。然后在MD Backend中计算好Force，把相应的Force传给PySAGES进行更新，PySAGES的Update Function接收一个State和一个Snap就可以得到新的State，这个State中有一个bias变量，就是偏置势对应的Bias Force。把Bias Force直接加到MD Backend中传过来的Force中，就可以得到一个全新的Force用于积分器的迭代。</p>
+<h1>PySAGES与CUDA SPONGE</h1>
+<p>接上一个章节内容，这里需要特别说明一下CUDA SPONGE提供的Python接口与PySAGES的运用方法。因为CUDA SPONGE的调用形式是通过CUDA去调用Python的函数内容，而PySAGES的调用形式是从Python去控制特定Backend的CUDA函数的句柄，来实现二者的结合。一个以CUDA为主，一个以Python为主。那么要结合的话，使用CUDA Sponge自身的调用形式会相对容易一些，因为我们将PySAGES中仅当作一个用于计算Bias Force的模块，集成到SPONGE的运行流程中。当然，为了结合PySAGES，我们还是需要手动去定义一些SPONGE的SnapShot和Helper，首先是SnapShot：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pysages.backends.snapshot <span class="hljs-keyword">import</span> Snapshot<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_snapshot</span>(<span class="hljs-params">num_atoms</span>):<br>    crd = jnp.array(np.random.random((num_atoms, <span class="hljs-number">3</span>)), jnp.float32)<br>    ids = jnp.arange(num_atoms)<br>    forces = jnp.zeros_like(crd)<br>    <span class="hljs-keyword">return</span> Snapshot(crd, <span class="hljs-literal">None</span>, forces, ids, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>)<br></code></pre></td></tr></table></figure>
+<p>这里因为是初始化，所以可以直接用一个jax的随机array来构造。其实也可以直接传一个backend的crd进来，但是为了区分initialization和update的功能，这里还是直接随机生成了一个。这里的SnapShot是一个namedtuple格式，存储了坐标和力等系统信息，这里为了最简化，我们只传入三个最基本的参数：坐标、力、原子索引。然后是SnapShotMethod和Helper，这两个标准化接口用于实时获取SnapShot中的信息：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> pysages.backends.snapshot <span class="hljs-keyword">import</span> SnapshotMethods, HelperMethods<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_snapshot_methods</span>():<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">positions</span>(<span class="hljs-params">snapshot</span>):<br>        <span class="hljs-keyword">return</span> snapshot.positions<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">indices</span>(<span class="hljs-params">snapshot</span>):<br>        <span class="hljs-keyword">return</span> snapshot.ids<br>    <span class="hljs-keyword">return</span> SnapshotMethods(positions, indices, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_helper</span>(<span class="hljs-params">dims=<span class="hljs-number">3</span></span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_dims</span>():<br>        <span class="hljs-keyword">return</span> dims<br>    <span class="hljs-keyword">return</span> HelperMethods(build_data_querier(build_sponge_snapshot_methods(), &#123;<span class="hljs-string">&quot;positions&quot;</span>, <span class="hljs-string">&quot;indices&quot;</span>&#125;), get_dims)<br></code></pre></td></tr></table></figure>
+<p>这样我们就完成了一个基本的SPONGE的Extension的构建。</p>
+<h1>完整示例</h1>
+<p>这里是一个把CUDA SPONGE作为MD Backend，然后用PySAGES来进行增强采样的一个简单示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">SPONGE Usage:</span><br><span class="hljs-string">    $ ../SPONGE -mdin nvt.txt</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> Sponge<br><br>Sponge.controller.Step_Print_Initial(<span class="hljs-string">&quot;Phi&quot;</span>, <span class="hljs-string">&quot;%2f&quot;</span>)<br>Sponge.controller.Step_Print_Initial(<span class="hljs-string">&quot;Psi&quot;</span>, <span class="hljs-string">&quot;%2f&quot;</span>)<br><br><span class="hljs-keyword">import</span> pysages<br><span class="hljs-keyword">from</span> pysages.colvars <span class="hljs-keyword">import</span> DihedralAngle<br><span class="hljs-keyword">from</span> numpy <span class="hljs-keyword">import</span> pi<br><span class="hljs-keyword">from</span> pysages.methods <span class="hljs-keyword">import</span> Metadynamics<br><span class="hljs-keyword">from</span> pysages.backends.snapshot <span class="hljs-keyword">import</span> Snapshot, SnapshotMethods, HelperMethods, build_data_querier<br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> jax <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> jnp<br><span class="hljs-keyword">from</span> jax.dlpack <span class="hljs-keyword">import</span> to_dlpack, from_dlpack<br><span class="hljs-keyword">from</span> cupy <span class="hljs-keyword">import</span> fromDlpack <span class="hljs-keyword">as</span> cufd<br><br>kB = <span class="hljs-number">0.00831446261815324</span><br>T = <span class="hljs-number">300</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_snapshot_methods</span>():<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">positions</span>(<span class="hljs-params">snapshot</span>):<br>        <span class="hljs-keyword">return</span> snapshot.positions<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">indices</span>(<span class="hljs-params">snapshot</span>):<br>        <span class="hljs-keyword">return</span> snapshot.ids<br>    <span class="hljs-keyword">return</span> SnapshotMethods(positions, indices, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_snapshot</span>(<span class="hljs-params">num_atoms</span>):<br>    crd = jnp.array(np.random.random((num_atoms, <span class="hljs-number">3</span>)), jnp.float32)<br>    ids = jnp.arange(num_atoms)<br>    forces = jnp.zeros_like(crd)<br>    <span class="hljs-keyword">return</span> Snapshot(crd, <span class="hljs-literal">None</span>, forces, ids, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">build_sponge_helper</span>(<span class="hljs-params">dims=<span class="hljs-number">3</span></span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_dims</span>():<br>        <span class="hljs-keyword">return</span> dims<br>    <span class="hljs-keyword">return</span> HelperMethods(build_data_querier(build_sponge_snapshot_methods(), &#123;<span class="hljs-string">&quot;positions&quot;</span>, <span class="hljs-string">&quot;indices&quot;</span>&#125;), get_dims)<br><br><span class="hljs-comment"># 定义增强采样方法</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">phi_psi</span>():<br>    cvs = [DihedralAngle([<span class="hljs-number">4</span>, <span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>]), DihedralAngle([<span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>, <span class="hljs-number">16</span>])]<br>    height = <span class="hljs-number">5.0</span>  <span class="hljs-comment"># kJ/mol</span><br>    sigma = [<span class="hljs-number">0.4</span>, <span class="hljs-number">0.4</span>]  <span class="hljs-comment"># radians</span><br>    stride = <span class="hljs-number">3</span><br>    ngauss = <span class="hljs-number">500</span><br>    grid = pysages.Grid(lower=(-pi, -pi), upper=(pi, pi), shape=(<span class="hljs-number">50</span>, <span class="hljs-number">50</span>), periodic=<span class="hljs-literal">True</span>)<br>    method = Metadynamics(cvs, height, sigma, stride, ngauss, grid=grid)<br>    <span class="hljs-keyword">return</span> method<br><br>initialized = <span class="hljs-literal">False</span><br>state = <span class="hljs-literal">None</span><br>snap = <span class="hljs-literal">None</span><br>helper = <span class="hljs-literal">None</span><br>method = <span class="hljs-literal">None</span><br>update_func = <span class="hljs-literal">None</span><br><br><span class="hljs-comment"># SPONGE用于更新Force的标准化调用</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">Calculate_Force</span>():<br>    <span class="hljs-keyword">global</span> initialized<br>    <span class="hljs-keyword">global</span> state<br>    <span class="hljs-keyword">global</span> snap<br>    <span class="hljs-keyword">global</span> helper<br>    <span class="hljs-keyword">global</span> method<br>    <span class="hljs-keyword">global</span> update_func<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> initialized:<br>        initialized = <span class="hljs-literal">True</span><br>        num_atoms = Sponge.md_info.frc.shape[<span class="hljs-number">0</span>]<br>        snap = build_sponge_snapshot(num_atoms)<br>        helper = build_sponge_helper()<br>        method = phi_psi()<br>        res = method.build(snap, helper)<br>        state = res[<span class="hljs-number">1</span>]()<br>        update_func = res[<span class="hljs-number">2</span>]<br>    <br>    snap = snap._replace(positions=from_dlpack(Sponge.md_info.crd.toDlpack()))<br>    state = update_func(snap, state)<br>    <span class="hljs-comment"># 加Meta</span><br>    Sponge.md_info.frc += cufd(to_dlpack(state.bias))<br>    <span class="hljs-comment"># 不加Meta</span><br>    <span class="hljs-comment"># Sponge.md_info.frc += 0</span><br><br><span class="hljs-comment"># 手动记录CV值</span><br><span class="hljs-keyword">import</span> os<br>record_name = <span class="hljs-string">&quot;cv_record.txt&quot;</span><br><span class="hljs-keyword">if</span> os.path.exists(record_name):<br>    os.remove(record_name)<br><br><span class="hljs-comment"># SPONGE的标准化打印输出接口</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">Mdout_Print</span>():<br>    <span class="hljs-keyword">global</span> state<br>    <span class="hljs-keyword">global</span> record_name<br>    Sponge.controller.Step_Print(<span class="hljs-string">&quot;Phi&quot;</span>, state.xi[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>])<br>    Sponge.controller.Step_Print(<span class="hljs-string">&quot;Psi&quot;</span>, state.xi[<span class="hljs-number">0</span>][<span class="hljs-number">1</span>])<br>    <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(record_name, <span class="hljs-string">&#x27;a+&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>        file.write(<span class="hljs-string">&quot;&#123;&#125;,&#123;&#125;\n&quot;</span>.<span class="hljs-built_in">format</span>(state.xi[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>], state.xi[<span class="hljs-number">0</span>][<span class="hljs-number">1</span>]))<br></code></pre></td></tr></table></figure>
+<p>其中用到的SPONGE配置文件为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs txt">case1 MD simulation<br><br>mode = NVT<br>default_in_file_prefix = protein/alad<br><br>pbc=0 <br>cutoff=999<br><br>dt = 1e-3<br>step_limit = 5000<br>write_information_interval = 10<br><br>thermostat = middle_langevin<br>middle_langevin_gamma = 10<br><br>rst = nvt_restart<br><br>coordinate_in_file = protein/alad_coordinate.txt<br>plugin = /usr/local/python-3.7.5/lib/python3.7/site-packages/prips/_prips.so<br>py = pysages_test.py<br></code></pre></td></tr></table></figure>
+<p>原始的pdb文件为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs txt">ATOM      1  H1  ACE     1       2.000   1.000  -0.000  1.00  0.00<br>ATOM      2  CH3 ACE     1       2.000   2.090   0.000  1.00  0.00<br>ATOM      3  H2  ACE     1       1.486   2.454   0.890  1.00  0.00<br>ATOM      4  H3  ACE     1       1.486   2.454  -0.890  1.00  0.00<br>ATOM      5  C   ACE     1       3.427   2.641  -0.000  1.00  0.00<br>ATOM      6  O   ACE     1       4.391   1.877  -0.000  1.00  0.00<br>ATOM      7  N   ALA     2       3.555   3.970  -0.000  1.00  0.00<br>ATOM      8  H   ALA     2       2.733   4.556  -0.000  1.00  0.00<br>ATOM      9  CA  ALA     2       4.853   4.614  -0.000  1.00  0.00<br>ATOM     10  HA  ALA     2       5.408   4.316   0.890  1.00  0.00<br>ATOM     11  CB  ALA     2       5.661   4.221  -1.232  1.00  0.00<br>ATOM     12  HB1 ALA     2       5.123   4.521  -2.131  1.00  0.00<br>ATOM     13  HB2 ALA     2       6.630   4.719  -1.206  1.00  0.00<br>ATOM     14  HB3 ALA     2       5.809   3.141  -1.241  1.00  0.00<br>ATOM     15  C   ALA     2       4.713   6.129   0.000  1.00  0.00<br>ATOM     16  O   ALA     2       3.601   6.653   0.000  1.00  0.00<br>ATOM     17  N   NME     3       5.846   6.835   0.000  1.00  0.00<br>ATOM     18  H   NME     3       6.737   6.359  -0.000  1.00  0.00<br>ATOM     19  CH3 NME     3       5.846   8.284   0.000  1.00  0.00<br>ATOM     20 HH31 NME     3       4.819   8.648   0.000  1.00  0.00<br>ATOM     21 HH32 NME     3       6.360   8.648   0.890  1.00  0.00<br>ATOM     22 HH33 NME     3       6.360   8.648  -0.890  1.00  0.00<br>TER   <br>END   <br></code></pre></td></tr></table></figure>
+<p>使用Xponge根据pdb文件进行建模的方法，可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18572403/cudasponge">这篇文章</a>中的流程。需要注意的是，生成一个坐标文件之后，需要手动把坐标文件里面的Box信息（最后一行的前三列）修改为<code>999</code>（不加PBC Box的情况下），改完大概是这样的一个txt文件：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs txt">22<br>3.514000 3.000000 5.288678<br>3.514000 4.090000 5.288679<br>3.000000 4.454000 6.021000<br>3.000000 4.454000 4.241000<br>4.941000 4.641000 5.288676<br>5.905000 3.877000 5.288673<br>5.069000 5.970000 5.288679<br>4.247000 6.556000 5.288679<br>6.367000 6.614000 5.288679<br>6.922000 6.316000 6.021000<br>7.175000 6.221000 3.899000<br>6.637000 6.521000 3.000000<br>8.144000 6.719000 3.925000<br>7.323000 5.141000 3.890000<br>6.227000 8.129000 5.288675<br>5.115000 8.653000 5.288673<br>7.360000 8.835000 5.288687<br>8.251000 8.359000 5.288693<br>7.360000 10.284000 5.288682<br>6.333000 10.648000 5.288674<br>7.874000 10.648000 6.021000<br>7.874000 10.648000 4.241000<br>999 999 999 90.000000 90.000000 90.000000<br></code></pre></td></tr></table></figure>
+<p>在确保SPONGE和PySAGES两者都正常安装的情况下，如果不加Meta，跑出来的CV轨迹是这样的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164402478.png" alt=""></p>
+<p>加上Meta之后，CV轨迹是这样的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164402508.png" alt=""></p>
+<p>可以看到，我们加上的Meta明显提升了MD的采样空间。</p>
+<p>其中作图脚本如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gaussian2</span>(<span class="hljs-params">x1, x2, sigma1=<span class="hljs-number">1.0</span>, sigma2=<span class="hljs-number">1.0</span>, A=<span class="hljs-number">0.5</span></span>):<br>    <span class="hljs-keyword">return</span> np.<span class="hljs-built_in">sum</span>(A*np.exp(-<span class="hljs-number">0.5</span>*(x1**<span class="hljs-number">2</span>/sigma1**<span class="hljs-number">2</span>+x2**<span class="hljs-number">2</span>/sigma2**<span class="hljs-number">2</span>))/np.pi/sigma1/sigma2, axis=-<span class="hljs-number">1</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">potential_energy</span>(<span class="hljs-params">position, psi, phi, sigma1, sigma2</span>):<br>    <span class="hljs-comment"># (A, )</span><br>    psi_, phi_ = position[:, <span class="hljs-number">0</span>], position[:, <span class="hljs-number">1</span>]<br>    <span class="hljs-comment"># (A, R)</span><br>    delta_psi = psi_[:, <span class="hljs-literal">None</span>] - psi[<span class="hljs-literal">None</span>]<br>    delta_phi = phi_[:, <span class="hljs-literal">None</span>] - phi[<span class="hljs-literal">None</span>]<br>    <span class="hljs-comment"># (A, )</span><br>    Z = -np.log(gaussian2(delta_psi, delta_phi, sigma1=sigma1, sigma2=sigma2, A=<span class="hljs-number">2.0</span>)+<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">return</span> Z<br><br>data = np.genfromtxt(<span class="hljs-string">&#x27;./cv_record.txt&#x27;</span>, delimiter=<span class="hljs-string">&#x27;,&#x27;</span>)<br>phi = data[:, <span class="hljs-number">0</span>]<br>psi = data[:, <span class="hljs-number">1</span>]<br><br>num_grids = <span class="hljs-number">100</span><br>num_levels = <span class="hljs-number">10</span><br>psi_grids = np.linspace(-np.pi, np.pi, num_grids)<br>phi_grids = np.linspace(-np.pi, np.pi, num_grids)<br>grids = np.array(np.meshgrid(psi_grids, phi_grids)).T.reshape((-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>))<br><br>Z = potential_energy(grids, phi, psi, <span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>).reshape((psi_grids.shape[<span class="hljs-number">0</span>], phi_grids.shape[<span class="hljs-number">0</span>])).T<br>X,Y = np.meshgrid(psi_grids, phi_grids)<br>levels = np.linspace(np.<span class="hljs-built_in">min</span>(Z), np.<span class="hljs-built_in">max</span>(Z), num_levels)<br><br>plt.figure()<br>plt.title(<span class="hljs-string">&quot;Biased MD Traj&quot;</span>)<br>plt.xlabel(<span class="hljs-string">r&#x27;$\phi$&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">r&#x27;$\psi$&#x27;</span>)<br>fc = plt.contourf(X, Y, Z, cmap=<span class="hljs-string">&#x27;Greens&#x27;</span>, levels=levels)<br>plt.colorbar(fc)<br><br>plt.xlim(-np.pi, np.pi)<br>plt.ylim(-np.pi, np.pi)<br>plt.plot(phi, psi, <span class="hljs-string">&#x27;o&#x27;</span>, alpha=<span class="hljs-number">0.4</span>, color=<span class="hljs-string">&#x27;red&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;meta.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<h1>特别注意</h1>
+<p>在使用PySAGES时有一点特别需要注意的是MetaDynamics方法更新的interval，原始更新步长是这样设定的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">ncalls = state.ncalls + <span class="hljs-number">1</span><br>in_deposition_step = (ncalls &gt; <span class="hljs-number">1</span>) &amp; (ncalls % stride == <span class="hljs-number">1</span>)<br></code></pre></td></tr></table></figure>
+<p>当<code>in_deposition_step=True</code>时才会计算bias force。虽然这么算也没问题，但在有些软件里面使用的更新步数设定是取余数为0，那么可以对应的修改为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">ncalls = state.ncalls + <span class="hljs-number">1</span><br>in_deposition_step = ncalls % stride == <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+<p>可以根据自己的场景和需求来进行修改。</p>
+<h1>总结概要</h1>
+<p>本文探索并梳理了一下CUDA SPONGE高性能分子模拟采样软件，和PySAGES高性能增强采样软件，这两者强强联合的MD模拟新范式。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pysages-sponge.html">https://www.cnblogs.com/dechinphy/p/pysages-sponge.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/da0cace7.html">https://dechin-phy.asia/posts/da0cace7.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-12-18</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-01-23</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/cafa8994.html">Markdown转Beamer</a><a class="next" href="/posts/1f78771.html">PCA主成分分析的Python实现</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/7e2c5785.html"><meta property="og:type" content="article"><meta property="og:title" content="用华为MindSpore进行分布式训练"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/7e2c5785.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-06-08T03:21:07.000Z"><meta property="article:modified_time" content="2021-06-10T02:55:00.000Z"><title>用华为MindSpore进行分布式训练 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">用华为MindSpore进行分布式训练</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">用华为MindSpore进行分布式训练</h1><div class="post-meta">2021-06-08<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 12</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">环境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85openmpi"><span class="toc-number">2.1.</span> <span class="toc-text">安装openmpi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85NCCL"><span class="toc-number">2.2.</span> <span class="toc-text">安装NCCL</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E6%B5%8B%E8%AF%95"><span class="toc-number">2.3.</span> <span class="toc-text">环境测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">MindSpore分布式训练</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>这篇文章我们主要探讨如何去部署一个基于MindSpore框架的分布式训练环境，在MindSpore环境已经配置好的情况下，我们只需要安装好openmpi和nccl这两个工具就可以实现分布式的训练，在文中我们已经给出了相应的示例。虽然分布式与并行技术的目的是为了提升性能，但不是说对所有的场景都能够起到加速的作用，比如文章中的案例就没有加速的效果。这其实是因为我们的用例场景太简单了，纵观整个训练过程，GPU的使用率不到10%，在这种情况下还要考虑上通信的开销，自然是没有放在同一个卡上去训练来得快。这也给我们一个启发，考虑使用分布式和并行计算的技术时，一定也要先评估好问题本身是否适用于并行化的处理，否则是达不到预期的加速的目的的。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>分布式和并行计算，在计算机领域是非常重要的概念。对于一些行外人来说，总觉得这是一些很简单的工作，但是如果我们纵观计算机的硬件发展史，从CPU到GPU，再到TPU和华为的昇腾（NPU），乃至当下的热点量子计算机（QPU），其实就是一个分布式与并行计算的发展史。从简单的数据并行，到算法并行，到图的并行，最后是量子叠加所带来的物理并行。因此能否做好分布式与并行的技术，很大程度上决定了一个工具的性能上限，本文我们一起来研究一下MindSpore分布式训练的方法。</p>
+<h1>环境部署</h1>
+<p>在前面的博客中，我们探讨过用Docker和Singularity容器等方案来安装MindSpore的CPU版本和GPU版本，感兴趣的读者可以翻一翻这些历史博客。而这篇文章中，我们将默认已经在本地安装好一个MindSpore的GPU环境，以此为前提进行探讨在单机多GPU卡的环境下去使用MindSpore的分布式功能。比较完整的介绍可以参考这个<a target="_blank" rel="noopener" href="https://www.mindspore.cn/tutorial/training/zh-CN/r1.2/advanced_use/distributed_training_gpu.html">官方地址</a>，里面包含了完整的安装部署和使用的介绍。这里我们仅针对本地Ubuntu的环境介绍基本安装和使用方法。</p>
+<h2 id="安装openmpi">安装openmpi</h2>
+<p>这里一共需要安装2个软件，我们都是采取了源码安装的方法，首先到这个MindSpore给出的下载链接中下载对应版本的源码：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616358.png" alt="">
+按照版本配套我们下载这个4.0.3的<code>tar.gz</code>的压缩包：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616381.png" alt="">
+下载完成后可以大致的按照这里面的操作指导进行源码安装：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616403.png" alt="">
+安装成功的话运行<code>mpirun --version</code>可以看到版本号。有这里面有两个需要提醒的点是：1. 解压缩不一定用这里面给出的指令，可以用自己的；2. 如果按照这个指引的prefix，后面需要在<code>LD_LIBRARY_PATH</code>这个环境变量中加入<code>/usr/local/lib/</code>这个路径，否则会有一些so库无法被识别。</p>
+<h2 id="安装NCCL">安装NCCL</h2>
+<p>MindSpore在GPU上的分布式通信是采用了NCCL这个工具，同样的我们先去这里面给出的链接找源码包下载安装：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616358.png" alt="">
+这里推荐使用Local的安装方案：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616439.png" alt="">
+找到适配自己的系统版本的软件包之后，就可以按照下述的指引一步一步安装：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616476.png" alt="">
+其中如果在<code>apt-key</code>这一步执行一次失败的话，可以多执行两次看看。</p>
+<h2 id="环境测试">环境测试</h2>
+<p>安装成功后，openmpi和NCCL都安装成功后，可以用如下的初始化示例测试一下环境的部署情况：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test-init.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br><span class="hljs-keyword">from</span> mindspore.communication.management <span class="hljs-keyword">import</span> init<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br>    init(<span class="hljs-string">&quot;nccl&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>如果执行的结果如下所示，没有任何的报错信息，则说明环境部署成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/mindspore/test$ mindspore test-init.py <br>dechin@ubuntu2004:~/projects/mindspore/test$<br></code></pre></td></tr></table></figure>
+<h1>MindSpore分布式训练</h1>
+<p>首先可能会有人好奇，上一个章节中最后用的mindspore是个啥指令？这其实是我自己在本地配置的一个mindspore-gpu版本的快捷命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/$ <span class="hljs-built_in">cat</span> ~/.bashrc | grep mindspore<br><span class="hljs-built_in">alias</span> mindspore=<span class="hljs-string">&#x27;singularity exec --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif python&#x27;</span><br></code></pre></td></tr></table></figure>
+<p>如果觉得还算方便的话，读者也可以按照自己的喜好去alias一个快捷命令。</p>
+<p>接下来我们要看一个实现的案例，这个代码来自于前面的这一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/nonlinear.html">博客</a>，只是我们在这个代码基础之上，加入了上一个章节中的初始化代码<code>init()</code>，完整代码如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test_nonlinear.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br><span class="hljs-keyword">from</span> mindspore.communication.management <span class="hljs-keyword">import</span> init<br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br>init()<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> dataset <span class="hljs-keyword">as</span> ds<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, Tensor, Model<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> mindspore.train.callback <span class="hljs-keyword">import</span> Callback, LossMonitor<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_data</span>(<span class="hljs-params">num, a=<span class="hljs-number">2.0</span>, b=<span class="hljs-number">3.0</span>, c=<span class="hljs-number">5.0</span></span>):<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num):<br>        x = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        y = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        noise = np.random.normal(<span class="hljs-number">0</span>, <span class="hljs-number">0.03</span>)<br>        z = a * x ** <span class="hljs-number">2</span> + b * y ** <span class="hljs-number">3</span> + c + noise<br>        <span class="hljs-keyword">yield</span> np.array([[x**<span class="hljs-number">2</span>], [y**<span class="hljs-number">3</span>]],dtype=np.float32).reshape(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>), np.array([z]).astype(np.float32)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">create_dataset</span>(<span class="hljs-params">num_data, batch_size=<span class="hljs-number">16</span>, repeat_size=<span class="hljs-number">1</span></span>):<br>    input_data = ds.GeneratorDataset(<span class="hljs-built_in">list</span>(get_data(num_data)), column_names=[<span class="hljs-string">&#x27;xy&#x27;</span>,<span class="hljs-string">&#x27;z&#x27;</span>])<br>    input_data = input_data.batch(batch_size)<br>    input_data = input_data.repeat(repeat_size)<br>    <span class="hljs-keyword">return</span> input_data<br><br>data_number = <span class="hljs-number">160</span><br>batch_number = <span class="hljs-number">16</span><br>repeat_number = <span class="hljs-number">200</span><br><br>ds_train = create_dataset(data_number, batch_size=batch_number, repeat_size=repeat_number)<br>dict_datasets = <span class="hljs-built_in">next</span>(ds_train.create_dict_iterator())<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LinearNet</span>(nn.Cell):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(LinearNet, <span class="hljs-variable language_">self</span>).__init__()<br>        <span class="hljs-variable language_">self</span>.fc = nn.Dense(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0.02</span>, <span class="hljs-number">0.02</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x</span>):<br>        x = <span class="hljs-variable language_">self</span>.fc(x)<br>        <span class="hljs-keyword">return</span> x<br><br>net = LinearNet()<br>model_params = net.trainable_params()<br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Param Shape is: &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(model_params)))<br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br>net_loss = nn.loss.MSELoss()<br><br>optim = nn.Momentum(net.trainable_params(), learning_rate=<span class="hljs-number">0.01</span>, momentum=<span class="hljs-number">0.6</span>)<br>model = Model(net, net_loss, optim)<br><br>epoch = <span class="hljs-number">1</span><br>model.train(epoch, ds_train, callbacks=[LossMonitor(<span class="hljs-number">10</span>)], dataset_sink_mode=<span class="hljs-literal">False</span>)<br><br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br></code></pre></td></tr></table></figure>
+<p>此时我们需要改成用mpirun去运行这个代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ mpirun -n 2 singularity <span class="hljs-built_in">exec</span> --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif python test_nonlinear.py<br></code></pre></td></tr></table></figure>
+<p>运行过程中我们就可以看到，有两个python的任务分别跑在两个不同的GPU卡上：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170616526.png" alt="">
+这个监控方式其实还是<code>nvidia-smi</code>的指令，只不过为了长期监视GPU状态，我是使用了<code>watch -n 1 nvidia-smi</code>的指令，每隔1s的时间就刷新一次<code>nvidia-smi</code>的状态。但是这里需要注意的也有两点：1. 这个代码直接用mindspore指令也可以跑在单GPU卡上，但是如果要用mpirun来运行，那么我们就不能使用刚才alias的mindspore指令，而需要手动写上完整的指令，除非把新的指令再alias一个；2. 上述的代码因为只是初始化了一下，所以虽然跑在两张卡上，但是实际上训练过程并没有互相通信，是两个独立的任务。那么如果要构造一个完整的自动化的分布式训练，就需要像如下代码一样，再加入context.set_auto_parallel_context(parallel_mode=ParallelMode.DATA_PARALLEL)这样的一个字样，以及checkpoint中的一些配置，新的完整代码如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test_nonlinear.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br><span class="hljs-keyword">from</span> mindspore.communication.management <span class="hljs-keyword">import</span> init<br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br>init()<br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> dataset <span class="hljs-keyword">as</span> ds<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, Tensor, Model<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> mindspore.train.callback <span class="hljs-keyword">import</span> Callback, LossMonitor, ModelCheckpoint, CheckpointConfig<br><span class="hljs-keyword">from</span> mindspore.context <span class="hljs-keyword">import</span> ParallelMode<br><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br>ms.common.set_seed(<span class="hljs-number">0</span>)<br><br>start_time = time.time()<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_data</span>(<span class="hljs-params">num, a=<span class="hljs-number">2.0</span>, b=<span class="hljs-number">3.0</span>, c=<span class="hljs-number">5.0</span></span>):<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num):<br>        x = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        y = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        noise = np.random.normal(<span class="hljs-number">0</span>, <span class="hljs-number">0.03</span>)<br>        z = a * x ** <span class="hljs-number">2</span> + b * y ** <span class="hljs-number">3</span> + c + noise<br>        <span class="hljs-keyword">yield</span> np.array([[x**<span class="hljs-number">2</span>], [y**<span class="hljs-number">3</span>]],dtype=np.float32).reshape(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>), np.array([z]).astype(np.float32)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">create_dataset</span>(<span class="hljs-params">num_data, batch_size=<span class="hljs-number">16</span>, repeat_size=<span class="hljs-number">1</span></span>):<br>    input_data = ds.GeneratorDataset(<span class="hljs-built_in">list</span>(get_data(num_data)), column_names=[<span class="hljs-string">&#x27;xy&#x27;</span>,<span class="hljs-string">&#x27;z&#x27;</span>])<br>    input_data = input_data.batch(batch_size)<br>    input_data = input_data.repeat(repeat_size)<br>    <span class="hljs-keyword">return</span> input_data<br><br>data_number = <span class="hljs-number">160</span><br>batch_number = <span class="hljs-number">16</span><br>repeat_number = <span class="hljs-number">20</span><br><br>context.set_auto_parallel_context(parallel_mode=ParallelMode.DATA_PARALLEL)<br>ds_train = create_dataset(data_number, batch_size=batch_number, repeat_size=repeat_number)<br>dict_datasets = <span class="hljs-built_in">next</span>(ds_train.create_dict_iterator())<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LinearNet</span>(nn.Cell):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(LinearNet, <span class="hljs-variable language_">self</span>).__init__()<br>        <span class="hljs-variable language_">self</span>.fc = nn.Dense(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0.02</span>, <span class="hljs-number">0.02</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x</span>):<br>        x = <span class="hljs-variable language_">self</span>.fc(x)<br>        <span class="hljs-keyword">return</span> x<br><br>net = LinearNet()<br>model_params = net.trainable_params()<br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Param Shape is: &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(model_params)))<br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br>net_loss = nn.loss.MSELoss()<br><br>optim = nn.Momentum(net.trainable_params(), learning_rate=<span class="hljs-number">0.01</span>, momentum=<span class="hljs-number">0.6</span>)<br>ckpt_config = CheckpointConfig()<br>ckpt_callback = ModelCheckpoint(prefix=<span class="hljs-string">&#x27;data_parallel&#x27;</span>, config=ckpt_config)<br><br>model = Model(net, net_loss, optim)<br><br>epoch = <span class="hljs-number">10</span><br>model.train(epoch, ds_train, callbacks=[ckpt_callback], dataset_sink_mode=<span class="hljs-literal">True</span>)<br><br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br><br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The total time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time.time() - start_time))<br></code></pre></td></tr></table></figure>
+<p>这个代码的运行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ mpirun -n 2 singularity <span class="hljs-built_in">exec</span> --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif python test_nonlinear.py <br>Param Shape is: 2<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[0.02 0.02]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [0.02]<br>Param Shape is: 2<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[0.02 0.02]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [0.02]<br>[WARNING] ME(2528801:139843698521024,MainProcess):2021-06-10-09:45:37.603.010 [mindspore/train/callback/_checkpoint.py:428] OSError, failed to remove the older ckpt file /home/dechin/projects/gitlab/dechin/src/mindspore/data_parallel-1_200.ckpt.<br>[WARNING] ME(2528799:139709496722368,MainProcess):2021-06-10-09:45:37.713.232 [mindspore/train/callback/_checkpoint.py:428] OSError, failed to remove the older ckpt file /home/dechin/projects/gitlab/dechin/src/mindspore/data_parallel-2_200.ckpt.<br>[WARNING] ME(2528799:139709496722368,MainProcess):2021-06-10-09:45:37.824.271 [mindspore/train/callback/_checkpoint.py:428] OSError, failed to remove the older ckpt file /home/dechin/projects/gitlab/dechin/src/mindspore/data_parallel-3_200.ckpt.<br>[WARNING] ME(2528799:139709496722368,MainProcess):2021-06-10-09:45:37.943.749 [mindspore/train/callback/_checkpoint.py:428] OSError, failed to remove the older ckpt file /home/dechin/projects/gitlab/dechin/src/mindspore/data_parallel-4_200.ckpt.<br>[WARNING] ME(2528801:139843698521024,MainProcess):2021-06-10-09:45:38.433.85 [mindspore/train/callback/_checkpoint.py:428] OSError, failed to remove the older ckpt file /home/dechin/projects/gitlab/dechin/src/mindspore/data_parallel-5_200.ckpt.<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[0.12186428 0.21167319]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [5.561276]<br>The total <span class="hljs-keyword">time</span> cost is: 8.412446737289429s<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[0.12186428 0.21167319]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [5.561276]<br>The total <span class="hljs-keyword">time</span> cost is: 8.439369916915894s<br></code></pre></td></tr></table></figure>
+<p>虽然运行成功了，但是有一点需要注意的是，分布式的这个案例耗时为<code>8.44s</code>，而单卡的训练耗时为<code>8.15s</code>，分布式的训练速度甚至比单卡的要慢，我们在总结里面对这个现象进行一个解释。</p>
+<h1>总结概要</h1>
+<p>这篇文章我们主要探讨如何去部署一个基于MindSpore框架的分布式训练环境，在MindSpore环境已经配置好的情况下，我们只需要安装好openmpi和nccl这两个工具就可以实现分布式的训练，在文中我们已经给出了相应的示例。虽然分布式与并行技术的目的是为了提升性能，但不是说对所有的场景都能够起到加速的作用，比如文章中的案例就没有加速的效果。这其实是因为我们的用例场景太简单了，纵观整个训练过程，GPU的使用率不到10%，在这种情况下还要考虑上通信的开销，自然是没有放在同一个卡上去训练来得快。这也给我们一个启发，考虑使用分布式和并行计算的技术时，一定也要先评估好问题本身是否适用于并行化的处理，否则是达不到预期的加速的目的的。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/dms.html">https://www.cnblogs.com/dechinphy/p/dms.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/7e2c5785.html">https://dechin-phy.asia/posts/7e2c5785.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-06-08</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-06-10</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/f9f9daae.html">Python实现GPU加速的基本操作</a><a class="next" href="/posts/42c703a6.html">用华为MindSpore框架训练数据库类型的数据集</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

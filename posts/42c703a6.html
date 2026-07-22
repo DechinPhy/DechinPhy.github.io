@@ -1,0 +1,235 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/42c703a6.html"><meta property="og:type" content="article"><meta property="og:title" content="用华为MindSpore框架训练数据库类型的数据集"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/42c703a6.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-06-01T07:51:37.000Z"><meta property="article:modified_time" content="2021-06-01T09:16:00.000Z"><title>用华为MindSpore框架训练数据库类型的数据集 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">用华为MindSpore框架训练数据库类型的数据集</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">用华为MindSpore框架训练数据库类型的数据集</h1><div class="post-meta">2021-06-01<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Sqlite3产生随机数据</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">数据库文件的读取</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">与MindSpore的结合</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文按照数据流的顺序，分别介绍了：使用sqlite3数据库存储数据、从sqlite3数据库中读取数据、使用从sqlite3数据库中的数据构造MindSpore可识别的训练数据集。对于输入的数据量比较大的场景，我们不太可能将全部的数据都加载到内存中，这就要考虑各种可以快速存储和读取的方案，数据库就是一种比较常见的方案。而sqlite3作为一款非常轻量级的数据库，在大部分的Python3中都是内置的，省去了很多编译安装的繁琐。当然性能表现可能不如其他的数据库，但是在我们这边给定的场景下，表现还是非常优秀的！</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/lbl.html">博客</a>我们讲到三种用python去读取一个文件的指定行的操作，最终给出的一个结论大概是，对于大型的数据而言，最快的找到指定行的方法是Linux系统自带的<code>sed</code>指令，那么是否只有这一种办法了呢？很显然不是，之所以采用这些方法，是因为我们被局限在数据的存储格式上，如果在处理数据或者产生数据的阶段，就把数据按照特定的数据结构进行存储，那么就能够大大的提高数据读取的效率。这里我们要介绍一个用<code>sqlite3</code>来读取数据用于MindSpore的训练的案例，在有限的内存空间中避免完整的去加载整个数据集。</p>
+<h1>Sqlite3产生随机数据</h1>
+<p>因为大部分的Python中是预装了sqlite3的，这就避免了我们自己再去重复安装的麻烦，比如Spark和PySpark就是安装起来比较麻烦的典型案例，当然其性能和分布式的处理也是非常具有优越性的。这里我们看一个用sqlite3产生训练数据的案例，这个案例的原型来自于这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/nonlinear.html">博客</a>，其函数表达形式为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>z</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><msup><mi>y</mi><mn>3</mn></msup><mo>+</mo><mi>c</mi></mrow><annotation encoding="application/x-tex">z(x,y)=ax^2+by^3+c
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.9474379999999999em;vertical-align:-0.08333em;"></span><span class="mord mathnormal">a</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.0585479999999998em;vertical-align:-0.19444em;"></span><span class="mord mathnormal">b</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal">c</span></span></span></span></span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># store_data_to_db.py</span><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> sqlite3<br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><br>conn = sqlite3.connect(<span class="hljs-string">&#x27;xyz.db&#x27;</span>) <span class="hljs-comment"># 创建或者链接一个已有db文件</span><br>cur = conn.cursor()<br><br><span class="hljs-keyword">try</span>:<br>    sql_1 = <span class="hljs-string">&#x27;&#x27;&#x27;CREATE TABLE number</span><br><span class="hljs-string">                    (i NUMBER,</span><br><span class="hljs-string">                     x NUMBER,</span><br><span class="hljs-string">                     y NUMBER,</span><br><span class="hljs-string">                     z NUMBER);&#x27;&#x27;&#x27;</span><br>    cur.execute(sql_1) <span class="hljs-comment"># 执行数据库指令，创建一个新的表单</span><br><span class="hljs-keyword">except</span>:<br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_data</span>(<span class="hljs-params">num, a=<span class="hljs-number">2.0</span>, b=<span class="hljs-number">3.0</span>, c=<span class="hljs-number">5.0</span></span>):<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> trange(num):<br>        x = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        y = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        noise = np.random.normal(<span class="hljs-number">0</span>, <span class="hljs-number">0.03</span>)<br>        z = a * x ** <span class="hljs-number">2</span> + b * y ** <span class="hljs-number">3</span> + c + noise <span class="hljs-comment"># 计算数据</span><br>        <span class="hljs-comment"># 将一行数据写入数据库</span><br>        cur.execute(<span class="hljs-string">&quot;INSERT INTO number VALUES(&#123;&#125;,&#123;&#125;,&#123;&#125;,&#123;&#125;)&quot;</span>.<span class="hljs-built_in">format</span>(_, x**<span class="hljs-number">2</span>, y**<span class="hljs-number">3</span>, z))<br><br>get_data(<span class="hljs-number">100</span>) <span class="hljs-comment"># 产生100组数据</span><br>conn.commit()<br>cur.close()<br>conn.close()<br></code></pre></td></tr></table></figure>
+<p>在这个案例中我们一共产生了100组的测试数据，运行过程如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">(base) dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ python3 store_data_to_db.py <br>100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00&lt;00:00, 29504.11it/s]<br>(base) dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ ll | grep xyz.db<br>-rw-r--r-- 1 dechin dechin    8192 6月   1 15:43 xyz.db<br></code></pre></td></tr></table></figure>
+<p>运行完成后，会在当前目录下产生一个名为<code>xyz.db</code>的数据库文件，在可迁移性上是比较灵活的。需要特别提及的是，这里我们不仅存储了x,y,z这3个变量，同时也存储了index数据，这样方便我们对数据进行检索和查找。在程序的最后一步，一定要执行<code>commit</code>才能够将数据保存到数据库文件中，否则不会被保存。</p>
+<h1>数据库文件的读取</h1>
+<p>接着上一个章节的内容，我们用Ipython来测试一下是否成功的将数据写入到了数据库文件中（这里<code>number</code>是表单的名字）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python">(base) dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ ipython<br>Python <span class="hljs-number">3.8</span><span class="hljs-number">.5</span> (default, Sep  <span class="hljs-number">4</span> <span class="hljs-number">2020</span>, 07:<span class="hljs-number">30</span>:<span class="hljs-number">14</span>) <br><span class="hljs-type">Type</span> <span class="hljs-string">&#x27;copyright&#x27;</span>, <span class="hljs-string">&#x27;credits&#x27;</span> <span class="hljs-keyword">or</span> <span class="hljs-string">&#x27;license&#x27;</span> <span class="hljs-keyword">for</span> more information<br>IPython <span class="hljs-number">7.19</span><span class="hljs-number">.0</span> -- An enhanced Interactive Python. <span class="hljs-type">Type</span> <span class="hljs-string">&#x27;?&#x27;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.<br><br>In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">import</span> sqlite3<br><br>In [<span class="hljs-number">2</span>]: conn = sqlite3.connect(<span class="hljs-string">&#x27;xyz.db&#x27;</span>)<br><br>In [<span class="hljs-number">3</span>]: cur = conn.cursor()<br><br>In [<span class="hljs-number">4</span>]: cur.execute(<span class="hljs-string">&#x27;SELECT * FROM number WHERE i=0&#x27;</span>)<br>Out[<span class="hljs-number">4</span>]: &lt;sqlite3.Cursor at <span class="hljs-number">0x7fd08bd5cc70</span>&gt;<br><br>In [<span class="hljs-number">5</span>]: <span class="hljs-built_in">print</span> (cur.fetchall())<br>[(<span class="hljs-number">0</span>, <span class="hljs-number">0.0099305893254821</span>, -<span class="hljs-number">0.003805282402773131</span>, <span class="hljs-number">5.014158221453069</span>)]<br><br>In [<span class="hljs-number">6</span>]: cur.execute(<span class="hljs-string">&#x27;SELECT * FROM number WHERE i=99&#x27;</span>)<br>Out[<span class="hljs-number">6</span>]: &lt;sqlite3.Cursor at <span class="hljs-number">0x7fd08bd5cc70</span>&gt;<br><br>In [<span class="hljs-number">7</span>]: <span class="hljs-built_in">print</span> (cur.fetchall())<br>[(<span class="hljs-number">99</span>, <span class="hljs-number">0.1408058052492868</span>, -<span class="hljs-number">0.5207606243222331</span>, <span class="hljs-number">3.7101686456005116</span>)]<br><br>In [<span class="hljs-number">8</span>]: cur.execute(<span class="hljs-string">&#x27;SELECT * FROM number WHERE i=100&#x27;</span>)<br>Out[<span class="hljs-number">8</span>]: &lt;sqlite3.Cursor at <span class="hljs-number">0x7fd08bd5cc70</span>&gt;<br><br>In [<span class="hljs-number">9</span>]: <span class="hljs-built_in">print</span> (cur.fetchall())<br>[]<br><br>In [<span class="hljs-number">10</span>]: cur.close()<br>    ...: conn.close()<br></code></pre></td></tr></table></figure>
+<p>在这个案例中我们可以看到，成功的读取了第0个数据和第99个数据，如果超过这个范围去检索，会返回一个空的值。返回的结果是被包在一个list中的tuple，所以注意读取的方式要用<code>cur.fetchall()[0][0]</code>才能够读取到这一列中的第一个元素。</p>
+<h1>与MindSpore的结合</h1>
+<p>在介绍完数据的产生和存储、数据库文件的读取两个工作后，结合起来我们可以尝试从数据库文件中去加载训练数据，用于MindSpore的模型训练。这里我们不展开去介绍MindSpore的模型和代码，在前面的这一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/linear.html">博客</a>中有介绍相关的细节，让我们直接看一下代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># dataset_test.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> dataset <span class="hljs-keyword">as</span> ds<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, Tensor, Model<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> mindspore.train.callback <span class="hljs-keyword">import</span> Callback, LossMonitor<br><span class="hljs-keyword">import</span> sqlite3<br><br>conn = sqlite3.connect(<span class="hljs-string">&#x27;xyz.db&#x27;</span>)<br>cur = conn.cursor()<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_data</span>(<span class="hljs-params">num, a=<span class="hljs-number">2.0</span>, b=<span class="hljs-number">3.0</span>, c=<span class="hljs-number">5.0</span></span>):<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num):<br>        cur.execute(<span class="hljs-string">&#x27;SELECT * FROM number WHERE i=&#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(_))<br>        data = cur.fetchall()[<span class="hljs-number">0</span>]<br>        <span class="hljs-keyword">yield</span> np.array([[<span class="hljs-built_in">float</span>(data[<span class="hljs-number">1</span>])],<br>                        [<span class="hljs-built_in">float</span>(data[<span class="hljs-number">2</span>])]],dtype=np.float32).reshape(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>), np.array([<span class="hljs-built_in">float</span>(data[<span class="hljs-number">3</span>])]).astype(np.float32)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">create_dataset</span>(<span class="hljs-params">num_data, batch_size=<span class="hljs-number">16</span>, repeat_size=<span class="hljs-number">1</span></span>):<br>    input_data = ds.GeneratorDataset(<span class="hljs-built_in">list</span>(get_data(num_data)), column_names=[<span class="hljs-string">&#x27;xy&#x27;</span>,<span class="hljs-string">&#x27;z&#x27;</span>])<br>    input_data = input_data.batch(batch_size)<br>    input_data = input_data.repeat(repeat_size)<br>    <span class="hljs-keyword">return</span> input_data<br><br>data_number = <span class="hljs-number">100</span><br>batch_number = <span class="hljs-number">10</span><br>repeat_number = <span class="hljs-number">20</span><br><br>ds_train = create_dataset(data_number, batch_size=batch_number, repeat_size=repeat_number)<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LinearNet</span>(nn.Cell):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(LinearNet, <span class="hljs-variable language_">self</span>).__init__()<br>        <span class="hljs-variable language_">self</span>.fc = nn.Dense(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0.02</span>, <span class="hljs-number">0.02</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x</span>):<br>        x = <span class="hljs-variable language_">self</span>.fc(x)<br>        <span class="hljs-keyword">return</span> x<br><br>net = LinearNet()<br>model_params = net.trainable_params()<br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Param Shape is: &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(model_params)))<br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br>net_loss = nn.loss.MSELoss()<br><br>optim = nn.Momentum(net.trainable_params(), learning_rate=<span class="hljs-number">0.01</span>, momentum=<span class="hljs-number">0.6</span>)<br>model = Model(net, net_loss, optim)<br><br>epoch = <span class="hljs-number">1</span><br>model.train(epoch, ds_train, callbacks=[LossMonitor(<span class="hljs-number">10</span>)], dataset_sink_mode=<span class="hljs-literal">False</span>)<br><br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br><br>cur.close()<br>conn.close()<br></code></pre></td></tr></table></figure>
+<p>跟前面的博客中类似的是，我们还是用了MindSpore的<code>GeneratorDataset</code>这个方法来构造数据，并且通过<code>get_data</code>函数逐个的返回数据库中对应位置的数据。可以看一下是否能够成功训练：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">(base) dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ singularity <span class="hljs-built_in">exec</span> --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif python dataset_test.py <br>Param Shape is: 2<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[0.02 0.02]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [0.02]<br>epoch: 1 step: 10, loss is 15.289665<br>epoch: 1 step: 20, loss is 4.292768<br>epoch: 1 step: 30, loss is 2.199254<br>epoch: 1 step: 40, loss is 0.558127<br>epoch: 1 step: 50, loss is 1.2218236<br>epoch: 1 step: 60, loss is 2.0977945<br>epoch: 1 step: 70, loss is 2.0961792<br>epoch: 1 step: 80, loss is 1.107859<br>epoch: 1 step: 90, loss is 1.1687267<br>epoch: 1 step: 100, loss is 1.166467<br>epoch: 1 step: 110, loss is 0.73308593<br>epoch: 1 step: 120, loss is 1.2287892<br>epoch: 1 step: 130, loss is 1.2843382<br>epoch: 1 step: 140, loss is 1.996727<br>epoch: 1 step: 150, loss is 1.9126663<br>epoch: 1 step: 160, loss is 1.1095876<br>epoch: 1 step: 170, loss is 1.1662093<br>epoch: 1 step: 180, loss is 2.1144183<br>epoch: 1 step: 190, loss is 1.6211499<br>epoch: 1 step: 200, loss is 2.0198507<br>Parameter (name=fc.weight, shape=(1, 2), dtype=Float32, requires_grad=True) [[1.0131103  0.27144054]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [5.3248053]<br></code></pre></td></tr></table></figure>
+<p>训练完成，虽然我们看到最终拟合出来的数据效果不是很好，但是从流程上来说我们已经达成了通过数据库格式的数据来构造MindSpore的训练数据输入的目的。</p>
+<h1>总结概要</h1>
+<p>本文按照数据流的顺序，分别介绍了：使用sqlite3数据库存储数据、从sqlite3数据库中读取数据、使用从sqlite3数据库中的数据构造MindSpore可识别的训练数据集。对于输入的数据量比较大的场景，我们不太可能将全部的数据都加载到内存中，这就要考虑各种可以快速存储和读取的方案，数据库就是一种比较常见的方案。而sqlite3作为一款非常轻量级的数据库，在大部分的Python3中都是内置的，省去了很多编译安装的繁琐。当然性能表现可能不如其他的数据库，但是在我们这边给定的场景下，表现还是非常优秀的！</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ms-sql.html">https://www.cnblogs.com/dechinphy/p/ms-sql.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/42c703a6.html">https://dechin-phy.asia/posts/42c703a6.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-06-01</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-06-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/7e2c5785.html">用华为MindSpore进行分布式训练</a><a class="next" href="/posts/2ac5b69b.html">MindSpore激活函数总结与测试</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

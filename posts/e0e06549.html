@@ -1,0 +1,245 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/e0e06549.html"><meta property="og:type" content="article"><meta property="og:title" content="Latex中也能展示动态图？"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/e0e06549.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-09-21T02:13:36.000Z"><meta property="article:modified_time" content="2022-09-21T03:20:00.000Z"><title>Latex中也能展示动态图？ | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Latex中也能展示动态图？</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Latex中也能展示动态图？</h1><div class="post-meta">2022-09-21<span> | </span><span class="category"><a href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">图片拆分</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">Latex加载动态图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了一个可以在Latex生成的PDF中展示动态图的解决方案，该方案依赖于三个东西：Python+Pillow的环境（或者其他可以将Gif拆分成众多png图片的工具/网站）、Overleaf的账号（或者具备animate的Latex环境）以及Acrobat Reader阅读器（或者其他可以支持pdf中的动态演示功能的阅读器）。虽然一系列的操作下来非常的麻烦，但是最终我们还是可以在Latex生成的PDF中成功的进行了动态展示。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在学术领域，很多文档是用Latex做的，甚至有很多人用Latex Beamer来做PPT演示文稿。虽然在易用性和美观等角度来说，Latex Beamer很大程度上不如PowerPoint，但是Beamer这种浓厚的学术色彩还是受到了很多人的喜好。但是我们知道Latex生成的文档一般是用pdf格式来存储的，如果放一个gif动态图进去，就可能会变成一个静态图，那就没办法展示整个动态的过程了。幸运的是，Latex还有一种比较麻烦的方法，对动态图也做了一定的支持。本文所使用的案例，是一个比较热门的<a target="_blank" rel="noopener" href="https://gitee.com/mindspore/mindscience/raw/master/MindSPONGE/docs/Q8V4Y0.gif">猴痘病毒蛋白的松弛过程</a>。碍于动态图比较大，在博客里面放不下，故只能用这种链接索引+静态图展示的方案。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163621276.png" alt=""></p>
+<h1>图片拆分</h1>
+<p>第一步，我们需要使用工具将一个Gif图片拆解成一系列的png图片。在Windows下有很多拆解工具可以使用，需要的童鞋可以自行搜索。但是对于一个Coder而言，用Python来进行拆解，可能是最方便的操作，也是这里我们比较推荐的方案——pillow。我们可以先用pip安装更新一下本地的pillow：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install pillow --upgrade<br>Requirement already satisfied: pillow <span class="hljs-keyword">in</span> /home/dechin/miniconda3/lib/python3.9/site-packages (8.4.0)<br>Collecting pillow<br>  Downloading Pillow-9.2.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.1 MB)<br>     ━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 2.2 MB/s eta 0:00:00<br>Installing collected packages: pillow<br>  Attempting uninstall: pillow<br>    Found existing installation: Pillow 8.4.0<br>    Uninstalling Pillow-8.4.0:<br>      Successfully uninstalled Pillow-8.4.0<br>Successfully installed pillow-9.2.0<br></code></pre></td></tr></table></figure>
+<p>安装完成后，直接在Ipython或者普通python的终端命令行调用即可，如果确实需要比较复杂操作的话，也可以写成脚本来运行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">from</span> PIL <span class="hljs-keyword">import</span> Image<br><br>In [<span class="hljs-number">2</span>]: <span class="hljs-keyword">import</span> os<br><br>In [<span class="hljs-number">3</span>]: gif_name = <span class="hljs-string">&#x27;Q8V4Y0.gif&#x27;</span><br><br>In [<span class="hljs-number">4</span>]: img = Image.<span class="hljs-built_in">open</span>(gif_name)<br><br>In [<span class="hljs-number">5</span>]: os.mkdir(<span class="hljs-string">&#x27;pngs&#x27;</span>)<br><br>In [<span class="hljs-number">6</span>]: !ls -l<br>total <span class="hljs-number">15836</span><br>-rwxr-xr-x <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">16211906</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">11</span> Q8V4Y0.gif<br>drwxr-xr-x <span class="hljs-number">2</span> dechin dechin     <span class="hljs-number">4096</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">17</span> pngs<br><br>In [<span class="hljs-number">7</span>]: <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>   ...:     current = img.tell()<br>   ...:     img.save(<span class="hljs-string">&#x27;pngs/&#x27;</span>+<span class="hljs-built_in">str</span>(current)+<span class="hljs-string">&#x27;.png&#x27;</span>)<br>   ...:     img.seek(current+<span class="hljs-number">1</span>)<br>   ...:<br>-----------------------------------------------------------<br>EOFError                  Traceback (most recent call last)<br>~/miniconda3/lib/python3<span class="hljs-number">.9</span>/site-packages/PIL/GifImagePlugin.py <span class="hljs-keyword">in</span> seek(<span class="hljs-variable language_">self</span>, frame)<br>    <span class="hljs-number">151</span>             <span class="hljs-keyword">try</span>:<br>--&gt; <span class="hljs-number">152</span>                 <span class="hljs-variable language_">self</span>._seek(f)<br>    <span class="hljs-number">153</span>             <span class="hljs-keyword">except</span> EOFError <span class="hljs-keyword">as</span> e:<br><br>~/miniconda3/lib/python3<span class="hljs-number">.9</span>/site-packages/PIL/GifImagePlugin.py <span class="hljs-keyword">in</span> _seek(<span class="hljs-variable language_">self</span>, frame, update_image)<br>    <span class="hljs-number">185</span>         <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> s <span class="hljs-keyword">or</span> s == <span class="hljs-string">b&quot;;&quot;</span>:<br>--&gt; <span class="hljs-number">186</span>             <span class="hljs-keyword">raise</span> EOFError<br>    <span class="hljs-number">187</span><br><br>EOFError:<br><br>The above exception was the direct cause of the following exception:<br><br>EOFError                  Traceback (most recent call last)<br>&lt;ipython-<span class="hljs-built_in">input</span>-<span class="hljs-number">7</span>-45000e59c5e9&gt; <span class="hljs-keyword">in</span> &lt;module&gt;<br>      <span class="hljs-number">2</span>     current = img.tell()<br>      <span class="hljs-number">3</span>     img.save(<span class="hljs-string">&#x27;pngs/&#x27;</span>+<span class="hljs-built_in">str</span>(current)+<span class="hljs-string">&#x27;.png&#x27;</span>)<br>----&gt; <span class="hljs-number">4</span>     img.seek(current+<span class="hljs-number">1</span>)<br>      <span class="hljs-number">5</span><br><br>~/miniconda3/lib/python3<span class="hljs-number">.9</span>/site-packages/PIL/GifImagePlugin.py <span class="hljs-keyword">in</span> seek(<span class="hljs-variable language_">self</span>, frame)<br>    <span class="hljs-number">153</span>             <span class="hljs-keyword">except</span> EOFError <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-number">154</span>                 <span class="hljs-variable language_">self</span>.seek(last_frame)<br>--&gt; <span class="hljs-number">155</span>                 <span class="hljs-keyword">raise</span> EOFError(<span class="hljs-string">&quot;no more images in GIF file&quot;</span>) <span class="hljs-keyword">from</span> e<br>    <span class="hljs-number">156</span><br>    <span class="hljs-number">157</span>     <span class="hljs-keyword">def</span> <span class="hljs-title function_">_seek</span>(<span class="hljs-params">self, frame, update_image=<span class="hljs-literal">True</span></span>):<br><br>EOFError: no more images <span class="hljs-keyword">in</span> GIF file<br><br>In [<span class="hljs-number">8</span>]: !ls -l pngs/<br>total <span class="hljs-number">37276</span><br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">277605</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">0.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">766892</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">1.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">770417</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">10.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773093</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">11.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773101</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">12.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768060</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">13.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">772558</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">14.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">767242</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">15.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768024</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">16.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">766089</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">17.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771081</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">18.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768937</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">19.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771098</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">2.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768942</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">20.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">774666</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">21.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">769060</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">22.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768860</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">23.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">774749</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">24.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">769303</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">25.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">770692</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">26.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773657</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">27.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">772078</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">28.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">769908</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">29.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771034</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">3.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771412</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">30.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771772</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">31.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771312</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">32.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771232</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">33.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768273</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">34.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">772945</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">35.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">775270</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">36.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">772346</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">37.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">770087</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">38.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768827</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">39.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771078</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">4.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771802</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">40.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773822</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">41.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">770597</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">42.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771889</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">43.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">774457</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">44.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771072</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">45.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773136</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">46.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771072</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">47.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771411</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">48.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">773853</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">49.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771607</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">5.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">771951</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">6.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">774519</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">7.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">768478</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">8.</span>png<br>-rw-r--r-- <span class="hljs-number">1</span> dechin dechin <span class="hljs-number">769771</span> Sep <span class="hljs-number">21</span> <span class="hljs-number">10</span>:<span class="hljs-number">18</span> <span class="hljs-number">9.</span>png<br></code></pre></td></tr></table></figure>
+<p>这个运行的过程中有一处报错，但是可以不用在意，有条件的童鞋可以加一个try-except即可。而这里我们最终是在指定路径下成功生成了一系列的png图片文件，接下来可以考虑放到Latex里面去。</p>
+<h1>Latex加载动态图</h1>
+<p>先看一下加载这个动态图的Latex案例，其实非常简单，就是用<code>animate</code>来加载一系列带数字的png图片，用来动态展示：</p>
+<figure class="highlight latex"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs latex"><span class="hljs-keyword">\documentclass</span>&#123;beamer&#125;<br><span class="hljs-keyword">\usepackage</span>&#123;graphicx&#125; <span class="hljs-comment">% Allows including images</span><br><span class="hljs-keyword">\usepackage</span>&#123;animate&#125;<br><br><span class="hljs-keyword">\begin</span>&#123;document&#125;<br><span class="hljs-keyword">\animategraphics</span>[width=0.5<span class="hljs-keyword">\linewidth</span>, autoplay=True]&#123;24&#125;&#123;imgs/&#125;&#123;0&#125;&#123;49&#125;<br><span class="hljs-keyword">\end</span>&#123;document&#125;<br></code></pre></td></tr></table></figure>
+<p>其中<code>imgs/</code>需要替换为你自己的图片存储路径，<code>{0}{49}</code>是图片后缀编号，我这里Gif拆完之后是有50张，<code>width=0.5\linewidth</code>是用来调整图片大小的，一般调节这几个参数就够了。不过，为了避免Latex使用中可能出现的各种环境依赖问题，推荐测试的时候使用Overleaf自带的环境，这样可以避免很多的麻烦：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163621318.png" alt=""></p>
+<p>这里还有一个问题是，不是所有的pdf阅读器都支持这样的插件，即使是生成了动态图，在一部分的阅读器下可能也无法正常播放，推荐使用Adobe Acrobat Reader DC，具体的安装方法这里就不过多的介绍，大家可以自行搜索。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163621357.png" alt=""></p>
+<p>打开之后是可以正常播放的，这里还是放了一个截图用来展示功能。还有一个比较酷的功能是，Latex的animate还可以附带一些控制组件：</p>
+<figure class="highlight latex"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs latex"><span class="hljs-keyword">\documentclass</span>&#123;beamer&#125;<br><span class="hljs-keyword">\usepackage</span>&#123;graphicx&#125; <span class="hljs-comment">% Allows including images</span><br><span class="hljs-keyword">\usepackage</span>&#123;animate&#125;<br><br><span class="hljs-keyword">\begin</span>&#123;document&#125;<br><span class="hljs-keyword">\animategraphics</span>[width=0.5<span class="hljs-keyword">\linewidth</span>, autoplay=True, loop, controls]&#123;24&#125;&#123;imgs/&#125;&#123;0&#125;&#123;49&#125;<br><span class="hljs-keyword">\end</span>&#123;document&#125;<br></code></pre></td></tr></table></figure>
+<p>加上控制组件之后，不仅可以循环播放，还可以暂停、逐帧控制、加速、慢放、回放等等，依然是先用Overleaf的环境进行编译：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163621411.png" alt=""></p>
+<p>然后下载到本地使用Acrobat Reader打开：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163621466.png" alt=""></p>
+<p>虽然比PowerPoint麻烦了许多，但是Latex也能够实现这样的功能，还是很让人欣慰的。</p>
+<h1>总结概要</h1>
+<p>本文介绍了一个可以在Latex生成的PDF中展示动态图的解决方案，该方案依赖于三个东西：Python+Pillow的环境（或者其他可以将Gif拆分成众多png图片的工具/网站）、Overleaf的账号（或者具备animate的Latex环境）以及Acrobat Reader阅读器（或者其他可以支持pdf中的动态演示功能的阅读器）。虽然一系列的操作下来非常的麻烦，但是最终我们还是可以在Latex生成的PDF中成功的进行了动态展示。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/latex-gif.html">https://www.cnblogs.com/dechinphy/p/latex-gif.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/easyidea/p/10520354.html">https://www.cnblogs.com/easyidea/p/10520354.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://liam.page/2017/08/10/importing-animate-in-LaTeX/">https://liam.page/2017/08/10/importing-animate-in-LaTeX/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/e0e06549.html">https://dechin-phy.asia/posts/e0e06549.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-09-21</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-09-21</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/72e5c182.html">RMarkdown进阶操作</a><a class="next" href="/posts/ecf2ce76.html">四元数Quaternion的基本运算</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

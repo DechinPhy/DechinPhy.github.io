@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/5fc5377d.html"><meta property="og:type" content="article"><meta property="og:title" content="Numpy计算近邻表时间对比"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/5fc5377d.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-01-09T07:47:47.000Z"><meta property="article:modified_time" content="2024-01-09T15:31:00.000Z"><title>Numpy计算近邻表时间对比 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Numpy计算近邻表时间对比</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Numpy计算近邻表时间对比</h1><div class="post-meta">2024-01-09<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">算法解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">Numpy代码实现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">近邻表计算与分子动力学模拟</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了在Python的numpy框架下计算近邻表的两种不同算法的原理以及复杂度，另有分别对应的两种代码实现。在实际使用中，我们更偏向于第二种算法的使用。因为对于第一种算法来说，哪怕是一个10000个原子的小体系，如果要计算两两间距，也会变成10000*10000这么大的一个张量的运算。可想而知，这样计算的效率肯定是比较低下的。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>所谓的近邻表求解，就是给定N个原子的体系，找出满足cutoff要求的每一对原子。在前面的几篇博客中，我们分别介绍过<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cuda-neighbor.html">CUDA近邻表计算</a>与<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/jaxnb1.html">JAX-MD关于格点法求解近邻表的实现</a>。虽然我们从理论上可以知道，用格点法求解近邻表，在复杂度上肯定是要优于传统的算法。本文主要从Python代码的实现上来具体测试一下二者的速度差异，这里使用的硬件还是CPU。</p>
+<h1>算法解析</h1>
+<p>若一对原子A和B满足下述条件，则称A、B为一对近邻原子：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="normal">∣</mi><msub><mtext mathvariant="bold">r</mtext><mi>A</mi></msub><mo>−</mo><msub><mtext mathvariant="bold">r</mtext><mi>B</mi></msub><mi mathvariant="normal">∣</mi><mo>≤</mo><mi>c</mi><mi>u</mi><mi>t</mi><mi>o</mi><mi>f</mi><mi>f</mi></mrow><annotation encoding="application/x-tex">|\textbf{r}_A-\textbf{r}_B|\leq cutoff
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord text"><span class="mord textbf">r</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">A</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord text"><span class="mord textbf">r</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05017em;">B</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal">c</span><span class="mord mathnormal">u</span><span class="mord mathnormal">t</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span></span></span></span></span></p>
+<p>传统的求解方法，就是把所有原子间距都计算一遍，然后对每个原子的近邻原子进行排序，最终按照给定的cutoff截断值确定相关的近邻原子。在Python中的实现，因为有numpy这样的强力工具，我们在计算原子两两间距时，只需要对一组维度为(N,D)的原子坐标进行扩维，分别变成(1,N,D)和(N,1,D)大小的原子坐标。然后将二者相减，计算过程中会自动广播(Broadcast)成(N,N,D)和(N,N,D)的两个数组进行计算。对得到的结果做一个Norm，就可以得到维度为(N,N)的两两间距矩阵。该算法的计算复杂度为<code>O(N^2)</code>。</p>
+<p>相对高效的一种求解方案是将原子坐标所在的空间划分成众多的小区域，通常我们设定这些小区域为边长等于cutoff的小正方体。这种设定有一个好处是，我们可以确定每一个正方体的近邻原子，一定在最靠近其周边的26个小正方体区域内。这样一来，我们就不需要去计算全局的两两间距，只需要计算单个小正方体内(假定有M个原子)的两两间距(M,M)，以及单个正方体与周边正方体内原子的配对间距(M,26M)。之所以这样分开计算，是为了减少原子跟自身间距的这一项重复计算。那么对于整个空间的原子，就需要计算(N,27M)这么多次的原子间距，是一个复杂度为<code>O(NlogN)</code>的算法。</p>
+<h1>Numpy代码实现</h1>
+<p>这里我们基于Python中的numpy框架来实现这两个不同的计算近邻表的算法。其实当我们使用numpy来进行计算的时候，应当尽可能的避免循环体的使用。但是这里仅演示两种算法的差异性，因此在实现格点法的时候偷了点懒，用了两个for循环，感兴趣的童鞋可以自行优化。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> itertools <span class="hljs-keyword">import</span> chain<br><span class="hljs-keyword">from</span> operator <span class="hljs-keyword">import</span> itemgetter<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-comment"># 在格点法中，为了避免重复计算，我们可以仅计算一半的近邻格点中的原子间距</span><br>NEIGHBOUR_GRID = np.array([<br>       [-<span class="hljs-number">1</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">0</span>],<br>       [-<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>,  <span class="hljs-number">1</span>],<br>       [-<span class="hljs-number">1</span>,  <span class="hljs-number">0</span>,  <span class="hljs-number">1</span>],<br>       [-<span class="hljs-number">1</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">0</span>, -<span class="hljs-number">1</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">0</span>,  <span class="hljs-number">0</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">0</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">0</span>],<br>       [ <span class="hljs-number">0</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">1</span>, -<span class="hljs-number">1</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">1</span>,  <span class="hljs-number">0</span>,  <span class="hljs-number">0</span>],<br>       [ <span class="hljs-number">1</span>,  <span class="hljs-number">0</span>,  <span class="hljs-number">1</span>],<br>       [ <span class="hljs-number">1</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">0</span>],<br>       [ <span class="hljs-number">1</span>,  <span class="hljs-number">1</span>,  <span class="hljs-number">1</span>]], np.int32)<br><br><span class="hljs-comment"># 原始的两两间距计算方法，需要排序</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_neighbours_by_dist</span>(<span class="hljs-params">crd, cutoff</span>):<br>    large_dis = np.tril(np.ones((crd.shape[<span class="hljs-number">0</span>], crd.shape[<span class="hljs-number">0</span>])) * <span class="hljs-number">999</span>)<br>    <span class="hljs-comment"># (N, N)</span><br>    dis = np.linalg.norm(crd[<span class="hljs-literal">None</span>] - crd[:, <span class="hljs-literal">None</span>], axis=-<span class="hljs-number">1</span>) + large_dis<br>    <span class="hljs-comment"># (N, M)</span><br>    neigh = np.argsort(dis, axis=-<span class="hljs-number">1</span>)<br>    <span class="hljs-comment"># (N, M)</span><br>    cut = np.take_along_axis(dis, neigh, axis=<span class="hljs-number">1</span>)<br>    <span class="hljs-comment"># (2, P)</span><br>    pairs = np.where(cut &lt;= cutoff)<br>    <span class="hljs-comment"># (P, )</span><br>    pairs_id0 = pairs[<span class="hljs-number">0</span>]<br>    pairs_id1 = neigh[pairs]<br>    <span class="hljs-comment"># (P, 2)</span><br>    sort_args = np.argsort(pairs_id0)<br>    <span class="hljs-keyword">return</span> np.hstack((pairs_id0[..., <span class="hljs-literal">None</span>], pairs_id1[..., <span class="hljs-literal">None</span>]))[sort_args]<br><br><span class="hljs-comment"># 格点法计算近邻表，先分格点，然后分两个模块计算单格点内原子间距，和中心格点-周边格点内的原子间距</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_neighbours_by_grid</span>(<span class="hljs-params">crd, cutoff</span>):<br>    <span class="hljs-comment"># (D, )</span><br>    min_xyz = np.<span class="hljs-built_in">min</span>(crd, axis=<span class="hljs-number">0</span>)<br>    max_xyz = np.<span class="hljs-built_in">max</span>(crd, axis=<span class="hljs-number">0</span>)<br>    space = max_xyz - min_xyz<br>    grids = np.ceil(space / cutoff).astype(np.int32)<br>    num_grids = np.product(grids)<br>    buffer = (grids * cutoff - space) / <span class="hljs-number">2</span><br>    start_crd = min_xyz - buffer<br>    <span class="hljs-comment"># (N, D)</span><br>    grid_id = ((crd - start_crd) // cutoff).astype(np.int32)<br>    grid_coe = np.array([<span class="hljs-number">1</span>, grids[<span class="hljs-number">0</span>], grids[<span class="hljs-number">1</span>]], np.int32)<br>    <span class="hljs-comment"># (N, )</span><br>    grid_id_1d = np.<span class="hljs-built_in">sum</span>(grid_id * grid_coe, axis=-<span class="hljs-number">1</span>).astype(np.int32)<br>    <span class="hljs-comment"># (N, 2)</span><br>    grid_id_dict = np.ndenumerate(grid_id_1d)<br>    <span class="hljs-comment"># (G, *)</span><br>    grid_dict = <span class="hljs-built_in">dict</span>.fromkeys(<span class="hljs-built_in">range</span>(num_grids), ())<br>    <span class="hljs-keyword">for</span> index, value <span class="hljs-keyword">in</span> grid_id_dict:<br>        grid_dict[value] += index<br>    neighbour_grid = (NEIGHBOUR_GRID * grid_coe).<span class="hljs-built_in">sum</span>(axis=-<span class="hljs-number">1</span>).astype(np.int32)<br>    neighbour_pairs = []<br><br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num_grids):<br>        <span class="hljs-keyword">if</span> grid_dict[i]:<br>            keeps = np.where((neighbour_grid + i &lt; num_grids) &amp; (neighbour_grid + i &gt;= <span class="hljs-number">0</span>))[<span class="hljs-number">0</span>]<br>            neighbour_grid_keep = neighbour_grid[keeps] + i<br>            grid_atoms = np.array(<span class="hljs-built_in">list</span>(grid_dict[i]), np.int32)<br>            <span class="hljs-keyword">try</span>:<br>                grid_neighbours = np.array(<span class="hljs-built_in">list</span>(chain(*itemgetter(*neighbour_grid_keep)(grid_dict))), np.int32)<br>            <span class="hljs-keyword">except</span> TypeError:<br>                <span class="hljs-keyword">if</span> neighbour_grid_keep.size == <span class="hljs-number">0</span>:<br>                    grid_neighbours = np.array([], np.int32)<br>                <span class="hljs-keyword">else</span>:<br>                    grid_neighbours = np.array(<span class="hljs-built_in">list</span>(itemgetter(*neighbour_grid_keep)(grid_dict)), np.int32)<br>            grid_crds = crd[grid_atoms]<br>            grid_neighbour_crds = crd[grid_neighbours]<br>            large_dis = np.tril(np.ones((grid_crds.shape[<span class="hljs-number">0</span>], grid_crds.shape[<span class="hljs-number">0</span>])) * <span class="hljs-number">999</span>)<br>            <span class="hljs-comment"># 单格点内部原子间距</span><br>            grid_dis = np.linalg.norm(grid_crds[<span class="hljs-literal">None</span>] - grid_crds[:, <span class="hljs-literal">None</span>], axis=-<span class="hljs-number">1</span>) + large_dis<br>            grid_pairs = np.argsort(grid_dis, axis=-<span class="hljs-number">1</span>)<br>            grid_cut = np.take_along_axis(grid_dis, grid_pairs, axis=-<span class="hljs-number">1</span>)<br>            pairs = np.where(grid_cut &lt;= cutoff)<br>            pairs_id0 = grid_atoms[pairs[<span class="hljs-number">0</span>]]<br>            pairs_id1 = grid_atoms[grid_pairs[pairs]]<br>            neighbour_pairs.extend(<span class="hljs-built_in">list</span>(np.hstack((pairs_id0[..., <span class="hljs-literal">None</span>], pairs_id1[..., <span class="hljs-literal">None</span>]))))<br>            <span class="hljs-comment"># 中心格点-周边格点内原子间距</span><br>            grid_dis = np.linalg.norm(grid_crds[:, <span class="hljs-literal">None</span>] - grid_neighbour_crds[<span class="hljs-literal">None</span>], axis=-<span class="hljs-number">1</span>)<br>            grid_pairs = np.argsort(grid_dis, axis=-<span class="hljs-number">1</span>)<br>            grid_cut = np.take_along_axis(grid_dis, grid_pairs, axis=-<span class="hljs-number">1</span>)<br>            pairs = np.where(grid_cut &lt;= cutoff)<br>            pairs_id0 = grid_atoms[pairs[<span class="hljs-number">0</span>]]<br>            pairs_id1 = grid_neighbours[grid_pairs[pairs]]<br>            neighbour_pairs.extend(<span class="hljs-built_in">list</span>(np.hstack((pairs_id0[..., <span class="hljs-literal">None</span>], pairs_id1[..., <span class="hljs-literal">None</span>]))))<br>    neighbour_pairs = np.sort(np.array(neighbour_pairs), axis=-<span class="hljs-number">1</span>)<br>    sort_args = np.argsort(neighbour_pairs[:, <span class="hljs-number">0</span>])<br>    <span class="hljs-keyword">return</span> neighbour_pairs[sort_args]<br><br><span class="hljs-comment"># 时间测算函数</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">benchmark</span>(<span class="hljs-params">N, cutoff=<span class="hljs-number">0.3</span>, D=<span class="hljs-number">3</span></span>):<br>    crd = np.random.random((N, D)).astype(np.float32) * np.array([<span class="hljs-number">3.</span>, <span class="hljs-number">4.</span>, <span class="hljs-number">5.</span>], np.float32)<br>    <span class="hljs-comment"># Solution 1</span><br>    time0 = time.time()<br>    neighbours_1 = get_neighbours_by_dist(crd, cutoff)<br>    time1 = time.time()<br>    record_1 = time1 - time0<br>    <span class="hljs-comment"># Solution 2</span><br>    time0 = time.time()<br>    neighbours_2 = get_neighbours_by_grid(crd, cutoff)<br>    time1 = time.time()<br>    record_2 = time1 - time0<br>    <span class="hljs-keyword">for</span> pair <span class="hljs-keyword">in</span> neighbours_1:<br>        <span class="hljs-keyword">if</span> (np.isin(neighbours_2, pair).<span class="hljs-built_in">sum</span>(axis=-<span class="hljs-number">1</span>) &lt; <span class="hljs-number">2</span>).<span class="hljs-built_in">all</span>():<br>            <span class="hljs-built_in">print</span> (pair)<br>    <span class="hljs-keyword">assert</span> neighbours_1.shape == neighbours_2.shape<br>    <span class="hljs-keyword">return</span> record_1, record_2<br><br><span class="hljs-comment"># 绘图主函数</span><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>    sizes = <span class="hljs-built_in">range</span>(<span class="hljs-number">1000</span>, <span class="hljs-number">10000</span>, <span class="hljs-number">1000</span>)<br>    time_dis = []<br>    time_grid = []<br>    <span class="hljs-keyword">for</span> size <span class="hljs-keyword">in</span> sizes:<br>        <span class="hljs-built_in">print</span> (size)<br>        times = benchmark(size)<br>        time_dis.append(times[<span class="hljs-number">0</span>])<br>        time_grid.append(times[<span class="hljs-number">1</span>])<br><br>    plt.figure()<br>    plt.title(<span class="hljs-string">&#x27;Neighbour List Calculation Time&#x27;</span>)<br>    plt.plot(sizes, time_dis, color=<span class="hljs-string">&#x27;black&#x27;</span>, label=<span class="hljs-string">&#x27;Full Connect&#x27;</span>)<br>    plt.plot(sizes, time_grid, color=<span class="hljs-string">&#x27;blue&#x27;</span>, label=<span class="hljs-string">&#x27;Cell List&#x27;</span>)<br>    plt.xlabel(<span class="hljs-string">&#x27;Size&#x27;</span>)<br>    plt.ylabel(<span class="hljs-string">&#x27;Time/s&#x27;</span>)<br>    plt.legend()<br>    plt.grid()<br>    plt.show()<br></code></pre></td></tr></table></figure>
+<p>上述代码的运行结果如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164157034.png" alt=""></p>
+<p>其实因为格点法中使用了for循环的问题，函数效率并不高。因此在体系非常小的场景下(比如只有几十个原子的体系)，本文用到的格点法代码效率并不如计算所有的原子两两间距。但是毕竟格点法的复杂度较低，因此在运行过程中随着体系的增长，格点法的优势也越来越大。</p>
+<h1>近邻表计算与分子动力学模拟</h1>
+<p>在分子动力学模拟中计算长程相互作用时，会经常使用到近邻表。如果要在GPU上实现格点近邻算法，有可能会遇到这样的一些问题：</p>
+<ol>
+<li>GPU更加擅长处理静态Shape的张量，因此往往会使用一个<code>最大近邻数</code>，对每一个原子的近邻原子标号进行限制，<strong>一般不允许满足cutoff的近邻原子数超过最大近邻数</strong>，否则这个cutoff就失去意义了。而如果单个原子的近邻原子数量低于最大近邻数，这时候就会用一个没有意义的数对剩下分配好的张量空间进行填充(Padding)，这样一来会带来很多不必要的计算。</li>
+<li>在运行分子动力学模拟的过程中，体系原子的坐标在不断的变化，近邻表也会随之变化，而此时的最大近邻数有可能无法存储完整的cutoff内的原子。</li>
+</ol>
+<h1>总结概要</h1>
+<p>本文介绍了在Python的numpy框架下计算近邻表的两种不同算法的原理以及复杂度，另有分别对应的两种代码实现。在实际使用中，我们更偏向于第二种算法的使用。因为对于第一种算法来说，哪怕是一个10000个原子的小体系，如果要计算两两间距，也会变成10000*10000这么大的一个张量的运算。可想而知，这样计算的效率肯定是比较低下的。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cell-list.html">https://www.cnblogs.com/dechinphy/p/cell-list.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/5fc5377d.html">https://dechin-phy.asia/posts/5fc5377d.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-01-09</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-01-09</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/6c41b697.html">Julia编程基础</a><a class="next" href="/posts/c52612d4.html">Python设置进程名称</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/fdd828cb.html"><meta property="og:type" content="article"><meta property="og:title" content="使用python的虚拟环境virtualenv"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/fdd828cb.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-04-01T13:15:19.000Z"><meta property="article:modified_time" content="2021-04-01T13:51:00.000Z"><title>使用python的虚拟环境virtualenv | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用python的虚拟环境virtualenv</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用python的虚拟环境virtualenv</h1><div class="post-meta">2021-04-01<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 8</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">安装virtualenv</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">virtualenv的使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83"><span class="toc-number">3.1.</span> <span class="toc-text">创建一个虚拟环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%BF%80%E6%B4%BB%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83"><span class="toc-number">3.2.</span> <span class="toc-text">激活虚拟环境</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AEpython%E5%BA%93"><span class="toc-number">3.3.</span> <span class="toc-text">安装与配置python库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%80%E5%87%BA%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83"><span class="toc-number">3.4.</span> <span class="toc-text">退出虚拟环境</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>在前面几篇博客中我们介绍过docker等容器的编程环境解决方案，但是容器作为一个系统级的隔离方案，其实更加强调的是用户间的隔离，这一点也得益其对NameSpace技术的推广和使用。但是在一部分的场景下，比如快速构造一个纯净的python环境、轻量级的操作实现不同python包的共存，容器技术虽然也可以完成，但是功能显得过于冗余，这就需要使用到本文所介绍的virtualenv这样的一个python依赖管理解决方案。文中我们介绍了virtualenv的安装与基本的使用方法，做了一遍比较完整的演示。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面几篇博客中我们介绍了容器的使用（<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pdflatex.html">博客1</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindspore.html">博客2</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cplex.html">博客3</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ortools.html">博客4</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/singularity-install.html">博客5</a>），容器是一种系统级的隔离方案，更多的强调资源上的隔离。而这里我们要介绍的python的虚拟环境，更加强调的是依赖的管理。假如一个python项目需要依赖于<code>numpy==1.20.1</code>的版本，另一个python项目必须依赖于<code>numpy==1.20.2</code>的版本。虽然我们也可以直接使用docker或者其他的容器方案来隔离编程环境，但是这会消耗比较大的资源，因为我们并不需要重新构造一整个系统。因此python也提供了一种更加优雅的解决方案：使用<code>virtualenv</code>来构造一个虚拟的python库的环境，这里面我们可以定制化自己所需的python依赖的版本。比较详细的virtualenv使用方法可以参考<a target="_blank" rel="noopener" href="https://virtualenv.pypa.io/en/latest/installation.html#via-pip">官方文档</a>，这里我们仅做一些简单的使用方法的介绍和演示。</p>
+<h1>安装virtualenv</h1>
+<p>virtualenv可以直接通过pip来安装和管理，这也大大简化了我们的操作：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ python3 -m pip install virtualenv<br>Collecting virtualenv<br>  Downloading virtualenv-20.4.3-py2.py3-none-any.whl (7.2 MB)<br>     |████████████████████████████████| 7.2 MB 7.5 MB/s <br>Requirement already satisfied: appdirs&lt;2,&gt;=1.4.3 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from virtualenv) (1.4.4)<br>Collecting distlib&lt;1,&gt;=0.3.1<br>  Downloading distlib-0.3.1-py2.py3-none-any.whl (335 kB)<br>     |████████████████████████████████| 335 kB 8.5 MB/s <br>Requirement already satisfied: filelock&lt;4,&gt;=3.0.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from virtualenv) (3.0.12)<br>Requirement already satisfied: six&lt;2,&gt;=1.9.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from virtualenv) (1.15.0)<br>Installing collected packages: distlib, virtualenv<br>Successfully installed distlib-0.3.1 virtualenv-20.4.3<br></code></pre></td></tr></table></figure>
+<p>需要注意的是，这里虽然我们可以通过virtualenv来构造一个纯净的python编程环境，但是python的版本是直接依赖于系统里面所包含的python版本的，我们不能通过virtualenv去构造一个不同的python版本。</p>
+<h1>virtualenv的使用</h1>
+<p>virtualenv的使用步骤基本上可以简单划分为：创建环境-激活环境-配置和使用环境-关闭环境，以下分别进行演示。</p>
+<h2 id="创建一个虚拟环境">创建一个虚拟环境</h2>
+<p>首先我们进入到一个空的目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ ll<br>总用量 0<br></code></pre></td></tr></table></figure>
+<p>然后直接执行<code>virtualenv envname</code>的命令来构建一个虚拟环境，这里因为我们系统中只有一个python版本，多个python版本的环境需要使用<code>-p</code>选项来进行配置。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ virtualenv test_env<br>created virtual environment CPython3.8.5.final.0-64 <span class="hljs-keyword">in</span> 295ms<br>  creator CPython3Posix(dest=/home/dechin/projects/2021-python/virtualenv/test_env, clear=False, no_vcs_ignore=False, global=False)<br>  seeder FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/home/dechin/.local/share/virtualenv)<br>    added seed packages: pip==21.0.1, setuptools==54.1.2, wheel==0.36.2<br>  activators BashActivator,CShellActivator,FishActivator,PowerShellActivator,PythonActivator,XonshActivator<br></code></pre></td></tr></table></figure>
+<p>执行完成上述指令之后，我们发现在刚才的目录下生成了一个与虚拟环境名称一致的目录名：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ ll<br>总用量 4<br>drwxr-xr-x 4 dechin dechin 4096  4月  1 21:06 test_env<br></code></pre></td></tr></table></figure>
+<p>这就代表虚拟环境已经创建成功了。</p>
+<h2 id="激活虚拟环境">激活虚拟环境</h2>
+<p>在使用一个指定的虚拟环境时，我们需要先激活这个虚拟环境，在虚拟环境目录下的bin目录中，有一个名为activate的可执行文件，就是用来激活虚拟环境的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ <span class="hljs-built_in">source</span> test_env/bin/activate<br>(test_env)[dechin@dechin-20n2s01200 virtualenv]$ python3 -m pip list<br>Package    Version<br>---------- -------<br>pip        21.0.1<br>setuptools 54.1.2<br>wheel      0.36.2<br></code></pre></td></tr></table></figure>
+<p>我们可以发现一个特点，在激活虚拟环境后，在Linux的命令行之前都会带有一个虚拟环境的名称，用于区分当前所在的虚拟环境。而这里虚拟环境中的python第三方库是几乎没有的，是一个非常纯净的环境，需要我们自己去手动安装与配置环境。</p>
+<h2 id="安装与配置python库">安装与配置python库</h2>
+<p>在虚拟环境中的操作跟在实际环境中的安装操作是一致的，我们一样也可以使用pip来进行安装包的管理，只是这时候安装所执行的变更只会保存到当前的虚拟环境下，不影响实际环境和其他的虚拟环境。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash">(test_env)[dechin@dechin-manjaro virtualenv]$ python3 -m pip install numpy<br>Collecting numpy<br>  Downloading numpy-1.20.2-cp38-cp38-manylinux2010_x86_64.whl (15.4 MB)<br>     |████████████████████████████████| 15.4 MB 295 kB/s <br>Installing collected packages: numpy<br>Successfully installed numpy-1.20.2<br>(test_env)[dechin@dechin-manjaro virtualenv]$ python3 -m pip list<br>Package    Version<br>---------- -------<br>numpy      1.20.2<br>pip        21.0.1<br>setuptools 54.1.2<br>wheel      0.36.2<br></code></pre></td></tr></table></figure>
+<p>安装完成后，我们看到当前安装的numpy版本号是1.20.2。让我们再打开一个新的终端窗口看下实际环境中的numpy的版本号：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro virtualenv]$ python3 -m pip show numpy<br>Name: numpy<br>Version: 1.20.1<br>Summary: NumPy is the fundamental package <span class="hljs-keyword">for</span> array computing with Python.<br>Home-page: https://www.numpy.org<br>Author: Travis E. Oliphant et al.<br>Author-email: None<br>License: BSD<br>Location: /home/dechin/anaconda3/lib/python3.8/site-packages<br>Requires: <br>Required-by: xarray, vaex-core, tifffile, tables, statsmodels, seaborn, scipy, scikit-learn, scikit-image, PyWavelets, pytools, pythreejs, pyscf, pyarrow, projectq, plotdigitizer, patsy, pandas, opencv-python, numexpr, numba, mkl-random, mkl-fft, matplotlib, ipyvolume, ipydatawidgets, imageio, hiq-projectq, h5py, cupy, bqplot, Bottleneck, bokeh, bkcharts, astropy, ts, hiqfermion<br></code></pre></td></tr></table></figure>
+<p>这里可以区分的是，实际环境中命令行的前面不带有虚拟环境的名称。我们可以看到实际环境下的numpy版本是1.20.1，这样一来我们就用这么一个开销并不是很高的方式，实现了两个不同的numpy版本的共存。</p>
+<h2 id="退出虚拟环境">退出虚拟环境</h2>
+<p>在当前的虚拟环境下，可以直接执行<code>deactivate</code>退出。我们可以测试这样的一个场景：先退出虚拟环境，然后再次进入，以确认刚才的操作被自动的保存到了虚拟环境中：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">(test_env)[dechin@dechin-manjaro virtualenv]$ deactivate<br>[dechin@dechin-manjaro virtualenv]$ <span class="hljs-built_in">source</span> test_env/bin/activate<br>(test_env)[dechin@dechin-manjaro virtualenv]$ python3 -m pip list<br>Package    Version<br>---------- -------<br>numpy      1.20.2<br>pip        21.0.1<br>setuptools 54.1.2<br>wheel      0.36.2<br>(test_env)[dechin@dechin-manjaro virtualenv]$ deactivate<br></code></pre></td></tr></table></figure>
+<p>在上述的执行结果中可以看到，对python环境的变更是永久保存下来了的。这一点上来说操作也比docker容器更加容易，在docker中如果需要持久化的保存一个操作，需要在对容器镜像操作之后，执行额外的commit指令才能保存。因此我们认为virtualenv是一个更加优雅、更加轻量级的，python环境差异化管理的解决方案。</p>
+<h1>总结概要</h1>
+<p>在前面几篇博客中我们介绍过docker等容器的编程环境解决方案，但是容器作为一个系统级的隔离方案，其实更加强调的是用户间的隔离，这一点也得益其对NameSpace技术的推广和使用。但是在一部分的场景下，比如快速构造一个纯净的python环境、轻量级的操作实现不同python包的共存，容器技术虽然也可以完成，但是功能显得过于冗余，这就需要使用到本文所介绍的virtualenv这样的一个python依赖管理解决方案。文中我们介绍了virtualenv的安装与基本的使用方法，做了一遍比较完整的演示。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/virtualenv.html">https://www.cnblogs.com/dechinphy/p/virtualenv.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/fdd828cb.html">https://dechin-phy.asia/posts/fdd828cb.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-04-01</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-04-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/8107f7d8.html">python3使用cv2对图像进行基本操作</a><a class="next" href="/posts/51e2319d.html">为科学计算而生的Julia——基于Manjaro Linux的安装与入门</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

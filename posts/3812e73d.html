@@ -1,0 +1,322 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/3812e73d.html"><meta property="og:type" content="article"><meta property="og:title" content="KTransformers实战DeepSeek-R1-1.58bit量化模型"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/3812e73d.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2025-03-11T02:49:58.000Z"><meta property="article:modified_time" content="2025-03-12T09:40:00.000Z"><title>KTransformers实战DeepSeek-R1-1.58bit量化模型 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">KTransformers实战DeepSeek-R1-1.58bit量化模型</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">KTransformers实战DeepSeek-R1-1.58bit量化模型</h1><div class="post-meta">2025-03-11<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 14</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">软硬件设施</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">启动指令</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Docker%E5%AE%B9%E5%99%A8%E5%88%9B%E5%BB%BA%E6%8C%87%E4%BB%A4"><span class="toc-number">3.1.</span> <span class="toc-text">Docker容器创建指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Docker%E5%AE%B9%E5%99%A8%E8%BF%90%E8%A1%8C%E6%8C%87%E4%BB%A4"><span class="toc-number">3.2.</span> <span class="toc-text">Docker容器运行指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#KTransformers%E5%90%AF%E5%8A%A8%E6%8C%87%E4%BB%A4"><span class="toc-number">3.3.</span> <span class="toc-text">KTransformers启动指令</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Local Chat测试结果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">KTransformers服务</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%97%A5%E5%BF%97%E8%BE%93%E5%87%BA"><span class="toc-number">5.1.</span> <span class="toc-text">日志输出</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">Web服务</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Open-WebUI"><span class="toc-number">6.1.</span> <span class="toc-text">Open WebUI</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">空间占用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">SlackBot配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">兼容Page-Assist</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">10.</span> <span class="toc-text">重要提示</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">11.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">12.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">13.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了国产的大模型推理工具KTransformers在本地成功运行的一个案例，在容器化部署的基础上，结合Open WebUI做了一个用户友好的大模型服务。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18719866/ktransformer#docker%E5%AE%89%E8%A3%85">上一篇文章</a>中，我们介绍过KTransformers大模型高性能加载工具的安装和使用方法。但是当时因为是在一个比较老旧的硬件上面进行测试，其实并没有真正的运行起来。现在补一个在KTransformers下运行DeepSeek-R1的1.58bit量化模型的实战测试。</p>
+<h1>软硬件设施</h1>
+<ol>
+<li>显卡：NVIDIA GeForce RTX 4080（只需1张）</li>
+<li>CPU：Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz（不支持AVX512）</li>
+<li>内存：640GB（未完全占满）</li>
+<li>运行环境：Ubuntu + Docker</li>
+</ol>
+<h1>启动指令</h1>
+<p>具体的部署方法，主要还是参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18719866/ktransformer">这篇文章</a>，这里不做过多讲解。以Docker安装的方式直接进入实战。</p>
+<h2 id="Docker容器创建指令">Docker容器创建指令</h2>
+<p>在还没有配置好的情况下，先启动这个旧版本的镜像：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker run -it --gpus <span class="hljs-string">&#x27;&quot;device=2,3&quot;&#x27;</span> -v /home/dechin/:/models --name ktransformers -itd docker.1ms.run/approachingai/ktransformers:0.2.1 nvidia-smi<br></code></pre></td></tr></table></figure>
+<p>这里加载了2张显卡到容器环境中，注意一定要把模型路径映射到容器的相应目录下。还有一点需要注意的是，这里下载下来的容器镜像是0.2.1的版本，如果直接运行，有可能出现<code>CUDA OOM</code>和<code>Illegal instruction (core dumped)</code>报错。所以最好是从github的主分支下载下来最新的代码，配置环境<code>export USE_NUMA=1</code>之后运行<code>bash install.sh</code>重新编译一遍。在最新的代码中，不会发生<code>CUDA OOM</code>报错。</p>
+<h2 id="Docker容器运行指令">Docker容器运行指令</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker start ktransformers<br>$ docker <span class="hljs-built_in">exec</span> -it ktransformers /bin/bash<br></code></pre></td></tr></table></figure>
+<p>这样就可以进入到Docker容器的命令行界面。</p>
+<h2 id="KTransformers启动指令">KTransformers启动指令</h2>
+<p>在容器中我们进入到ktransformers路径下，就可以执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 -m ktransformers.local_chat --gguf_path /models/llm/models/DeepSeek-R1-IQ1_S --model_path /models/llm/models/DeepSeek-R1 --cpu_infer 36 -f <span class="hljs-literal">true</span> --port 11434 --max_new_tokens 1000<br></code></pre></td></tr></table></figure>
+<p>如果软件版本没问题的话，上述命令会运行成功并进入到一个本地Chat的模式。但是经过实际测试，默认的0.2.1的版本还是有问题。我建议直接clone最新分支代码，直接运行<code>bash install.sh</code>进行安装。</p>
+<h1>Local Chat测试结果</h1>
+<p>简单提问：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534573.png" alt=""></p>
+<p>测试经典AI问题（更多类似问题可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18741066/ds-test">这篇文章</a>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534605.png" alt=""></p>
+<p>平均tokens速度大概就是在<code>6T/s</code>了，从实际体验来说的话，勉强能接受。更多的示例就不放了，需要记住的是，如果tokens配置的不够多，输出有可能会受限：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534639.png" alt=""></p>
+<h1>KTransformers服务</h1>
+<p>上面介绍的是使用<code>local_chat</code>的模式，但是如果要有更好的使用体验的话，还是需要用服务模式：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">ktransformers --gguf_path /models/llm/models/DeepSeek-R1-IQ1_S --model_path /models/llm/models/DeepSeek-R1 --cpu_infer 36 --force_think --host 0.0.0.0 --port 8080 --max_new_tokens 4096 --model_name DeepSeek-R1 --fast_safetensors <span class="hljs-literal">true</span> --dynamic_temperature <span class="hljs-literal">true</span> --use_cuda_graph<br></code></pre></td></tr></table></figure>
+<p>容器内启动成功以后，可以在宿主机测试一个OpenAI格式的请求（如果是Ollama格式的请求，需要额外装一些软件，默认不带Ollama格式请求的支持）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">curl -X <span class="hljs-string">&#x27;POST&#x27;</span> \<br>  <span class="hljs-string">&#x27;http://localhost:11434/v1/chat/completions&#x27;</span> \<br>  -H <span class="hljs-string">&#x27;accept: application/json&#x27;</span> \<br>  -H <span class="hljs-string">&#x27;Content-Type: application/json&#x27;</span> \<br>  -d <span class="hljs-string">&#x27;&#123;</span><br><span class="hljs-string">  &quot;messages&quot;: [</span><br><span class="hljs-string">    &#123;</span><br><span class="hljs-string">      &quot;content&quot;: &quot;Who are you?&quot;,</span><br><span class="hljs-string">      &quot;role&quot;: &quot;user&quot;</span><br><span class="hljs-string">    &#125;</span><br><span class="hljs-string">  ],</span><br><span class="hljs-string">  &quot;model&quot;: &quot;DeepSeek-R1&quot;,</span><br><span class="hljs-string">  &quot;stream&quot;: false</span><br><span class="hljs-string">&#125;&#x27;</span><br></code></pre></td></tr></table></figure>
+<p>如果得到一个这样的输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">&#123;<span class="hljs-string">&quot;id&quot;</span>:<span class="hljs-string">&quot;xxx&quot;</span>,<span class="hljs-string">&quot;choices&quot;</span>:[&#123;<span class="hljs-string">&quot;finish_reason&quot;</span>:<span class="hljs-string">&quot;stop&quot;</span>,<span class="hljs-string">&quot;index&quot;</span>:0,<span class="hljs-string">&quot;logprobs&quot;</span>:null,<span class="hljs-string">&quot;message&quot;</span>:&#123;<span class="hljs-string">&quot;content&quot;</span>:<span class="hljs-string">&quot;&lt;think&gt;\nI&#x27;m DeepSeek-R1, an artificial intelligence created by DeepSeek. I&#x27;m at your service. I&#x27;m an open AI, so feel free to ask me anything. I&#x27;ll do my best to provide valuable answers. If you have any questions, go ahead. I&#x27;m here to help!\n&lt;/think&gt;\n\nI&#x27;m DeepSeek-R1, an artificial intelligence created by DeepSeek. I&#x27;m at your service. I&#x27;m an open AI, so feel free to ask me anything. I&#x27;ll do my best to provide valuable answers. If you have any questions, go ahead. I&#x27;m here to help!&quot;</span>,<span class="hljs-string">&quot;refusal&quot;</span>:null,<span class="hljs-string">&quot;role&quot;</span>:<span class="hljs-string">&quot;assistant&quot;</span>,<span class="hljs-string">&quot;audio&quot;</span>:null,<span class="hljs-string">&quot;function_call&quot;</span>:null,<span class="hljs-string">&quot;tool_calls&quot;</span>:null&#125;&#125;],<span class="hljs-string">&quot;created&quot;</span>:1741763162,<span class="hljs-string">&quot;model&quot;</span>:<span class="hljs-string">&quot;DeepSeek-R1&quot;</span>,<span class="hljs-string">&quot;object&quot;</span>:<span class="hljs-string">&quot;chat.completion&quot;</span>,<span class="hljs-string">&quot;service_tier&quot;</span>:null,<span class="hljs-string">&quot;system_fingerprint&quot;</span>:null,<span class="hljs-string">&quot;usage&quot;</span>:&#123;<span class="hljs-string">&quot;completion_tokens&quot;</span>:126,<span class="hljs-string">&quot;prompt_tokens&quot;</span>:7,<span class="hljs-string">&quot;total_tokens&quot;</span>:133,<span class="hljs-string">&quot;completion_tokens_details&quot;</span>:null,<span class="hljs-string">&quot;prompt_tokens_details&quot;</span>:null&#125;&#125;<br></code></pre></td></tr></table></figure>
+<p>那就表示服务启动成功了，其中<code>content</code>部分就是模型生成的答复。服务部署成功以后，就可以继续考虑使用一些WebUI的服务，让KTransformers模型的使用更加友好。</p>
+<h2 id="日志输出">日志输出</h2>
+<p>如果你也是直接使用官方的Docker镜像部署的KTransformer，那么默认的日志路径在<code>/opt/conda/lib/python3.10/site-packages/ktransformers/logs/lexllama.log</code>，可以直接<code>tail -f</code>查看。不知道为何，在启动服务时配置的<code>log_dir</code>和<code>log_file</code>都没有生效。</p>
+<h1>Web服务</h1>
+<p>如果我们想要一个像DeepSeek官网那种可以Chat的网站，或者是类似于之前的文章中介绍过的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18715481/ds-pa">PageAssist</a>这样的插件，就需要部署一个WebUI的服务。但是如果参考KTransformers官网的做法：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534676.png" alt=""></p>
+<p>我在运行的过程中，最后一步会出现大量的<code>ninja</code>进程：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ps -ef | grep <span class="hljs-string">&quot;[n]inja&quot;</span> | grep -v <span class="hljs-string">&quot;grep&quot;</span> | <span class="hljs-built_in">wc</span> -l<br>25349<br></code></pre></td></tr></table></figure>
+<p>而且数量会不断增长，因此我个人的建议是暂时先不要使用KTransformers自带的这个Web服务，可以试一试另一个开源Web服务：<code>Open WebUI</code>。</p>
+<h2 id="Open-WebUI">Open WebUI</h2>
+<p>Open WebUI有两种安装方法，一种比较简单的直接在本机使用python进行安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">conda create -n open-webui python=3.11 -y<br>conda activate open-webui<br>pip install open-webui<br>open-webui serve<br></code></pre></td></tr></table></figure>
+<p>需要注意的是，open-webui对于python的版本有要求，所以使用虚拟环境创建一个新的python环境是最好的。成功启动服务之后，可以在浏览器打开：<code>http://localhost:8080</code>进入到Open WebUI的主界面。</p>
+<p>考虑到安装的逻辑，这里先介绍第二种安装<code>open-webui</code>的方法，再进入到演示成果。第二种方法就是使用docker来安装，也是我个人比较推荐的一个方案：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker pull ghcr.io/open-webui/open-webui:main<br>docker run -d -p 3000:8080 -v open-webui:/app/backend/data --name open-webui ghcr.io/open-webui/open-webui:main<br></code></pre></td></tr></table></figure>
+<p>可以查看容器日志，以确认服务部署的进度：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker logs -f open-webui<br></code></pre></td></tr></table></figure>
+<p>因为这里使用了端口映射，所以在本地启动web服务时使用的路径应该为<code>http://localhost:3000</code>。然后这两种方案的部署，都可以进入到主页：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534715.png" alt=""></p>
+<p>点击<code>开始使用</code>：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534751.png" alt=""></p>
+<p>这里有一个账号分配的界面，对于多用户的使用非常友好，可以直接在服务器上面部署一个Open WebUI服务（注意安全性配置问题），然后本地多用户直接在同一个IP下创建自己的使用账号即可。</p>
+<p>进入以后，在设置界面，配置KTransformers为外部连接：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534794.png" alt=""></p>
+<p>然后就可以像PageAssist和DeepSeek的官网那样，去使用本地使用KTransformers进行推理的DeepSeek-R1模型了：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534834.png" alt=""></p>
+<p>还有其他更多的一些测试：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534879.png" alt=""></p>
+<p>虽然咱用的是一个1.58bit的迷你量化版，但毕竟也是全量参数的DeepSeek，效果上确实明显比70B的蒸馏版要好一些。</p>
+<h1>空间占用</h1>
+<p>因为KTransformers主打的是使用CPU指令集加速的推理方法，所以对于GPU的需求没有很高（<code>nvidia-smi</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534923.png" alt=""></p>
+<p>内存方面，不知道为什么占了很多的磁盘I/O（<code>docker stats</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163534963.png" alt=""></p>
+<p>我只能手动配置一下尽量不适用磁盘I/O：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">sysctl vm.swappiness=0<br></code></pre></td></tr></table></figure>
+<p>这样大部分的内存消耗都被放到cache里面（<code>free -h</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535016.png" alt=""></p>
+<h1>SlackBot配置</h1>
+<p>在<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18750795/slackbot">前面一篇文章</a>中，我们提到可以将Ollama对接SlackBot，做一个Slack大模型聊天机器人。这里对照OpenAI的请求格式，我们做一个对应的调整，使得SlackBot可以对接上KTransformer搭建的推理模型：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> re<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime<br><span class="hljs-keyword">import</span> requests<br><span class="hljs-keyword">from</span> slack_bolt <span class="hljs-keyword">import</span> App<br><span class="hljs-keyword">from</span> slack_bolt.adapter.socket_mode <span class="hljs-keyword">import</span> SocketModeHandler<br><span class="hljs-keyword">from</span> dotenv <span class="hljs-keyword">import</span> load_dotenv<br><br><span class="hljs-comment"># 加载环境变量</span><br>load_dotenv()<br><br><span class="hljs-comment"># 初始化 Slack 应用</span><br>app = App(<br>    token=os.environ[<span class="hljs-string">&quot;SLACK_BOT_TOKEN&quot;</span>],<br>    signing_secret=os.environ[<span class="hljs-string">&quot;SLACK_SIGNING_SECRET&quot;</span>]<br>)<br><br><span class="hljs-comment"># OpenAI 配置</span><br><span class="hljs-comment"># OPENAI_API_KEY = os.getenv(&quot;OPENAI_API_KEY&quot;)</span><br>OPENAI_ENDPOINT = <span class="hljs-string">&quot;http://xxx.xxx.xxx.xxx:11434/v1/chat/completions&quot;</span><br>OPENAI_MODEL = os.getenv(<span class="hljs-string">&quot;OPENAI_MODEL&quot;</span>, <span class="hljs-string">&quot;DeepSeek-R1&quot;</span>)<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">PerformanceMetrics</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-variable language_">self</span>.start_time = <span class="hljs-literal">None</span><br>        <span class="hljs-variable language_">self</span>.total_tokens = <span class="hljs-number">0</span><br>        <span class="hljs-variable language_">self</span>.total_duration = <span class="hljs-number">0.0</span><br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">start_timing</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-variable language_">self</span>.start_time = time.time()<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">add_response</span>(<span class="hljs-params">self, openai_response: <span class="hljs-built_in">dict</span></span>):<br>        <span class="hljs-string">&quot;&quot;&quot;更新性能统计&quot;&quot;&quot;</span><br>        <span class="hljs-variable language_">self</span>.total_duration = time.time() - <span class="hljs-variable language_">self</span>.start_time<br>        <span class="hljs-variable language_">self</span>.total_tokens = openai_response.get(<span class="hljs-string">&#x27;usage&#x27;</span>, &#123;&#125;).get(<span class="hljs-string">&#x27;total_tokens&#x27;</span>, <span class="hljs-number">0</span>)<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_metrics</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-built_in">str</span>:<br>        <span class="hljs-keyword">if</span> <span class="hljs-variable language_">self</span>.total_duration &gt; <span class="hljs-number">0</span>:<br>            speed = <span class="hljs-variable language_">self</span>.total_tokens / <span class="hljs-variable language_">self</span>.total_duration<br>        <span class="hljs-keyword">else</span>:<br>            speed = <span class="hljs-number">0</span><br>        <br>        <span class="hljs-keyword">return</span> (<br>            <span class="hljs-string">f&quot;\n\n_性能统计：生成 <span class="hljs-subst">&#123;self.total_tokens&#125;</span> tokens | &quot;</span><br>            <span class="hljs-string">f&quot;速度 <span class="hljs-subst">&#123;speed:<span class="hljs-number">.1</span>f&#125;</span> tokens/s | &quot;</span><br>            <span class="hljs-string">f&quot;总耗时 <span class="hljs-subst">&#123;self.total_duration:<span class="hljs-number">.1</span>f&#125;</span>s_&quot;</span><br>        )<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">query_openai</span>(<span class="hljs-params">prompt: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">dict</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;向 OpenAI 发送请求并获取响应&quot;&quot;&quot;</span><br>    headers = &#123;<br>        <span class="hljs-string">&quot;accept&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>,<br>        <span class="hljs-string">&quot;Content-Type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span><br>    &#125;<br>    <br>    payload = &#123;<br>        <span class="hljs-string">&quot;model&quot;</span>: OPENAI_MODEL,<br>        <span class="hljs-string">&quot;messages&quot;</span>: [&#123;<br>            <span class="hljs-string">&quot;role&quot;</span>: <span class="hljs-string">&quot;user&quot;</span>,<br>            <span class="hljs-string">&quot;content&quot;</span>: <span class="hljs-string">f&quot;请先输出思考过程（用THINKING:开头），再输出最终答案（用ANSWER:开头），输出结果中的`请用引号&#x27;替代：\n\n<span class="hljs-subst">&#123;prompt&#125;</span>&quot;</span><br>        &#125;],<br>        <span class="hljs-string">&quot;stream&quot;</span>: <span class="hljs-string">&quot;false&quot;</span>,<br>    &#125;<br><br>    <span class="hljs-keyword">try</span>:<br>        metrics = PerformanceMetrics()<br>        metrics.start_timing()<br>        <br>        response = requests.post(OPENAI_ENDPOINT, headers=headers, json=payload, timeout=<span class="hljs-number">60</span>*<span class="hljs-number">60</span>*<span class="hljs-number">6</span>)<br>        response.raise_for_status()<br>        <br>        json_response = response.json()<br>        metrics.add_response(json_response)<br>        json_response[<span class="hljs-string">&quot;metrics&quot;</span>] = metrics<br>        <br>        <span class="hljs-keyword">return</span> json_response<br>    <span class="hljs-keyword">except</span> requests.exceptions.RequestException <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&quot;error&quot;</span>: <span class="hljs-string">f&quot;OpenAI 请求失败: <span class="hljs-subst">&#123;<span class="hljs-built_in">str</span>(e)&#125;</span>&quot;</span>&#125;<br>    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&quot;error&quot;</span>: <span class="hljs-string">f&quot;处理响应时发生错误: <span class="hljs-subst">&#123;<span class="hljs-built_in">str</span>(e)&#125;</span>&quot;</span>&#125;<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">format_slack_response</span>(<span class="hljs-params">raw_response: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;将原始响应分割为思考过程和最终答案&quot;&quot;&quot;</span><br>    <span class="hljs-comment"># 统一处理可能的错误信息</span><br>    <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;error&#x27;</span> <span class="hljs-keyword">in</span> raw_response:<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;⚠️ 错误：<span class="hljs-subst">&#123;raw_response[<span class="hljs-string">&#x27;error&#x27;</span>]&#125;</span>&quot;</span><br>    <br>    content = raw_response[<span class="hljs-string">&#x27;choices&#x27;</span>][<span class="hljs-number">0</span>][<span class="hljs-string">&#x27;message&#x27;</span>][<span class="hljs-string">&#x27;content&#x27;</span>]<br>    <br>    thinking_match = re.search(<span class="hljs-string">r&quot;THINKING:(.*?)(ANSWER:|\Z)&quot;</span>, content, re.DOTALL)<br>    answer_match = re.search(<span class="hljs-string">r&quot;ANSWER:(.*)&quot;</span>, content, re.DOTALL)<br><br>    thinking = thinking_match.group(<span class="hljs-number">1</span>).strip() <span class="hljs-keyword">if</span> thinking_match <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;未提供思考过程&quot;</span><br>    answer = answer_match.group(<span class="hljs-number">1</span>).strip() <span class="hljs-keyword">if</span> answer_match <span class="hljs-keyword">else</span> content<br><br>    <span class="hljs-keyword">return</span> (<br>        <span class="hljs-string">f&quot;*🤔 思考过程*：\n```<span class="hljs-subst">&#123;thinking&#125;</span>```\n\n&quot;</span><br>        <span class="hljs-string">f&quot;*💡 最终回答*：\n```<span class="hljs-subst">&#123;answer&#125;</span>```&quot;</span><br>    )<br><br><span class="hljs-meta">@app.event(<span class="hljs-params"><span class="hljs-string">&quot;app_mention&quot;</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">handle_openai_query</span>(<span class="hljs-params">event, say</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;处理 Slack 提及事件&quot;&quot;&quot;</span><br>    say(text=<span class="hljs-string">f&quot;AI模型正在思考（<span class="hljs-subst">&#123;OPENAI_MODEL&#125;</span>），请稍候...&quot;</span>)<br>    <br>    <span class="hljs-comment"># 移除机器人提及标记</span><br>    query = event[<span class="hljs-string">&quot;text&quot;</span>].replace(<span class="hljs-string">f&#x27;&lt;@<span class="hljs-subst">&#123;app.client.auth_test()[<span class="hljs-string">&quot;user_id&quot;</span>]&#125;</span>&gt;&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>).strip()<br>    <br>    <span class="hljs-comment"># 获取 OpenAI 响应</span><br>    response = query_openai(query)<br>    <br>    <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;error&#x27;</span> <span class="hljs-keyword">in</span> response:<br>        say(text=response[<span class="hljs-string">&#x27;error&#x27;</span>], channel=event[<span class="hljs-string">&quot;channel&quot;</span>])<br>        <span class="hljs-keyword">return</span><br>    <br>    <span class="hljs-comment"># 格式化消息</span><br>    message_content = format_slack_response(response)<br>    <br>    <span class="hljs-comment"># 添加性能统计</span><br>    <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;metrics&#x27;</span> <span class="hljs-keyword">in</span> response:<br>        message_content += response[<span class="hljs-string">&#x27;metrics&#x27;</span>].get_metrics()<br>    <br>    <span class="hljs-comment"># 发送最终响应</span><br>    say(text=message_content, channel=event[<span class="hljs-string">&quot;channel&quot;</span>])<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    SocketModeHandler(app, os.environ[<span class="hljs-string">&quot;SLACK_APP_TOKEN&quot;</span>]).start()<br></code></pre></td></tr></table></figure>
+<p>运行效果大概是这样的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535061.png" alt=""></p>
+<p>生成代码：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535104.png" alt=""></p>
+<p>实际上SlackBot还可以利用会话修改的功能，生成流式的答复，但是如果高频的调用SlackBot的API，有可能会被官方限流。所以，不建议这么用。</p>
+<h1>兼容Page-Assist</h1>
+<p>关于Page-Assist插件的安装和使用方法，可以参考之前的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18715481/ds-pa">这篇文章</a>。
+如果本地已经有了Page-Assist，不想通过Open-WebUI来访问KTransformers推理大模型，其实也是可以的。在Page-Assist的设置里找到<code>OpenAI兼容API</code>，选择OpenAI提供商，然后按照自己的命名填一个本地提供商和url（注意！<code>这里是http，不是https！</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535160.png" alt=""></p>
+<p>把自己的路径配置进去，如果能够成功连上的话，会弹框让你选择模型加入本地模型列表：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535232.png" alt=""></p>
+<p>然后就可以轻松开启对话：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535302.png" alt=""></p>
+<p>这样一来，还可以使用本地的embedding模型实现联网搜索功能：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535345.png" alt=""></p>
+<p>可以对照一下数据来源：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163535388.png" alt=""></p>
+<h1>重要提示</h1>
+<ol>
+<li><code>KTransformers官方不支持多用户</code>同时使用，采用的是队列阻塞模式。</li>
+<li>部分老旧型号的显卡运行KTransformers可能报错<code>TORCH_USE_CUDA_DSA</code>，没有太好的解决方案。</li>
+<li>如果CPU不支持AVX512指令集，无法充分发挥KTransformers的性能。</li>
+<li>如果在Docker容器中对KTransformers的版本做了更新，记得把更新commit到镜像中。</li>
+<li>容器内部的接口监听，必须是<code>0.0.0.0</code>，或者匹配自己的IP段。</li>
+</ol>
+<h1>总结概要</h1>
+<p>本文介绍了国产的大模型推理工具KTransformers在本地成功运行的一个案例，在容器化部署的基础上，结合Open WebUI做了一个用户友好的大模型服务。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/kt158.html">https://www.cnblogs.com/dechinphy/p/kt158.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://kvcache-ai.github.io/ktransformers/en/api/server/website.html">https://kvcache-ai.github.io/ktransformers/en/api/server/website.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://ollama.cadn.net.cn/api.html">https://ollama.cadn.net.cn/api.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.openwebui.com/getting-started/quick-start/">https://docs.openwebui.com/getting-started/quick-start/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/3812e73d.html">https://dechin-phy.asia/posts/3812e73d.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2025-03-11</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-03-12</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/e27320d.html">解决Cupy相关报错</a><a class="next" href="/posts/e5082fec.html">Ollama+DeepSeek+SlackBot</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

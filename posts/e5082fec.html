@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/e5082fec.html"><meta property="og:type" content="article"><meta property="og:title" content="Ollama+DeepSeek+SlackBot"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/e5082fec.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2025-03-04T08:38:20.000Z"><meta property="article:modified_time" content="2025-03-10T02:34:00.000Z"><title>Ollama+DeepSeek+SlackBot | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Ollama+DeepSeek+SlackBot</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Ollama+DeepSeek+SlackBot</h1><div class="post-meta">2025-03-04<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Slack应用注册流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">关键信息</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">关键配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">slack_bolt环境配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">SlackBot对接Ollama模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">成果展示</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">方案选择</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">10.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">11.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了一种使用Slack聊天工具中的机器人SlackBot的API接口，实现本地化部署Ollama的DeepSeek大模型的远程通讯方案。相比于调用公网的API接口，数据隐私稍微好一点点。最终的方案应该是自建加密聊天工具+Ollama本地化部署，但是这个时间成本有点高，用户可以自行尝试。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>想必最近有在部署DeepSeek大模型的人，看标题就知道这篇文章在做什么事情了。由于Ollama对于IP的监听缺乏安全防护，并且内网部署的Ollama模型对于外网来说也是不可见的，而如果使用一些公网API，又存在隐私数据泄露的风险。这里提供一个方案：使用端到端加密的通讯软件，将消息内容转为token传输给Ollama本地部署的模型，然后接收token作为消息，通过加密通讯返回给用户。但是考虑到加密通讯软件的用户群体并不是很大，这里仅仅使用Slack作为一个演示。需要注意的是，Slack公司也有自己的AI模型SlackAI，在用户数据安全防护这一块有多大的可靠性，留给大家自行判断。</p>
+<h1>Slack应用注册流程</h1>
+<p>我们先假定你已经有一个Slack账号和相应的Slack工作区了，那么可以进入到<a target="_blank" rel="noopener" href="https://api.slack.com/apps">app界面</a>去创建一个自己的应用：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200786.png" alt=""></p>
+<p>我选择的是<code>scratch</code>创建模式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200821.png" alt=""></p>
+<p>这样就能在网页界面上进行配置。选择好自己的工作区，配置该机器人在工作区中的名字：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200863.png" alt=""></p>
+<p>创建完成后大概是这样的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200900.png" alt=""></p>
+<p>然后可以进入到APP的设置界面：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200942.png" alt=""></p>
+<p>要打开Socket模式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164200993.png" alt=""></p>
+<p>权限配置在<code>Event Subscriptions</code>和<code>OAuth &amp; Permissions</code>中：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201036.png" alt=""></p>
+<p>但是权限配置这一块需要后面单独开一个章节，请继续往下看。配置完成后，可以把应用安装到自己的工作区：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201080.png" alt=""></p>
+<p>安装完成后，打开本地的Slack客户端，找到<code>应用</code>-<code>添加应用</code>，在列表中属于该工作区的应用会排在最前面，可以直接将其加入工作区：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201127.png" alt=""></p>
+<p>这样以后就可以在应用列表看到自己定义的应用了。</p>
+<h1>关键信息</h1>
+<p>Slack应用创建之后，有几个关键的tokens信息（可以自己在Slack APP网页找到相关的字符串）需要保存到本地：</p>
+<ol>
+<li><code>SLACK_BOT_TOKEN</code>，是一串<code>xoxb-</code>开头的字符串，用<code>QAuth&amp;Permissions</code>里面的<code>Bot User OAuth Token</code>；</li>
+<li><code>SLACK_APP_TOKEN</code>，是一串<code>xapp-</code>开头的字符串，从<code>Basic Information</code>里面的<code>APP Level Tokens</code>里面找，注意权限配置；</li>
+<li><code>SLACK_SIGNING_SECRET</code>，是一串普通的随机字符串，从<code>Basic Information</code>里面找。</li>
+</ol>
+<h1>关键配置</h1>
+<p>想要正常的使用SlackBot，有几个关键的权限配置，如果权限配置错误，会导致SlackBot无法正确的读取消息或者正确地对消息进行反应。</p>
+<p>首先是<code>APP Level Tokens</code>的配置（参考这里的ChatBotApp里面的配置）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201172.png" alt=""></p>
+<p>然后是<code>Event Subscriptions</code>中的配置信息：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201212.png" alt=""></p>
+<p>最后是两个<code>QAuth&amp;Permissions</code>的配置参数：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201264.png" alt=""></p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201317.png" alt=""></p>
+<p>需要注意的是，这些都是个人配置信息，仅供参考。</p>
+<h1>slack_bolt环境配置</h1>
+<p>slack_bolt可以允许你从本地Python启动服务，调用SlackBot的API，监听Slack应用程序中的对话，并且可以按照不同的权限跟用户进行对话。可以使用pip安装slack_bolt：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install slack_bolt<br>Looking <span class="hljs-keyword">in</span> indexes: https://pypi.tuna.tsinghua.edu.cn/simple<br>Collecting slack_bolt<br>  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/5d/2d/fb23c998c43ff8398d7fa1e58bb82e7e735fbdaa0bd4ddaac04b3865bd4c/slack_bolt-1.22.0-py2.py3-none-any.whl (229 kB)<br>Collecting slack_sdk&lt;4,&gt;=3.33.5 (from slack_bolt)<br>  Downloading https://pypi.tuna.tsinghua.edu.cn/packages/25/2d/8724ef191cb64907de1e4e4436462955501e00f859a53d0aa794d0d060ff/slack_sdk-3.34.0-py2.py3-none-any.whl (292 kB)<br>Installing collected packages: slack_sdk, slack_bolt<br>Successfully installed slack_bolt-1.22.0 slack_sdk-3.34.0<br></code></pre></td></tr></table></figure>
+<p>然后根据前面重要配置信息中提到的，配置Token：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># export SLACK_BOT_TOKEN=xxx</span><br><span class="hljs-comment"># export SLACK_APP_TOKEN=xxx</span><br><span class="hljs-comment"># export SLACK_SIGNING_SECRET=xxx</span><br></code></pre></td></tr></table></figure>
+<p>先测试一个简单的Python脚本：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br><br><span class="hljs-keyword">from</span> slack_bolt <span class="hljs-keyword">import</span> App<br><span class="hljs-keyword">from</span> slack_bolt.adapter.socket_mode <span class="hljs-keyword">import</span> SocketModeHandler<br><br><span class="hljs-comment"># Install the Slack app and get xoxb- token in advance</span><br>app = App(token=os.environ[<span class="hljs-string">&quot;SLACK_BOT_TOKEN&quot;</span>])<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    SocketModeHandler(app, os.environ[<span class="hljs-string">&quot;SLACK_APP_TOKEN&quot;</span>]).start()<br></code></pre></td></tr></table></figure>
+<p>运行效果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 slack_chatbot.py <br>⚡️ Bolt app is running!<br></code></pre></td></tr></table></figure>
+<p>这就表示本地SlackBot安装成功了，当然，这个程序本身没有附带任何的功能。可以稍微升级一下SlackBot的测试功能：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">from</span> slack_bolt <span class="hljs-keyword">import</span> App<br><span class="hljs-keyword">from</span> slack_bolt.adapter.socket_mode <span class="hljs-keyword">import</span> SocketModeHandler<br><br><span class="hljs-comment"># Initializes your app with your bot token and socket mode handler</span><br>app = App(token=os.environ.get(<span class="hljs-string">&quot;SLACK_BOT_TOKEN&quot;</span>), signing_secret=os.environ.get(<span class="hljs-string">&quot;SLACK_SIGNING_SECRET&quot;</span>))<br><br><span class="hljs-comment"># Listens to incoming messages that contain &quot;hello&quot;</span><br><span class="hljs-comment"># To learn available listener arguments,</span><br><span class="hljs-comment"># visit https://tools.slack.dev/bolt-python/api-docs/slack_bolt/kwargs_injection/args.html</span><br><span class="hljs-meta">@app.message(<span class="hljs-params"><span class="hljs-string">&quot;hello&quot;</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">message_hello</span>(<span class="hljs-params">message, say</span>):<br>    <span class="hljs-comment"># say() sends a message to the channel where the event was triggered</span><br>    say(<span class="hljs-string">f&quot;Hey there &lt;@<span class="hljs-subst">&#123;message[<span class="hljs-string">&#x27;user&#x27;</span>]&#125;</span>&gt;!&quot;</span>)<br><br><span class="hljs-meta">@app.event(<span class="hljs-params"><span class="hljs-string">&quot;app_mention&quot;</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">handle_mentions</span>(<span class="hljs-params">event, say</span>):<br>    say(text=<span class="hljs-string">&quot;Hello!&quot;</span>, channel=event[<span class="hljs-string">&quot;channel&quot;</span>])<br><br><span class="hljs-comment"># Start your app</span><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    SocketModeHandler(app, os.environ[<span class="hljs-string">&quot;SLACK_APP_TOKEN&quot;</span>]).start()<br></code></pre></td></tr></table></figure>
+<p>在这个案例中，我们的程序会对一个事件和一个关键词起反应。例如我们只@slackbot的话，会返回一个hello：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201367.png" alt=""></p>
+<p>如果@slackbot并且带上指定的字符串，那么就会做出相应的特别处理：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201436.png" alt=""></p>
+<h1>SlackBot对接Ollama模型</h1>
+<p>在上述章节中已经完成了本地通信的一些配置，接下来我们可以把SlackBot对接到Ollama模型中，原理也很简单：触发SlackBot之后，将消息作为token转发给Ollama的API，然后等待回复再回传给Slack聊天界面。这就是我做的一个简单的框架，接下来看看具体实施。</p>
+<p>首先安装Ollama通信相关依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install requests python-dotenv<br></code></pre></td></tr></table></figure>
+<p>直接上D老师给的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> re<br><span class="hljs-keyword">import</span> requests<br><span class="hljs-keyword">from</span> slack_bolt <span class="hljs-keyword">import</span> App<br><span class="hljs-keyword">from</span> slack_bolt.adapter.socket_mode <span class="hljs-keyword">import</span> SocketModeHandler<br><span class="hljs-keyword">from</span> dotenv <span class="hljs-keyword">import</span> load_dotenv<br><br><span class="hljs-comment"># 加载环境变量</span><br>load_dotenv()<br><br><span class="hljs-comment"># 初始化 Slack 应用</span><br>app = App(<br>    token=os.environ[<span class="hljs-string">&quot;SLACK_BOT_TOKEN&quot;</span>],<br>    signing_secret=os.environ[<span class="hljs-string">&quot;SLACK_SIGNING_SECRET&quot;</span>]<br>)<br><br><span class="hljs-comment"># Ollama 配置（可通过环境变量覆盖）</span><br>OLLAMA_ENDPOINT = os.getenv(<span class="hljs-string">&quot;OLLAMA_ENDPOINT&quot;</span>, <span class="hljs-string">&quot;http://localhost:11434/api/generate&quot;</span>)<br>OLLAMA_MODEL = os.getenv(<span class="hljs-string">&quot;OLLAMA_MODEL&quot;</span>, <span class="hljs-string">&quot;deepseek-r1:14b&quot;</span>)<br>OLLAMA_PARAMS = &#123;<br>    <span class="hljs-string">&quot;num_ctx&quot;</span>: <span class="hljs-built_in">int</span>(os.getenv(<span class="hljs-string">&quot;OLLAMA_NUM_CTX&quot;</span>, <span class="hljs-number">4096</span>)),<br>    <span class="hljs-string">&quot;num_gpu&quot;</span>: <span class="hljs-built_in">int</span>(os.getenv(<span class="hljs-string">&quot;OLLAMA_NUM_GPU&quot;</span>, <span class="hljs-number">64</span>)),<br>    <span class="hljs-string">&quot;keep_alive&quot;</span>: os.getenv(<span class="hljs-string">&quot;OLLAMA_KEEP_ALIVE&quot;</span>, <span class="hljs-string">&quot;2h&quot;</span>)<br>&#125;<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">query_ollama</span>(<span class="hljs-params">prompt: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;向 Ollama 发送请求并获取完整响应&quot;&quot;&quot;</span><br>    payload = &#123;<br>        <span class="hljs-string">&quot;model&quot;</span>: OLLAMA_MODEL,<br>        <span class="hljs-string">&quot;prompt&quot;</span>: <span class="hljs-string">f&quot;请先输出思考过程（用THINKING:开头），再输出最终答案（用ANSWER:开头）：\n\n<span class="hljs-subst">&#123;prompt&#125;</span>&quot;</span>,<br>        <span class="hljs-string">&quot;stream&quot;</span>: <span class="hljs-literal">False</span>,<br>        <span class="hljs-comment"># &quot;options&quot;: OLLAMA_PARAMS</span><br>    &#125;<br><br>    <span class="hljs-keyword">try</span>:<br>        response = requests.post(OLLAMA_ENDPOINT, json=payload, timeout=<span class="hljs-number">6000</span>)<br>        response.raise_for_status()<br>        <span class="hljs-keyword">return</span> response.json()[<span class="hljs-string">&quot;response&quot;</span>]<br>    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;Ollama 请求失败: <span class="hljs-subst">&#123;<span class="hljs-built_in">str</span>(e)&#125;</span>&quot;</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">format_slack_response</span>(<span class="hljs-params">raw_response: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">str</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;将原始响应分割为思考过程和最终答案&quot;&quot;&quot;</span><br>    thinking_match = re.search(<span class="hljs-string">r&quot;THINKING:(.*?)(ANSWER:|\Z)&quot;</span>, raw_response, re.DOTALL)<br>    answer_match = re.search(<span class="hljs-string">r&quot;ANSWER:(.*)&quot;</span>, raw_response, re.DOTALL)<br><br>    thinking = thinking_match.group(<span class="hljs-number">1</span>).strip() <span class="hljs-keyword">if</span> thinking_match <span class="hljs-keyword">else</span> <span class="hljs-string">&quot;未提供思考过程&quot;</span><br>    answer = answer_match.group(<span class="hljs-number">1</span>).strip() <span class="hljs-keyword">if</span> answer_match <span class="hljs-keyword">else</span> raw_response<br><br>    <span class="hljs-keyword">return</span> (<br>        <span class="hljs-string">f&quot;*🤔 思考过程*：\n```<span class="hljs-subst">&#123;thinking&#125;</span>```\n\n&quot;</span><br>        <span class="hljs-string">f&quot;*💡 最终回答*：\n```<span class="hljs-subst">&#123;answer&#125;</span>```&quot;</span><br>    )<br><br><span class="hljs-meta">@app.event(<span class="hljs-params"><span class="hljs-string">&quot;app_mention&quot;</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">handle_ollama_query</span>(<span class="hljs-params">event, say</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;处理 Slack 提及事件&quot;&quot;&quot;</span><br>    <span class="hljs-comment"># 移除机器人提及标记</span><br>    query = event[<span class="hljs-string">&quot;text&quot;</span>].replace(<span class="hljs-string">f&#x27;&lt;@<span class="hljs-subst">&#123;app.client.auth_test()[<span class="hljs-string">&quot;user_id&quot;</span>]&#125;</span>&gt;&#x27;</span>, <span class="hljs-string">&#x27;&#x27;</span>).strip()<br>    <br>    <span class="hljs-comment"># 获取原始响应</span><br>    raw_response = query_ollama(query)<br>    <br>    <span class="hljs-comment"># 格式化响应</span><br>    slack_message = format_slack_response(raw_response)<br>    <br>    <span class="hljs-comment"># 发送到 Slack 频道</span><br>    say(text=slack_message, channel=event[<span class="hljs-string">&quot;channel&quot;</span>])<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    SocketModeHandler(app, os.environ[<span class="hljs-string">&quot;SLACK_APP_TOKEN&quot;</span>]).start()<br></code></pre></td></tr></table></figure>
+<p>只要运行这个Python脚本，就可以通过SlackBot启动Ollama本地对话服务。可以查看会话过程中Ollama的模型被调用（本地部署了多个模型，不要在意ModelName的差异）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama ps<br>NAME                   ID              SIZE     PROCESSOR          UNTIL              <br>deepseek-r1:32b-q40    13c7c287f615    21 GB    30%/70% CPU/GPU    4 minutes from now<br></code></pre></td></tr></table></figure>
+<h1>成果展示</h1>
+<p>通过上一个章节部署完成，启动会话服务之后，可以测试一下本地DeepSeek蒸馏模型的回答。</p>
+<p>简单提问：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201498.png" alt=""></p>
+<p>进一步提问：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201542.png" alt=""></p>
+<p>因为每一次回复需要时间，不是流式的响应，因此我自己加了一个响应回复：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201588.png" alt=""></p>
+<p>这样就会告知用户，你的提问已经被接收到了，服务正在正常运行，模型正在推理。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201637.png" alt=""></p>
+<p>更多的示例就不一一展示了，跟之前介绍过的AnythingLLM和ChatBox、PageAssit等相比功能还是非常欠缺的，有兴趣的朋友可以考虑进一步去拓展。</p>
+<h1>方案选择</h1>
+<p>前一段时间有很多新闻在报道Ollama的安全漏洞，在公网上有众多开放Ollama端口的服务器可以被有心之人利用。这件事也引起了很多大模型本地用户的警觉，D老师对比了几种可能用到的方案并给出了建议：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164201685.png" alt=""></p>
+<p>D老师认为，使用自建的加密聊天工具+Ollama的安全加固，会是一个比较好用的方案。既可以满足用户的数据隐私需求，又可以很大程度上提高本地大模型使用的灵活度。而这篇文章中我们所使用到的是公共聊天工具+Ollama的方案，相比于使用公网API，数据隐私会稍好一些。但是这里面的数据隐私也很大程度上依赖于聊天工具对于用户隐私数据的保护程度，用户需要自己进行鉴别。</p>
+<h1>总结概要</h1>
+<p>本文介绍了一种使用Slack聊天工具中的机器人SlackBot的API接口，实现本地化部署Ollama的DeepSeek大模型的远程通讯方案。相比于调用公网的API接口，数据隐私稍微好一点点。最终的方案应该是自建加密聊天工具+Ollama本地化部署，但是这个时间成本有点高，用户可以自行尝试。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/slackbot.html">https://www.cnblogs.com/dechinphy/p/slackbot.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://tools.slack.dev/bolt-python/getting-started">https://tools.slack.dev/bolt-python/getting-started</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2468402">https://cloud.tencent.com/developer/article/2468402</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/e5082fec.html">https://dechin-phy.asia/posts/e5082fec.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2025-03-04</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-03-10</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/3812e73d.html">KTransformers实战DeepSeek-R1-1.58bit量化模型</a><a class="next" href="/posts/a2d9c82a.html">Cython与CUDA之Add</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

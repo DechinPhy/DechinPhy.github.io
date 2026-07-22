@@ -1,0 +1,300 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/fbdd909a.html"><meta property="og:type" content="article"><meta property="og:title" content="DeepSeek模型量化"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/fbdd909a.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2025-02-12T02:35:12.000Z"><meta property="article:modified_time" content="2025-02-17T06:12:00.000Z"><title>DeepSeek模型量化 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">DeepSeek模型量化</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">DeepSeek模型量化</h1><div class="post-meta">2025-02-12<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 4.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 22</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">安装llama.cpp</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#llama-cpp%E4%B9%8BCUDA%E5%8A%A0%E9%80%9F"><span class="toc-number">2.1.</span> <span class="toc-text">llama.cpp之CUDA加速</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">下载Hugging Face模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">HF模型转GGUF模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">GGUF模型量化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">其他报错处理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>这篇文章主要介绍了llama.cpp这一大模型工具的使用。因为已经使用Ollama来run大模型，因此仅介绍了llama.cpp在HF模型转GGUF模型中的应用，及其在大模型量化中的使用。大模型的参数量化技术，使得我们可以在本地有限预算的硬件条件下，也能够运行DeepSeek的蒸馏模型。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>大语言模型（Large Language Model，LLM），可以通过量化（Quantization）操作来节约内存/显存的使用，并且降低了通讯开销，进而达到加速模型推理的效果。常见的就是把Float16的浮点数，转换成低精度的整数，例如Int4整数。最极限的情况下，可以把参数转化成二值Bool变量，也就是只有0和1，但是这种大幅度的量化有可能导致模型的推理效果不佳。常用的是，在70B以下的模型用Q8，70B以上可以用Q4。具体的原理，包括对称量化和非对称量化等，这里就不作介绍了，主要看看工程上怎么实现，主要使用了<code>llama.cpp</code>来完成量化。</p>
+<h1>安装llama.cpp</h1>
+<p>这里我们在Ubuntu上使用本地编译构建的方法进行安装，首先从github上面clone下来：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://github.com/ggerganov/llama.cpp.git<br>正克隆到 <span class="hljs-string">&#x27;llama.cpp&#x27;</span>...<br>remote: Enumerating objects: 43657, <span class="hljs-keyword">done</span>.<br>remote: Counting objects: 100% (15/15), <span class="hljs-keyword">done</span>.<br>remote: Compressing objects: 100% (14/14), <span class="hljs-keyword">done</span>.<br>remote: Total 43657 (delta 3), reused 5 (delta 1), pack-reused 43642 (from 3)<br>接收对象中: 100% (43657/43657), 88.26 MiB | 8.30 MiB/s, 完成.<br>处理 delta 中: 100% (31409/31409), 完成.<br></code></pre></td></tr></table></figure>
+<p>最好创建一个虚拟环境，以避免各种软件依赖的问题，推荐Python3.10：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 创建虚拟环境</span><br>$ conda create -n llama python=3.10<br><span class="hljs-comment"># 激活虚拟环境</span><br>$ conda activate llama<br></code></pre></td></tr></table></figure>
+<p>进入下载好的llama.cpp路径，安装所有的依赖项：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cd</span> llama.cpp/<br>$ python3 -m pip install -e .<br></code></pre></td></tr></table></figure>
+<p>创建一个编译目录，执行编译指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">mkdir</span> build<br>$ <span class="hljs-built_in">cd</span> build/<br>$ cmake ..<br>-- The C compiler identification is GNU 7.5.0<br>-- The CXX compiler identification is GNU 9.4.0<br>-- Detecting C compiler ABI info<br>-- Detecting C compiler ABI info - <span class="hljs-keyword">done</span><br>-- Check <span class="hljs-keyword">for</span> working C compiler: /usr/bin/cc - skipped<br>-- Detecting C compile features<br>-- Detecting C compile features - <span class="hljs-keyword">done</span><br>-- Detecting CXX compiler ABI info<br>-- Detecting CXX compiler ABI info - <span class="hljs-keyword">done</span><br>-- Check <span class="hljs-keyword">for</span> working CXX compiler: /usr/bin/c++ - skipped<br>-- Detecting CXX compile features<br>-- Detecting CXX compile features - <span class="hljs-keyword">done</span><br>-- Found Git: /usr/bin/git (found version <span class="hljs-string">&quot;2.25.1&quot;</span>) <br>-- Looking <span class="hljs-keyword">for</span> pthread.h<br>-- Looking <span class="hljs-keyword">for</span> pthread.h - found<br>-- Performing Test CMAKE_HAVE_LIBC_PTHREAD<br>-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed<br>-- Check <span class="hljs-keyword">if</span> compiler accepts -pthread<br>-- Check <span class="hljs-keyword">if</span> compiler accepts -pthread - <span class="hljs-built_in">yes</span><br>-- Found Threads: TRUE  <br>-- Warning: ccache not found - consider installing it <span class="hljs-keyword">for</span> faster compilation or <span class="hljs-built_in">disable</span> this warning with GGML_CCACHE=OFF<br>-- CMAKE_SYSTEM_PROCESSOR: x86_64<br>-- Including CPU backend<br>-- Found OpenMP_C: -fopenmp (found version <span class="hljs-string">&quot;4.5&quot;</span>) <br>-- Found OpenMP_CXX: -fopenmp (found version <span class="hljs-string">&quot;4.5&quot;</span>) <br>-- Found OpenMP: TRUE (found version <span class="hljs-string">&quot;4.5&quot;</span>)  <br>-- x86 detected<br>-- Adding CPU backend variant ggml-cpu: -march=native <br>-- Configuring <span class="hljs-keyword">done</span><br>-- Generating <span class="hljs-keyword">done</span><br>-- Build files have been written to: /datb/DeepSeek/llama/llama.cpp/build<br>$ cmake --build . --config Release<br>Scanning dependencies of target ggml-base<br>[  0%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml.c.o<br>[  1%] Building C object ggml/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o<br>[100%] Linking CXX executable ../../bin/llama-vdot<br>[100%] Built target llama-vdot<br></code></pre></td></tr></table></figure>
+<p>到这里，就成功构建了cpu版本的llama.cpp，可以直接使用了。如果需要安装gpu加速的版本，可以参考下面这一小节，如果嫌麻烦建议直接跳过。</p>
+<h2 id="llama-cpp之CUDA加速">llama.cpp之CUDA加速</h2>
+<p>安装GPU版本llama.cpp需要先安装一些依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> apt install curl libcurl4-openssl-dev<br></code></pre></td></tr></table></figure>
+<p>跟cpu版本不同的地方，主要在于cmake的编译指令（如果已经编译了cpu的版本，最好先清空<code>build</code>路径下的文件）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ cmake .. -DCMAKE_CUDA_COMPILER=/usr/bin/nvcc -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DLLAMA_CURL=ON -DCMAKE_CUDA_STANDARD=17<br></code></pre></td></tr></table></figure>
+<p>这里加的一个FLAG：<code>-DCMAKE_CUDA_STANDARD=17</code>可以解决<a target="_blank" rel="noopener" href="https://github.com/ggerganov/llama.cpp/issues/11725">Llama.cpp仓库里面的Issue</a>，如果不加这个Flag，有可能出现下面这种报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">Make Error <span class="hljs-keyword">in</span> ggml/src/ggml-cuda/CMakeLists.txt:<br>  Target <span class="hljs-string">&quot;ggml-cuda&quot;</span> requires the language dialect <span class="hljs-string">&quot;CUDA17&quot;</span> (with compiler<br>  extensions), but CMake does not know the compile flags to use to <span class="hljs-built_in">enable</span> it.<br></code></pre></td></tr></table></figure>
+<p>如果顺利的话，执行下面这个指令，成功编译通过的话就是成功了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ cmake --build . --config Release<br></code></pre></td></tr></table></figure>
+<p>但是如果像我这样有报错信息，那就得单独处理以下。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">/datb/DeepSeek/llama/llama.cpp/ggml/src/ggml-cuda/vendors/cuda.h:6:10: fatal error: cuda_bf16.h: 没有那个文件或目录<br> <span class="hljs-comment">#include &lt;cuda_bf16.h&gt;</span><br>          ^~~~~~~~~~~~~<br>compilation terminated.<br></code></pre></td></tr></table></figure>
+<p>这个报错是说找不到头文件，于是在环境里面<code>find / -name cuda_bf16.h</code>了一下，发现其实是有这个头文件的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">/home/dechin/anaconda3/envs/llama/lib/python3.10/site-packages/nvidia/cuda_runtime/include/cuda_bf16.h<br>/home/dechin/anaconda3/envs/llama/lib/python3.10/site-packages/triton/backends/nvidia/include/cuda_bf16.h<br></code></pre></td></tr></table></figure>
+<p>处理方式是把这个路径加到<code>CPATH</code>里面：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">export</span> CPATH=<span class="hljs-variable">$CPATH</span>:/home/dechin/anaconda3/envs/llama/lib/python3.10/site-packages/nvidia/cuda_runtime/include/<br></code></pre></td></tr></table></figure>
+<p>如果是出现这个报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">/home/dechin/anaconda3/envs/llama/lib/python3.10/site-packages/nvidia/cuda_runtime/include/cuda_fp16.h:4100:10: fatal error: nv/target: 没有那个文件或目录<br> <span class="hljs-comment">#include &lt;nv/target&gt;</span><br>          ^~~~~~~~~~~<br>compilation terminated.<br></code></pre></td></tr></table></figure>
+<p>那就是找不到target目录的路径，如果本地有target路径的话，也可以直接配置到<code>CPATH</code>里面：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">export</span> CPATH=/home/dechin/anaconda3/pkgs/cupy-core-13.3.0-py310h5da974a_2/lib/python3.10/site-packages/cupy/_core/include/cupy/_cccl/libcudacxx/:<span class="hljs-variable">$CPATH</span><br></code></pre></td></tr></table></figure>
+<p>如果是下面这些报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">/datb/DeepSeek/llama/llama.cpp/ggml/src/ggml-cuda/common.cuh(138): error: identifier <span class="hljs-string">&quot;cublasGetStatusString&quot;</span> is undefined<br><br>/datb/DeepSeek/llama/llama.cpp/ggml/src/ggml-cuda/common.cuh(417): error: A __device__ variable cannot be marked constexpr<br><br>/datb/DeepSeek/llama/llama.cpp/ggml/src/ggml-cuda/common.cuh(745): error: identifier <span class="hljs-string">&quot;CUBLAS_TF32_TENSOR_OP_MATH&quot;</span> is undefined<br><br>3 errors detected <span class="hljs-keyword">in</span> the compilation of <span class="hljs-string">&quot;/tmp/tmpxft_000a126f_00000000-9_acc.compute_75.cpp1.ii&quot;</span>.<br>make[2]: *** [ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/build.make:82：ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/acc.cu.o] 错误 1<br>make[1]: *** [CMakeFiles/Makefile2:1964：ggml/src/ggml-cuda/CMakeFiles/ggml-cuda.dir/all] 错误 2<br>make: *** [Makefile:160：all] 错误 2<br></code></pre></td></tr></table></figure>
+<p>那么很有可能是<code>cuda-toolkit</code>的版本问题，尝试安装cuda-12：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ conda install nvidia::cuda-toolkit<br></code></pre></td></tr></table></figure>
+<p>如果使用conda安装过程有这种问题：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">Collecting package metadata (current_repodata.json): failed<br><br><span class="hljs-comment"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; ERROR REPORT &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span><br><br>    Traceback (most recent call last):<br>      File <span class="hljs-string">&quot;/home/dechin/anaconda3/lib/python3.8/site-packages/conda/gateways/repodata/__init__.py&quot;</span>, line 132, <span class="hljs-keyword">in</span> conda_http_errors<br>        yield<br>      File <span class="hljs-string">&quot;/home/dechin/anaconda3/lib/python3.8/site-packages/conda/gateways/repodata/__init__.py&quot;</span>, line 101, <span class="hljs-keyword">in</span> repodata<br>        response.raise_for_status()<br>      File <span class="hljs-string">&quot;/home/dechin/anaconda3/lib/python3.8/site-packages/requests/models.py&quot;</span>, line 1024, <span class="hljs-keyword">in</span> raise_for_status<br>        raise HTTPError(http_error_msg, response=self)<br>    requests.exceptions.HTTPError: 404 Client Error: Not Found <span class="hljs-keyword">for</span> url: https://conda.anaconda.org/defaults/linux-64/current_repodata.json<br></code></pre></td></tr></table></figure>
+<p>那应该是conda源的问题，可以删掉旧的channels，使用默认channels或者找一个国内可以用的镜像源进行配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ conda config --remove-key channels<br>$ conda config --remove-key default_channels<br>$ conda config --append channels conda-forge<br></code></pre></td></tr></table></figure>
+<p>重新安装以后，nvcc的路径发生了变化，要注意修改下编译时的<code>DCMAKE_CUDA_COMPILER</code>参数配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ cmake .. -DCMAKE_CUDA_COMPILER=/home/dechin/anaconda3/envs/llama/bin/nvcc -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DLLAMA_CURL=ON -DCMAKE_CUDA_STANDARD=17<br></code></pre></td></tr></table></figure>
+<p>如果出现如下报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">-- Unable to find cuda_runtime.h <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;/home/dechin/anaconda3/envs/llama/include&quot;</span> <span class="hljs-keyword">for</span> CUDAToolkit_INCLUDE_DIR.<br>-- Could NOT find CUDAToolkit (missing: CUDAToolkit_INCLUDE_DIR) <br>CMake Error at ggml/src/ggml-cuda/CMakeLists.txt:151 (message):<br>  CUDA Toolkit not found<br><br><br>-- Configuring incomplete, errors occurred!<br>See also <span class="hljs-string">&quot;/datb/DeepSeek/llama/llama.cpp/build/CMakeFiles/CMakeOutput.log&quot;</span>.<br>See also <span class="hljs-string">&quot;/datb/DeepSeek/llama/llama.cpp/build/CMakeFiles/CMakeError.log&quot;</span>.<br></code></pre></td></tr></table></figure>
+<p>这是找不到<code>CUDAToolkit_INCLUDE_DIR</code>的路径配置，只要在cmake的指令里面加上一个include路径即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ cmake .. -DCMAKE_CUDA_COMPILER=/home/dechin/anaconda3/envs/llama/bin/nvcc -DGGML_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DLLAMA_CURL=ON -DCMAKE_CUDA_STANDARD=17 -DCUDAToolkit_INCLUDE_DIR=/home/dechin/anaconda3/envs/llama/targets/x86_64-linux/include/ -DCURL_LIBRARY=/usr/lib/x86_64-linux-gnu/<br></code></pre></td></tr></table></figure>
+<p>如果经过以上的一串处理，依然有报错信息，那我建议还是用个Docker吧，或者直接用CPU版本执行quantize，模型调用使用Ollama，这样方便一些。</p>
+<h1>下载Hugging Face模型</h1>
+<p>由于很多已经完成量化的GGUF模型文件，无法被二次量化，所以建议直接从Hugging Face下载safetensors模型文件。然后用llama.cpp里面的一个Python脚本将hf模型转为gguf模型，然后再使用llama.cpp进行模型quantize。</p>
+<p>关于模型下载这部分，因为Hugging Face的访问有时候也会受限，所以这里首推的还是国内的ModelScope平台。从ModelScope平台下载模型，可以装一个这种Python形式的modelscope：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install modelscope<br>Looking <span class="hljs-keyword">in</span> indexes: https://pypi.tuna.tsinghua.edu.cn/simple<br>Requirement already satisfied: modelscope <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (1.22.3)<br>Requirement already satisfied: requests&gt;=2.25 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.8/site-packages (from modelscope) (2.25.1)<br>Requirement already satisfied: urllib3&gt;=1.26 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.8/site-packages (from modelscope) (1.26.5)<br>Requirement already satisfied: tqdm&gt;=4.64.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from modelscope) (4.67.1)<br>Requirement already satisfied: certifi&gt;=2017.4.17 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.8/site-packages (from requests&gt;=2.25-&gt;modelscope) (2021.5.30)<br>Requirement already satisfied: chardet&lt;5,&gt;=3.0.2 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.8/site-packages (from requests&gt;=2.25-&gt;modelscope) (4.0.0)<br>Requirement already satisfied: idna&lt;3,&gt;=2.5 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.8/site-packages (from requests&gt;=2.25-&gt;modelscope) (2.10)<br></code></pre></td></tr></table></figure>
+<p>然后使用modelcope下载模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ modelscope download --model deepseek-ai/DeepSeek-R1-Distill-Qwen-32B<br></code></pre></td></tr></table></figure>
+<p>如果出现报错（如果没有报错就不用理会，等待模型下载完成即可）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">safetensors integrity check failed, expected sha256 signature is xxx<br></code></pre></td></tr></table></figure>
+<p>可以尝试另一种安装方式：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> apt install git-lfs<br></code></pre></td></tr></table></figure>
+<p>下载模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://www.modelscope.cn/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B.git<br>正克隆到 <span class="hljs-string">&#x27;DeepSeek-R1-Distill-Qwen-32B&#x27;</span>...<br>remote: Enumerating objects: 52, <span class="hljs-keyword">done</span>.<br>remote: Counting objects: 100% (52/52), <span class="hljs-keyword">done</span>.<br>remote: Compressing objects: 100% (37/37), <span class="hljs-keyword">done</span>.<br>remote: Total 52 (delta 17), reused 42 (delta 13), pack-reused 0<br>展开对象中: 100% (52/52), 2.27 MiB | 2.62 MiB/s, 完成.<br>过滤内容: 100% (8/8), 5.02 GiB | 912.00 KiB/s, 完成.<br>Encountered 8 file(s) that may not have been copied correctly on Windows:<br>	model-00005-of-000008.safetensors<br>	model-00004-of-000008.safetensors<br>	model-00008-of-000008.safetensors<br>	model-00002-of-000008.safetensors<br>	model-00007-of-000008.safetensors<br>	model-00003-of-000008.safetensors<br>	model-00006-of-000008.safetensors<br>	model-00001-of-000008.safetensors<br><br>See: `git lfs <span class="hljs-built_in">help</span> smudge` <span class="hljs-keyword">for</span> more details.<br></code></pre></td></tr></table></figure>
+<p>这个过程会消耗很多时间，请耐心等待模型下载完成为止。下载完成后查看路径：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cd</span> DeepSeek-R1-Distill-Qwen-32B/<br>$ ll<br>总用量 63999072<br>drwxrwxr-x 4 dechin dechin       4096 2月  12 19:22 ./<br>drwxrwxr-x 3 dechin dechin       4096 2月  12 17:46 ../<br>-rw-rw-r-- 1 dechin dechin        664 2月  12 17:46 config.json<br>-rw-rw-r-- 1 dechin dechin         73 2月  12 17:46 configuration.json<br>drwxrwxr-x 2 dechin dechin       4096 2月  12 17:46 figures/<br>-rw-rw-r-- 1 dechin dechin        181 2月  12 17:46 generation_config.json<br>drwxrwxr-x 9 dechin dechin       4096 2月  12 19:22 .git/<br>-rw-rw-r-- 1 dechin dechin       1519 2月  12 17:46 .gitattributes<br>-rw-rw-r-- 1 dechin dechin       1064 2月  12 17:46 LICENSE<br>-rw-rw-r-- 1 dechin dechin 8792578462 2月  12 19:22 model-00001-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906899 2月  12 19:03 model-00002-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906927 2月  12 19:18 model-00003-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906927 2月  12 18:56 model-00004-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906927 2月  12 18:38 model-00005-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906927 2月  12 19:19 model-00006-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 8776906927 2月  12 19:15 model-00007-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin 4073821536 2月  12 19:02 model-00008-of-000008.safetensors<br>-rw-rw-r-- 1 dechin dechin      64018 2月  12 17:46 model.safetensors.index.json<br>-rw-rw-r-- 1 dechin dechin      18985 2月  12 17:46 README.md<br>-rw-rw-r-- 1 dechin dechin       3071 2月  12 17:46 tokenizer_config.json<br>-rw-rw-r-- 1 dechin dechin    7031660 2月  12 17:46 tokenizer.json<br></code></pre></td></tr></table></figure>
+<p>这就是下载成功了。</p>
+<h1>HF模型转GGUF模型</h1>
+<p>找到编译好的<code>llama/llama.cpp/</code>下的python脚本文件，可以先看下其用法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 convert_hf_to_gguf.py --<span class="hljs-built_in">help</span><br>usage: convert_hf_to_gguf.py [-h] [--vocab-only] [--outfile OUTFILE] [--outtype &#123;f32,f16,bf16,q8_0,tq1_0,tq2_0,auto&#125;] [--bigendian] [--use-temp-file] [--no-lazy]<br>                             [--model-name MODEL_NAME] [--verbose] [--split-max-tensors SPLIT_MAX_TENSORS] [--split-max-size SPLIT_MAX_SIZE] [--dry-run]<br>                             [--no-tensor-first-split] [--metadata METADATA] [--print-supported-models]<br>                             [model]<br><br>Convert a huggingface model to a GGML compatible file<br><br>positional arguments:<br>  model                 directory containing model file<br><br>options:<br>  -h, --<span class="hljs-built_in">help</span>            show this <span class="hljs-built_in">help</span> message and <span class="hljs-built_in">exit</span><br>  --vocab-only          extract only the vocab<br>  --outfile OUTFILE     path to write to; default: based on input. &#123;ftype&#125; will be replaced by the outtype.<br>  --outtype &#123;f32,f16,bf16,q8_0,tq1_0,tq2_0,auto&#125;<br>                        output format - use f32 <span class="hljs-keyword">for</span> float32, f16 <span class="hljs-keyword">for</span> float16, bf16 <span class="hljs-keyword">for</span> bfloat16, q8_0 <span class="hljs-keyword">for</span> Q8_0, tq1_0 or tq2_0 <span class="hljs-keyword">for</span> ternary, and auto <span class="hljs-keyword">for</span> the highest-<br>                        fidelity 16-bit <span class="hljs-built_in">float</span> <span class="hljs-built_in">type</span> depending on the first loaded tensor <span class="hljs-built_in">type</span><br>  --bigendian           model is executed on big endian machine<br>  --use-temp-file       use the tempfile library <span class="hljs-keyword">while</span> processing (helpful when running out of memory, process killed)<br>  --no-lazy             use more RAM by computing all outputs before writing (use <span class="hljs-keyword">in</span> <span class="hljs-keyword">case</span> lazy evaluation is broken)<br>  --model-name MODEL_NAME<br>                        name of the model<br>  --verbose             increase output verbosity<br>  --split-max-tensors SPLIT_MAX_TENSORS<br>                        max tensors <span class="hljs-keyword">in</span> each <span class="hljs-built_in">split</span><br>  --split-max-size SPLIT_MAX_SIZE<br>                        max size per <span class="hljs-built_in">split</span> N(M|G)<br>  --dry-run             only <span class="hljs-built_in">print</span> out a <span class="hljs-built_in">split</span> plan and <span class="hljs-built_in">exit</span>, without writing any new files<br>  --no-tensor-first-split<br>                        <span class="hljs-keyword">do</span> not add tensors to the first <span class="hljs-built_in">split</span> (disabled by default)<br>  --metadata METADATA   Specify the path <span class="hljs-keyword">for</span> an authorship metadata override file<br>  --print-supported-models<br>                        Print the supported models<br></code></pre></td></tr></table></figure>
+<p>然后执行构建GGUF：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 convert_hf_to_gguf.py /datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B --outfile /datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B.gguf<br>INFO:hf-to-gguf:Set model quantization version<br>INFO:gguf.gguf_writer:Writing the following files:<br>INFO:gguf.gguf_writer:/datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B.gguf: n_tensors = 771, total_size = 65.5G<br>Writing: 100%|██████████████████████████████████████████████████████████████| 65.5G/65.5G [19:42&lt;00:00, 55.4Mbyte/s]<br>INFO:hf-to-gguf:Model successfully exported to /datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B.gguf<br></code></pre></td></tr></table></figure>
+<p>完成转化后，会在指定的路径下生成一个gguf文件，也就是all-in-one的模型文件。默认是fp32的精度，可以用于执行下一步的量化操作。</p>
+<h1>GGUF模型量化</h1>
+<p>在编译好的<code>llama.cpp</code>的<code>build/bin/</code>路径下，可以找到量化的可执行文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ./llama-quantize --<span class="hljs-built_in">help</span><br>usage: ./llama-quantize [--<span class="hljs-built_in">help</span>] [--allow-requantize] [--leave-output-tensor] [--pure] [--imatrix] [--include-weights] [--exclude-weights] [--output-tensor-type] [--token-embedding-type] [--override-kv] model-f32.gguf [model-quant.gguf] <span class="hljs-built_in">type</span> [nthreads]<br><br>  --allow-requantize: Allows requantizing tensors that have already been quantized. Warning: This can severely reduce quality compared to quantizing from 16bit or 32bit<br>  --leave-output-tensor: Will leave output.weight un(re)quantized. Increases model size but may also increase quality, especially when requantizing<br>  --pure: Disable k-quant mixtures and quantize all tensors to the same <span class="hljs-built_in">type</span><br>  --imatrix file_name: use data <span class="hljs-keyword">in</span> file_name as importance matrix <span class="hljs-keyword">for</span> quant optimizations<br>  --include-weights tensor_name: use importance matrix <span class="hljs-keyword">for</span> this/these tensor(s)<br>  --exclude-weights tensor_name: use importance matrix <span class="hljs-keyword">for</span> this/these tensor(s)<br>  --output-tensor-type ggml_type: use this ggml_type <span class="hljs-keyword">for</span> the output.weight tensor<br>  --token-embedding-type ggml_type: use this ggml_type <span class="hljs-keyword">for</span> the token embeddings tensor<br>  --keep-split: will generate quantized model <span class="hljs-keyword">in</span> the same shards as input<br>  --override-kv KEY=TYPE:VALUE<br>      Advanced option to override model metadata by key <span class="hljs-keyword">in</span> the quantized model. May be specified multiple <span class="hljs-built_in">times</span>.<br>Note: --include-weights and --exclude-weights cannot be used together<br><br>Allowed quantization types:<br>   2  or  Q4_0    :  4.34G, +0.4685 ppl @ Llama-3-8B<br>   3  or  Q4_1    :  4.78G, +0.4511 ppl @ Llama-3-8B<br>   8  or  Q5_0    :  5.21G, +0.1316 ppl @ Llama-3-8B<br>   9  or  Q5_1    :  5.65G, +0.1062 ppl @ Llama-3-8B<br>  19  or  IQ2_XXS :  2.06 bpw quantization<br>  20  or  IQ2_XS  :  2.31 bpw quantization<br>  28  or  IQ2_S   :  2.5  bpw quantization<br>  29  or  IQ2_M   :  2.7  bpw quantization<br>  24  or  IQ1_S   :  1.56 bpw quantization<br>  31  or  IQ1_M   :  1.75 bpw quantization<br>  36  or  TQ1_0   :  1.69 bpw ternarization<br>  37  or  TQ2_0   :  2.06 bpw ternarization<br>  10  or  Q2_K    :  2.96G, +3.5199 ppl @ Llama-3-8B<br>  21  or  Q2_K_S  :  2.96G, +3.1836 ppl @ Llama-3-8B<br>  23  or  IQ3_XXS :  3.06 bpw quantization<br>  26  or  IQ3_S   :  3.44 bpw quantization<br>  27  or  IQ3_M   :  3.66 bpw quantization mix<br>  12  or  Q3_K    : <span class="hljs-built_in">alias</span> <span class="hljs-keyword">for</span> Q3_K_M<br>  22  or  IQ3_XS  :  3.3 bpw quantization<br>  11  or  Q3_K_S  :  3.41G, +1.6321 ppl @ Llama-3-8B<br>  12  or  Q3_K_M  :  3.74G, +0.6569 ppl @ Llama-3-8B<br>  13  or  Q3_K_L  :  4.03G, +0.5562 ppl @ Llama-3-8B<br>  25  or  IQ4_NL  :  4.50 bpw non-linear quantization<br>  30  or  IQ4_XS  :  4.25 bpw non-linear quantization<br>  15  or  Q4_K    : <span class="hljs-built_in">alias</span> <span class="hljs-keyword">for</span> Q4_K_M<br>  14  or  Q4_K_S  :  4.37G, +0.2689 ppl @ Llama-3-8B<br>  15  or  Q4_K_M  :  4.58G, +0.1754 ppl @ Llama-3-8B<br>  17  or  Q5_K    : <span class="hljs-built_in">alias</span> <span class="hljs-keyword">for</span> Q5_K_M<br>  16  or  Q5_K_S  :  5.21G, +0.1049 ppl @ Llama-3-8B<br>  17  or  Q5_K_M  :  5.33G, +0.0569 ppl @ Llama-3-8B<br>  18  or  Q6_K    :  6.14G, +0.0217 ppl @ Llama-3-8B<br>   7  or  Q8_0    :  7.96G, +0.0026 ppl @ Llama-3-8B<br>   1  or  F16     : 14.00G, +0.0020 ppl @ Mistral-7B<br>  32  or  BF16    : 14.00G, -0.0050 ppl @ Mistral-7B<br>   0  or  F32     : 26.00G              @ 7B<br>          COPY    : only copy tensors, no quantizing<br></code></pre></td></tr></table></figure>
+<p>这里可以看到完整的可以执行量化操作的精度。例如我们可以量化一个<code>q4_0</code>精度的32B模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ./llama-quantize /datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B.gguf /datb/DeepSeek/models/DeepSeek-R1-Distill-Qwen-32B-Q4_0.gguf q4_0<br></code></pre></td></tr></table></figure>
+<p>输出结果对比（这里的Q8_0是直接从模型仓库里面下载的别人量化出来的Q8_0模型）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">-rw-rw-r-- 1 dechin dechin 65535969184 2月  13 09:33 DeepSeek-R1-Distill-Qwen-32B.gguf<br>-rw-rw-r-- 1 dechin dechin 18640230304 2月  13 09:51 DeepSeek-R1-Distill-Qwen-32B-Q4_0.gguf<br>-rw-rw-r-- 1 dechin dechin 34820884384 2月   9 01:44 DeepSeek-R1-Distill-Qwen-32B-Q8_0.gguf<br></code></pre></td></tr></table></figure>
+<p>从F32到Q8再到Q4，可以看到有一个很明显的内存占用的下降。我们可以根据自己本地的计算机资源来决定要做多少精度的量化操作。</p>
+<p>量化完成后，可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18702523/deepseek2#%E6%A8%A1%E5%9E%8B%E6%9E%84%E5%BB%BA%E9%85%8D%E7%BD%AE">这篇文章</a>的内容构建模型，导入模型成功以后，可以用<code>ollama list</code>查看到所有的本地模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ollama list<br>NAME                            ID              SIZE      MODIFIED      <br>deepseek-r1:32b-q2k             8d2a0c19f6e0    12 GB     5 seconds ago    <br>deepseek-r1:32b-q40             13c7c287f615    18 GB     3 minutes ago    <br>deepseek-r1:32b                 91f2de3dd7fd    34 GB     42 hours ago     <br>nomic-embed-text-v1.5:latest    5b3683392ccb    274 MB    43 hours ago     <br>deepseek-r1:14b                 ea35dfe18182    9.0 GB    7 days ago  <br></code></pre></td></tr></table></figure>
+<p>这里q2k也是本地量化的<code>Q2_K</code>的模型。只是从<code>Q4_0</code>到<code>Q2_k</code>已经没有太大的参数内存缩减了，所以很多人量化一般就到<code>Q4_0</code>这个级别，可以兼具性能与精确性。</p>
+<h1>其他报错处理</h1>
+<p>如果运行<code>llama-quantize</code>这个可执行文件出现这种报错：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs txt">./xxx/llama-quantize: error while loading shared libraries: libllama.so: cannot open shared object file: No such file or directory<br></code></pre></td></tr></table></figure>
+<p>动态链接库路径<code>LD_LIBRARY_PATH</code>没有设置，也可以选择直接进入到<code>bin/</code>路径下运行该可执行文件。</p>
+<h1>总结概要</h1>
+<p>这篇文章主要介绍了llama.cpp这一大模型工具的使用。因为已经使用Ollama来run大模型，因此仅介绍了llama.cpp在HF模型转GGUF模型中的应用，及其在大模型量化中的使用。大模型的参数量化技术，使得我们可以在本地有限预算的硬件条件下，也能够运行DeepSeek的蒸馏模型。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/quantize.html">https://www.cnblogs.com/dechinphy/p/quantize.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/m0_73365120/article/details/141901884">https://blog.csdn.net/m0_73365120/article/details/141901884</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/fbdd909a.html">https://dechin-phy.asia/posts/fbdd909a.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2025-02-12</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-02-17</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/a8897e6c.html">DeepSeek+PageAssist实现本地大模型联网</a><a class="next" href="/posts/f4d3e7c5.html">DeepSeek+Zotero</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

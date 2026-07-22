@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/4a91fd6c.html"><meta property="og:type" content="article"><meta property="og:title" content="Cython与CUDA之BatchGather"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/4a91fd6c.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2025-03-03T07:21:04.000Z"><meta property="article:modified_time" content="2025-03-03T08:11:00.000Z"><title>Cython与CUDA之BatchGather | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Cython与CUDA之BatchGather</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Cython与CUDA之BatchGather</h1><div class="post-meta">2025-03-03<span> | </span><span class="category"><a href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 8</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">CUDA头文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">CUDA文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Cython文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">Python调用文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">运行方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>以学习CUDA为目的，接上一篇关于Cython与CUDA架构下的Gather算子实现，这里我们加一个Batch的维度，做一个BatchGather的简单实现。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面一篇文章中，我们介绍过<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18740207/cycuda-gather">Cython+CUDA框架下实现一个简单的Gather算子的方法</a>。这里演示Gather算子的升级版本实现——BatchGather算子。不过这里只是加了一个Batch维度，并没有添加其他的维度，例如Dimension维度，在这里暂不考虑。</p>
+<h1>CUDA头文件</h1>
+<p>这里我们保留了原本的Gather部分，只添加一个BatchGather的运算，以下为<code>cuda_index.cuh</code>的内容：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">float</span> <span class="hljs-title function_">Gather</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N, <span class="hljs-type">int</span> M)</span>;<br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">float</span> <span class="hljs-title function_">BatchGather</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N, <span class="hljs-type">int</span> M, <span class="hljs-type">int</span> B)</span>;<br></code></pre></td></tr></table></figure>
+<p>BatchGather只是在Gather的基础上加了一个B的维度。除了CUDA算子本身的头文件之外，这里我们还使用到了异常捕获头文件<code>error.cuh</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">pragma</span> once</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> CHECK(call) do&#123;const cudaError_t error_code = call; <span class="hljs-keyword">if</span> (error_code != cudaSuccess)&#123;printf(<span class="hljs-string">&quot;CUDA Error:\n&quot;</span>); printf(<span class="hljs-string">&quot;    File:   %s\n&quot;</span>, __FILE__); printf(<span class="hljs-string">&quot;    Line:   %d\n&quot;</span>, __LINE__); printf(<span class="hljs-string">&quot;    Error code: %d\n&quot;</span>, error_code); printf(<span class="hljs-string">&quot;    Error text: %s\n&quot;</span>, cudaGetErrorString(error_code)); exit(1);&#125;&#125; while (0)</span><br></code></pre></td></tr></table></figure>
+<p>其中的宏可用于检测CUDA函数所抛出的异常。另外还有一个用于统计CUDA函数运行时长的头文件：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">pragma</span> once</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;cuda_runtime.h&gt;</span></span><br><br><span class="hljs-comment">// 宏定义，用于测量CUDA函数的执行时间</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> TIME_CUDA_FUNCTION(func) \</span><br><span class="hljs-meta">    do &#123; \</span><br><span class="hljs-meta">        cudaEvent_t start, stop; \</span><br><span class="hljs-meta">        float elapsedTime; \</span><br><span class="hljs-meta">        cudaEventCreate(&amp;start); \</span><br><span class="hljs-meta">        cudaEventCreate(&amp;stop); \</span><br><span class="hljs-meta">        cudaEventRecord(start, NULL); \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        func; \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        cudaEventRecord(stop, NULL); \</span><br><span class="hljs-meta">        cudaEventSynchronize(stop); \</span><br><span class="hljs-meta">        cudaEventElapsedTime(&amp;elapsedTime, start, stop); \</span><br><span class="hljs-meta">        printf(<span class="hljs-string">&quot;Time taken by function %s is: %f ms\n&quot;</span>, #func, elapsedTime); \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        cudaEventDestroy(start); \</span><br><span class="hljs-meta">        cudaEventDestroy(stop); \</span><br><span class="hljs-meta">    &#125; while (0)</span><br><br><span class="hljs-comment">// 宏定义，用于测量CUDA函数的执行时间并返回该时间</span><br><span class="hljs-meta">#<span class="hljs-keyword">define</span> GET_CUDA_TIME(func) \</span><br><span class="hljs-meta">    (&#123; \</span><br><span class="hljs-meta">        cudaEvent_t start, stop; \</span><br><span class="hljs-meta">        float elapsedTime = 0.0f; \</span><br><span class="hljs-meta">        cudaEventCreate(&amp;start); \</span><br><span class="hljs-meta">        cudaEventCreate(&amp;stop); \</span><br><span class="hljs-meta">        cudaEventRecord(start, NULL); \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        func; \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        cudaEventRecord(stop, NULL); \</span><br><span class="hljs-meta">        cudaEventSynchronize(stop); \</span><br><span class="hljs-meta">        cudaEventElapsedTime(&amp;elapsedTime, start, stop); \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        cudaEventDestroy(start); \</span><br><span class="hljs-meta">        cudaEventDestroy(stop); \</span><br><span class="hljs-meta">        \</span><br><span class="hljs-meta">        elapsedTime; \</span><br><span class="hljs-meta">    &#125;)</span><br></code></pre></td></tr></table></figure>
+<p>可选择直接打印时长，也可以选择返回时长的float值。</p>
+<h1>CUDA文件</h1>
+<p>接下来就是正式的CUDA函数内容<code>cuda_index.cu</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// nvcc -shared ./cuda_index.cu -Xcompiler -fPIC -o ./libcuindex.so</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;cuda_index.cuh&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;error.cuh&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;record.cuh&quot;</span></span><br><br>__global__ <span class="hljs-type">void</span> <span class="hljs-title function_">GatherKernel</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N)</span>&#123;<br>    <span class="hljs-type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;<br>    <span class="hljs-keyword">if</span> (idx &lt; N)&#123;<br>        res[idx] = source[index[idx]];<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">float</span> <span class="hljs-title function_">Gather</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N, <span class="hljs-type">int</span> M)</span>&#123;<br>    <span class="hljs-type">float</span> *souce_device, *res_device;<br>    <span class="hljs-type">int</span> *index_device;<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;souce_device, M * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>)));<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;res_device, N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>)));<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;index_device, N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">int</span>)));<br>    CHECK(cudaMemcpy(souce_device, source, M * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyHostToDevice));<br>    CHECK(cudaMemcpy(res_device, res, N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyHostToDevice));<br>    CHECK(cudaMemcpy(index_device, index, N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">int</span>), cudaMemcpyHostToDevice));<br>    <span class="hljs-type">int</span> block_size = <span class="hljs-number">1024</span>;<br>    <span class="hljs-type">int</span> grid_size = (N + block_size - <span class="hljs-number">1</span>) / block_size;<br>    <span class="hljs-type">float</span> timeTaken = GET_CUDA_TIME((GatherKernel&lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;(souce_device, index_device, res_device, N)));<br>    CHECK(cudaGetLastError());<br>    CHECK(cudaDeviceSynchronize());<br>    CHECK(cudaMemcpy(res, res_device, N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyDeviceToHost));<br>    CHECK(cudaFree(souce_device));<br>    CHECK(cudaFree(index_device));<br>    CHECK(cudaDeviceSynchronize());<br>    CHECK(cudaFree(res_device));<br>    CHECK(cudaDeviceReset());<br>    <span class="hljs-keyword">return</span> timeTaken;<br>&#125;<br><br>__global__ <span class="hljs-type">void</span> <span class="hljs-title function_">BatchGatherKernel</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N, <span class="hljs-type">int</span> M, <span class="hljs-type">int</span> B)</span>&#123;<br>    <span class="hljs-type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;<br>    <span class="hljs-keyword">if</span> (idx &lt; N*B)&#123;<br>        <span class="hljs-type">int</span> batch_idx = idx / N;<br>        <span class="hljs-type">int</span> source_idx = batch_idx * M + index[idx];<br>        res[idx] = source[source_idx];<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">float</span> <span class="hljs-title function_">BatchGather</span><span class="hljs-params">(<span class="hljs-type">float</span> *source, <span class="hljs-type">int</span> *index, <span class="hljs-type">float</span> *res, <span class="hljs-type">int</span> N, <span class="hljs-type">int</span> M, <span class="hljs-type">int</span> B)</span>&#123;<br>    <span class="hljs-type">float</span> *souce_device, *res_device;<br>    <span class="hljs-type">int</span> *index_device;<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;souce_device, B * M * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>)));<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;res_device, B * N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>)));<br>    CHECK(cudaMalloc((<span class="hljs-type">void</span> **)&amp;index_device, B * N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">int</span>)));<br>    CHECK(cudaMemcpy(souce_device, source, B * M * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyHostToDevice));<br>    CHECK(cudaMemcpy(res_device, res, B * N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyHostToDevice));<br>    CHECK(cudaMemcpy(index_device, index, B * N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">int</span>), cudaMemcpyHostToDevice));<br>    <span class="hljs-type">int</span> block_size = <span class="hljs-number">1024</span>;<br>    <span class="hljs-type">int</span> grid_size = (B * N + block_size - <span class="hljs-number">1</span>) / block_size;<br>    <span class="hljs-type">float</span> timeTaken = GET_CUDA_TIME((BatchGatherKernel&lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;(souce_device, index_device, res_device, N, M, B)));<br>    CHECK(cudaGetLastError());<br>    CHECK(cudaDeviceSynchronize());<br>    CHECK(cudaMemcpy(res, res_device, B * N * <span class="hljs-keyword">sizeof</span>(<span class="hljs-type">float</span>), cudaMemcpyDeviceToHost));<br>    CHECK(cudaFree(souce_device));<br>    CHECK(cudaFree(index_device));<br>    CHECK(cudaDeviceSynchronize());<br>    CHECK(cudaFree(res_device));<br>    CHECK(cudaDeviceReset());<br>    <span class="hljs-keyword">return</span> timeTaken;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这里传入到CUDA之前，我们需要在Cython或者Python中把相关的数据压缩为一维，所以传入CUDA函数的是一个一维的指针。相比于单一的Gather操作，BatchGather中的几个输入含义有所变化，例如<code>N</code>表示的是单Batch的Index长度，<code>M</code>表示的是单Batch的源数组长度。</p>
+<h1>Cython文件</h1>
+<p>对于一个新的Batch函数来说，我们需要构建一个新的Cython调用函数<code>wrapper.pyx</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># cythonize -i -f wrapper.pyx</span><br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>cimport numpy <span class="hljs-keyword">as</span> np<br>cimport cython<br><br>cdef extern <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;&lt;dlfcn.h&gt;&quot;</span> nogil:<br>    void *dlopen(const char *, <span class="hljs-built_in">int</span>)<br>    char *dlerror()<br>    void *dlsym(void *, const char *)<br>    <span class="hljs-built_in">int</span> dlclose(void *)<br>    enum:<br>        RTLD_LAZY<br><br>ctypedef <span class="hljs-built_in">float</span> (*GatherFunc)(<span class="hljs-built_in">float</span> *source, <span class="hljs-built_in">int</span> *index, <span class="hljs-built_in">float</span> *res, <span class="hljs-built_in">int</span> N, <span class="hljs-built_in">int</span> M) noexcept nogil<br>ctypedef <span class="hljs-built_in">float</span> (*BatchGatherFunc)(<span class="hljs-built_in">float</span> *source, <span class="hljs-built_in">int</span> *index, <span class="hljs-built_in">float</span> *res, <span class="hljs-built_in">int</span> N, <span class="hljs-built_in">int</span> M, <span class="hljs-built_in">int</span> B) noexcept nogil<br><br>cdef void* handle = dlopen(<span class="hljs-string">&#x27;/path/to/libcuindex.so&#x27;</span>, RTLD_LAZY)<br><br><span class="hljs-meta">@cython.boundscheck(<span class="hljs-params"><span class="hljs-literal">False</span></span>)</span><br><span class="hljs-meta">@cython.wraparound(<span class="hljs-params"><span class="hljs-literal">False</span></span>)</span><br>cpdef <span class="hljs-built_in">float</span>[:] cuda_gather(<span class="hljs-built_in">float</span>[:] x, <span class="hljs-built_in">int</span>[:] idx):<br>    cdef:<br>        GatherFunc Gather<br>        <span class="hljs-built_in">float</span> timeTaken<br>        <span class="hljs-built_in">int</span> N = idx.shape[<span class="hljs-number">0</span>]<br>        <span class="hljs-built_in">int</span> M = x.shape[<span class="hljs-number">0</span>]<br>        <span class="hljs-built_in">float</span>[:] res = np.zeros((N, ), dtype=np.float32)<br>    Gather = &lt;GatherFunc&gt;dlsym(handle, <span class="hljs-string">&quot;Gather&quot;</span>)<br>    timeTaken = Gather(&amp;x[<span class="hljs-number">0</span>], &amp;idx[<span class="hljs-number">0</span>], &amp;res[<span class="hljs-number">0</span>], N, M)<br>    <span class="hljs-built_in">print</span> (timeTaken)<br>    <span class="hljs-keyword">return</span> res<br><br><span class="hljs-meta">@cython.boundscheck(<span class="hljs-params"><span class="hljs-literal">False</span></span>)</span><br><span class="hljs-meta">@cython.wraparound(<span class="hljs-params"><span class="hljs-literal">False</span></span>)</span><br>cpdef <span class="hljs-built_in">float</span>[:] batch_cuda_gather(<span class="hljs-built_in">float</span>[:] x, <span class="hljs-built_in">int</span>[:] idx, <span class="hljs-built_in">int</span> B):<br>    cdef:<br>        BatchGatherFunc BatchGather<br>        <span class="hljs-built_in">float</span> timeTaken<br>        <span class="hljs-built_in">int</span> N = idx.shape[<span class="hljs-number">0</span>] // B<br>        <span class="hljs-built_in">int</span> M = x.shape[<span class="hljs-number">0</span>] // B<br>        <span class="hljs-built_in">float</span>[:] res = np.zeros((B*N, ), dtype=np.float32)<br>    BatchGather = &lt;BatchGatherFunc&gt;dlsym(handle, <span class="hljs-string">&quot;BatchGather&quot;</span>)<br>    timeTaken = BatchGather(&amp;x[<span class="hljs-number">0</span>], &amp;idx[<span class="hljs-number">0</span>], &amp;res[<span class="hljs-number">0</span>], N, M, B)<br>    <span class="hljs-built_in">print</span> (timeTaken)<br>    <span class="hljs-keyword">return</span> res<br><br><span class="hljs-keyword">while</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">True</span>:<br>    dlclose(handle)<br></code></pre></td></tr></table></figure>
+<p>这里我们还是接受一维的数组，多引入一个Batch维度的参数<code>B</code>，其他的都是一样的。</p>
+<h1>Python调用文件</h1>
+<p>最后是用来调用的最上层Python端的代码<code>test_gather.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>np.random.seed(<span class="hljs-number">0</span>)<br><span class="hljs-keyword">from</span> wrapper <span class="hljs-keyword">import</span> batch_cuda_gather<br><br>B = <span class="hljs-number">2</span><br>M = <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">128</span><br>N = <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span><br><br>x = np.random.random((M*B,)).astype(np.float32)<br>idx = np.random.randint(<span class="hljs-number">0</span>, M, (N*B,)).astype(np.int32)<br><br>np_res = np.zeros((B, N), dtype=np.float32)<br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(B):<br>    np_res[i] = x.reshape((B,-<span class="hljs-number">1</span>))[i][idx.reshape((B, -<span class="hljs-number">1</span>))[i]]<br>np_res = np_res.reshape(-<span class="hljs-number">1</span>)<br><br>res = np.asarray(batch_cuda_gather(x, idx, B))<br><span class="hljs-built_in">print</span> (res.shape)<br><span class="hljs-built_in">print</span> ((res==np_res).<span class="hljs-built_in">sum</span>())<br></code></pre></td></tr></table></figure>
+<p>为了方便处理，在构建数据的时候，我们直接在生成数据阶段就生成一维的数据，然后直接调用Cython函数进行CUDA相关运算。</p>
+<h1>运行方法</h1>
+<p>首先将CUDA文件编译成动态链接库，使其可以在Cython中被调用。然后将Cython文件编译成动态链接库，使其可以在Python中被调用。最后运行Python代码即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ nvcc -shared ./cuda_index.cu -Xcompiler -fPIC -o ./libcuindex.so<br>$ cythonize -i -f wrapper.pyx<br>$ python3 test_gather.py<br></code></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">0.9606080055236816<br>(2097152,)<br>2097152<br></code></pre></td></tr></table></figure>
+<p>这表示CUDA核函数部分的运行时长为0.96ms，输入的数组总长度为2097152，跟numpy版本的数组索引实现对比之后，得到2097152个相同的元素。也就是说，计算结果跟numpy的计算结果是一致的，以此来校验CUDA部分的运算结果。</p>
+<h1>总结概要</h1>
+<p>以学习CUDA为目的，接上一篇关于Cython与CUDA架构下的Gather算子实现，这里我们加一个Batch的维度，做一个BatchGather的简单实现。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cython-cuda-batchgather.html">https://www.cnblogs.com/dechinphy/p/cython-cuda-batchgather.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/4a91fd6c.html">https://dechin-phy.asia/posts/4a91fd6c.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2025-03-03</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2025-03-03</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/a2d9c82a.html">Cython与CUDA之Add</a><a class="next" href="/posts/22680821.html">CUDA时长统计</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

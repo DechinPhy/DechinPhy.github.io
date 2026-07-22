@@ -1,0 +1,270 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/e858e7e6.html"><meta property="og:type" content="article"><meta property="og:title" content="使用line_profiler对python代码性能进行评估优化"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/e858e7e6.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-01-20T07:46:14.000Z"><meta property="article:modified_time" content="2021-01-20T11:46:00.000Z"><title>使用line_profiler对python代码性能进行评估优化 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用line_profiler对python代码性能进行评估优化</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用line_profiler对python代码性能进行评估优化</h1><div class="post-meta">2021-01-20<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 18</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">性能测试的意义</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">line_profiler的安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">在需要调试优化的代码中引用line_profiler</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">使用line_profiler进行简单性能分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">使用line_profiler分析不同函数库计算正弦函数sin的效率</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>介绍python的逐行性能分析工具line_profiler的安装与使用，对给定的两个案例用line_profiler进行分析并给出性能分析的结论，其中通过正弦函数的不同实现方式的性能排名也给了大家一些库的使用的启发。</p>
+<span id="more"></span>
+<h1>性能测试的意义</h1>
+<p>在做完一个python项目之后，我们经常要考虑对软件的性能进行优化。那么我们需要一个软件优化的思路，首先我们需要明确软件本身代码以及函数的瓶颈，最理想的情况就是有这样一个工具，能够将一个目标函数的代码每一行的性能都评估出来，这样我们可以针对所有代码中性能最差的那一部分，来进行针对性的优化。开源库<code>line_profiler</code>就做了一个这样的工作，开源地址：<a href="github.com/rkern/line_profiler">github.com/rkern/line_profiler</a>。下面让我们一起看下该工具的安装和使用详情。</p>
+<h1>line_profiler的安装</h1>
+<p><code>line_profiler</code>的安装支持源码安装和pip的安装，这里我们仅介绍pip形式的安装，也比较容易，源码安装方式请参考官方开源地址。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro line_profiler]$ python3 -m pip install line_profiler<br>Collecting line_profiler<br>  Downloading line_profiler-3.1.0-cp38-cp38-manylinux2010_x86_64.whl (65 kB)<br>     |████████████████████████████████| 65 kB 221 kB/s <br>Requirement already satisfied: IPython <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from line_profiler) (7.19.0)<br>Requirement already satisfied: prompt-toolkit!=3.0.0,!=3.0.1,&lt;3.1.0,&gt;=2.0.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (3.0.8)<br>Requirement already satisfied: backcall <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (0.2.0)<br>Requirement already satisfied: pexpect&gt;4.3; sys_platform != <span class="hljs-string">&quot;win32&quot;</span> <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (4.8.0)<br>Requirement already satisfied: setuptools&gt;=18.5 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (50.3.1.post20201107)<br>Requirement already satisfied: jedi&gt;=0.10 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (0.17.1)<br>Requirement already satisfied: decorator <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (4.4.2)<br>Requirement already satisfied: traitlets&gt;=4.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (5.0.5)<br>Requirement already satisfied: pygments <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (2.7.2)<br>Requirement already satisfied: pickleshare <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from IPython-&gt;line_profiler) (0.7.5)<br>Requirement already satisfied: wcwidth <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from prompt-toolkit!=3.0.0,!=3.0.1,&lt;3.1.0,&gt;=2.0.0-&gt;IPython-&gt;line_profiler) (0.2.5)<br>Requirement already satisfied: ptyprocess&gt;=0.5 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pexpect&gt;4.3; sys_platform != <span class="hljs-string">&quot;win32&quot;</span>-&gt;IPython-&gt;line_profiler) (0.6.0)<br>Requirement already satisfied: parso&lt;0.8.0,&gt;=0.7.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from jedi&gt;=0.10-&gt;IPython-&gt;line_profiler) (0.7.0)<br>Requirement already satisfied: ipython-genutils <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from traitlets&gt;=4.2-&gt;IPython-&gt;line_profiler) (0.2.0)<br>Installing collected packages: line-profiler<br>Successfully installed line-profiler-3.1.0<br></code></pre></td></tr></table></figure>
+<p>这里额外介绍一种临时使用pip的源进行安装的方案，这里用到的是腾讯所提供的pypi源：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 -m pip install -i https://mirrors.cloud.tencent.com/pypi/simple line_profiler<br></code></pre></td></tr></table></figure>
+<p>如果需要永久保存源可以修改<code>~/.pip/pip.conf</code>文件，一个参考示例如下（采用华为云的镜像源）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[global]<br>index-url = https://mirrors.huaweicloud.com/repository/pypi/simple<br>trusted-host = mirrors.huaweicloud.com<br><span class="hljs-built_in">timeout</span> = 120<br></code></pre></td></tr></table></figure>
+<h1>在需要调试优化的代码中引用line_profiler</h1>
+<p>让我们直接来看一个案例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># line_profiler_test.py</span><br><span class="hljs-keyword">from</span> line_profiler <span class="hljs-keyword">import</span> LineProfiler<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-meta">@profile</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_profiler</span>():<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">100</span>):<br>        a = np.random.randn(<span class="hljs-number">100</span>)<br>        b = np.random.randn(<span class="hljs-number">1000</span>)<br>        c = np.random.randn(<span class="hljs-number">10000</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    test_profiler()<br></code></pre></td></tr></table></figure>
+<p>在这个案例中，我们定义了一个需要测试的函数<code>test_profiler</code>，在这个函数中有几行待分析性能的模块<code>numpy.random.randn</code>。使用的方式就是先import进来<code>LineProfiler</code>函数，然后在需要逐行进行性能分析的函数上方引用名为<code>profile</code>的装饰器，就完成了line_profiler性能分析的配置。关于python装饰器的使用和原理，可以参考这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/decoretor.html">博客</a>的内容介绍。还有一点需要注意的是，line_profiler所能够分析的范围仅限于加了装饰器的函数内容，如果函数内有其他的调用之类的，不会再进入其他的函数进行分析，除了内嵌的嵌套函数。</p>
+<h1>使用line_profiler进行简单性能分析</h1>
+<p>line_profiler的使用方法也较为简单，主要就是两步：先用<code>kernprof</code>解析，再采用python执行得到分析结果。</p>
+<ol>
+<li>在定义好需要分析的函数模块之后，用<code>kernprof</code>解析成二进制<code>lprof</code>文件：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# kernprof -l line_profiler_test.py <br>Wrote profile results to line_profiler_test.py.lprof<br></code></pre></td></tr></table></figure>
+<p>该命令执行结束后，会在当前目录下产生一个<code>lprof</code>文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# ll<br>总用量 8<br>-rw-r--r-- 1 dechin dechin 304  1月 20 16:00 line_profiler_test.py<br>-rw-r--r-- 1 root   root   185  1月 20 16:00 line_profiler_test.py.lprof<br></code></pre></td></tr></table></figure>
+<ol start="2">
+<li>使用<code>python3</code>运行<code>lprof</code>二进制文件：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# python3 -m line_profiler line_profiler_test.py.lprof <br>Timer unit: 1e-06 s<br><br>Total <span class="hljs-keyword">time</span>: 0.022633 s<br>File: line_profiler_test.py<br>Function: test_profiler at line 5<br><br>Line <span class="hljs-comment">#      Hits         Time  Per Hit   % Time  Line Contents</span><br>==============================================================<br>     5                                           @profile<br>     6                                           def test_profiler():<br>     7       101         40.0      0.4      0.2      <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(100):<br>     8       100        332.0      3.3      1.5          a = np.random.randn(100)<br>     9       100       2092.0     20.9      9.2          b = np.random.randn(1000)<br>    10       100      20169.0    201.7     89.1          c = np.random.randn(10000)<br>    11         1          0.0      0.0      0.0      <span class="hljs-built_in">return</span> None<br></code></pre></td></tr></table></figure>
+<p>这里我们就直接得到了逐行的性能分析结论。简单介绍一下每一列的含义：代码在代码文件中对应的行号、被调用的次数、该行的总共执行时间、单次执行所消耗的时间、执行时间在该函数下的占比，最后一列是具体的代码内容。其实，关于<code>line_profiler</code>的使用介绍到这里就可以结束了，但是我们希望通过另外一个实际案例来分析line_profiler的功能，感兴趣的读者可以继续往下阅读。</p>
+<h1>使用line_profiler分析不同函数库计算正弦函数sin的效率</h1>
+<p>我们这里需要测试多个库中所实现的<code>正弦函数</code>，其中包含我们自己使用的fortran内置的<code>SIN</code>函数。</p>
+<p>在演示line_profiler的性能测试之前，让我们先看看如何将一个fortran的<code>f90</code>文件转换成python可调用的动态链接库文件。</p>
+<ol>
+<li>首先在Manjaro Linux平台上安装gfotran</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# pacman -S gcc-fortran<br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (1) gcc-fortran-10.2.0-4<br><br>下载大小：   9.44 MiB<br>全部安装大小：  31.01 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> gcc-fortran-10.2.0-4-x86_64                                                                                        9.4 MiB  6.70 MiB/s 00:01 [#######################################################################################] 100%<br>(1/1) 正在检查密钥环里的密钥                                                                                                                  [#######################################################################################] 100%<br>(1/1) 正在检查软件包完整性                                                                                                                    [#######################################################################################] 100%<br>(1/1) 正在加载软件包文件                                                                                                                      [#######################################################################################] 100%<br>(1/1) 正在检查文件冲突                                                                                                                        [#######################################################################################] 100%<br>(1/1) 正在检查可用存储空间                                                                                                                    [#######################################################################################] 100%<br>:: 正在处理软件包的变化...<br>(1/1) 正在安装 gcc-fortran                                                                                                                    [#######################################################################################] 100%<br>:: 正在运行事务后钩子函数...<br>(1/2) Arming ConditionNeedsUpdate...<br>(2/2) Updating the info directory file...<br></code></pre></td></tr></table></figure>
+<ol start="2">
+<li>创建一个简单的fortran文件<code>fmath.f90</code>，功能为返回正弦函数的值：</li>
+</ol>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs fortran"><span class="hljs-function"><span class="hljs-keyword">subroutine</span></span> fsin(theta,result)<br>        <span class="hljs-keyword">implicit</span> <span class="hljs-keyword">none</span><br>        <span class="hljs-keyword">real</span>*<span class="hljs-number">8</span>::theta<br>        <span class="hljs-keyword">real</span>*<span class="hljs-number">8</span>,<span class="hljs-keyword">intent</span>(<span class="hljs-keyword">out</span>)::result<br>        result=<span class="hljs-built_in">SIN</span>(theta)<br><span class="hljs-keyword">end</span> <span class="hljs-function"><span class="hljs-keyword">subroutine</span></span><br></code></pre></td></tr></table></figure>
+<ol start="3">
+<li>用f2py将该fortran文件编译成名为<code>fmath</code>的动态链接库：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# f2py -c -m fmath fmath.f90 <br>running build<br>running config_cc<br>unifing config_cc, config, build_clib, build_ext, build commands --compiler options<br>running config_fc<br>unifing config_fc, config, build_clib, build_ext, build commands --fcompiler options<br>running build_src<br>build_src<br>building extension <span class="hljs-string">&quot;fmath&quot;</span> sources<br>f2py options: []<br>f2py:&gt; /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fmathmodule.c<br>creating /tmp/tmpup5ia9lf/src.linux-x86_64-3.8<br>Reading fortran codes...<br>        Reading file <span class="hljs-string">&#x27;fmath.f90&#x27;</span> (format:free)<br>Post-processing...<br>        Block: fmath<br>                        Block: fsin<br>Post-processing (stage 2)...<br>Building modules...<br>        Building module <span class="hljs-string">&quot;fmath&quot;</span>...<br>                Constructing wrapper <span class="hljs-keyword">function</span> <span class="hljs-string">&quot;fsin&quot;</span>...<br>                  result = fsin(theta)<br>        Wrote C/API module <span class="hljs-string">&quot;fmath&quot;</span> to file <span class="hljs-string">&quot;/tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fmathmodule.c&quot;</span><br>  adding <span class="hljs-string">&#x27;/tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.c&#x27;</span> to sources.<br>  adding <span class="hljs-string">&#x27;/tmp/tmpup5ia9lf/src.linux-x86_64-3.8&#x27;</span> to include_dirs.<br>copying /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/f2py/src/fortranobject.c -&gt; /tmp/tmpup5ia9lf/src.linux-x86_64-3.8<br>copying /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/f2py/src/fortranobject.h -&gt; /tmp/tmpup5ia9lf/src.linux-x86_64-3.8<br>build_src: building npy-pkg config files<br>running build_ext<br>customize UnixCCompiler<br>customize UnixCCompiler using build_ext<br>get_default_fcompiler: matching types: <span class="hljs-string">&#x27;[&#x27;</span>gnu95<span class="hljs-string">&#x27;, &#x27;</span>intel<span class="hljs-string">&#x27;, &#x27;</span>lahey<span class="hljs-string">&#x27;, &#x27;</span>pg<span class="hljs-string">&#x27;, &#x27;</span>absoft<span class="hljs-string">&#x27;, &#x27;</span>nag<span class="hljs-string">&#x27;, &#x27;</span>vast<span class="hljs-string">&#x27;, &#x27;</span>compaq<span class="hljs-string">&#x27;, &#x27;</span>intele<span class="hljs-string">&#x27;, &#x27;</span>intelem<span class="hljs-string">&#x27;, &#x27;</span>gnu<span class="hljs-string">&#x27;, &#x27;</span>g95<span class="hljs-string">&#x27;, &#x27;</span>pathf95<span class="hljs-string">&#x27;, &#x27;</span>nagfor<span class="hljs-string">&#x27;]&#x27;</span><br>customize Gnu95FCompiler<br>Found executable /usr/bin/gfortran<br>customize Gnu95FCompiler<br>customize Gnu95FCompiler using build_ext<br>building <span class="hljs-string">&#x27;fmath&#x27;</span> extension<br>compiling C sources<br>C compiler: gcc -pthread -B /home/dechin/anaconda3/compiler_compat -Wl,--sysroot=/ -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC<br><br>creating /tmp/tmpup5ia9lf/tmp<br>creating /tmp/tmpup5ia9lf/tmp/tmpup5ia9lf<br>creating /tmp/tmpup5ia9lf/tmp/tmpup5ia9lf/src.linux-x86_64-3.8<br>compile options: <span class="hljs-string">&#x27;-I/tmp/tmpup5ia9lf/src.linux-x86_64-3.8 -I/home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include -I/home/dechin/anaconda3/include/python3.8 -c&#x27;</span><br>gcc: /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fmathmodule.c<br>gcc: /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.c<br>In file included from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/ndarraytypes.h:1822,<br>                 from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/ndarrayobject.h:12,<br>                 from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/arrayobject.h:4,<br>                 from /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.h:13,<br>                 from /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fmathmodule.c:15:<br>/home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/npy_1_7_deprecated_api.h:17:2: 警告：#warning <span class="hljs-string">&quot;Using deprecated NumPy API, disable it with &quot;</span> <span class="hljs-string">&quot;#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION&quot;</span> [-Wcpp]<br>   17 | <span class="hljs-comment">#warning &quot;Using deprecated NumPy API, disable it with &quot; \</span><br>      |  ^~~~~~~<br>In file included from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/ndarraytypes.h:1822,<br>                 from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/ndarrayobject.h:12,<br>                 from /home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/arrayobject.h:4,<br>                 from /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.h:13,<br>                 from /tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.c:2:<br>/home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include/numpy/npy_1_7_deprecated_api.h:17:2: 警告：#warning <span class="hljs-string">&quot;Using deprecated NumPy API, disable it with &quot;</span> <span class="hljs-string">&quot;#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION&quot;</span> [-Wcpp]<br>   17 | <span class="hljs-comment">#warning &quot;Using deprecated NumPy API, disable it with &quot; \</span><br>      |  ^~~~~~~<br>compiling Fortran sources<br>Fortran f77 compiler: /usr/bin/gfortran -Wall -g -ffixed-form -fno-second-underscore -fPIC -O3 -funroll-loops<br>Fortran f90 compiler: /usr/bin/gfortran -Wall -g -fno-second-underscore -fPIC -O3 -funroll-loops<br>Fortran fix compiler: /usr/bin/gfortran -Wall -g -ffixed-form -fno-second-underscore -Wall -g -fno-second-underscore -fPIC -O3 -funroll-loops<br>compile options: <span class="hljs-string">&#x27;-I/tmp/tmpup5ia9lf/src.linux-x86_64-3.8 -I/home/dechin/anaconda3/lib/python3.8/site-packages/numpy/core/include -I/home/dechin/anaconda3/include/python3.8 -c&#x27;</span><br>gfortran:f90: fmath.f90<br>/usr/bin/gfortran -Wall -g -Wall -g -shared /tmp/tmpup5ia9lf/tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fmathmodule.o /tmp/tmpup5ia9lf/tmp/tmpup5ia9lf/src.linux-x86_64-3.8/fortranobject.o /tmp/tmpup5ia9lf/fmath.o -L/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib -L/usr/lib/gcc/x86_64-pc-linux-gnu/10.2.0/../../../../lib -lgfortran -o ./fmath.cpython-38-x86_64-linux-gnu.so<br>Removing build directory /tmp/tmpup5ia9lf<br></code></pre></td></tr></table></figure>
+<p>这中间会有一些告警，但是并不影响我们的正常使用，编译好之后，可以在当前目录下看到一个so文件（如果是windows平台可能是其他类型的动态链接库文件）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# ll<br>总用量 120<br>-rwxr-xr-x 1 root   root   107256  1月 20 16:40 fmath.cpython-38-x86_64-linux-gnu.so<br>-rw-r--r-- 1 root   root      150  1月 20 16:40 fmath.f90<br>-rw-r--r-- 1 dechin dechin    304  1月 20 16:00 line_profiler_test.py<br>-rw-r--r-- 1 root   root      185  1月 20 16:00 line_profiler_test.py.lprof<br></code></pre></td></tr></table></figure>
+<ol start="3">
+<li>用ipython测试该动态链接库的功能是否正常：</li>
+</ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# ipython<br>Python 3.8.5 (default, Sep  4 2020, 07:30:14) <br>Type <span class="hljs-string">&#x27;copyright&#x27;</span>, <span class="hljs-string">&#x27;credits&#x27;</span> or <span class="hljs-string">&#x27;license&#x27;</span> <span class="hljs-keyword">for</span> more information<br>IPython 7.19.0 -- An enhanced Interactive Python. Type <span class="hljs-string">&#x27;?&#x27;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.<br><br>In [1]: from fmath import fsin<br><br>In [2]: <span class="hljs-built_in">print</span> (fsin(3.14))<br>0.0015926529164868282<br><br>In [3]: <span class="hljs-built_in">print</span> (fsin(3.1415926))<br>5.3589793170057245e-08<br></code></pre></td></tr></table></figure>
+<p>这里我们可以看到基于fortran的正弦函数的功能已经完成实现了，接下来让我们正式对比几种正弦函数实现的性能（底层的实现有可能重复，这里作为黑盒来进行性能测试）。</p>
+<p>首先，我们还是需要创建好待测试的python文件<code>sin_profiler_test.py</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># sin_profiler_test.py</span><br><span class="hljs-keyword">from</span> line_profiler <span class="hljs-keyword">import</span> LineProfiler<br><span class="hljs-keyword">import</span> random<br><span class="hljs-keyword">from</span> numpy <span class="hljs-keyword">import</span> sin <span class="hljs-keyword">as</span> numpy_sin<br><span class="hljs-keyword">from</span> math <span class="hljs-keyword">import</span> sin <span class="hljs-keyword">as</span> math_sin<br><span class="hljs-comment"># from cupy import sin as cupy_sin</span><br><span class="hljs-keyword">from</span> cmath <span class="hljs-keyword">import</span> sin <span class="hljs-keyword">as</span> cmath_sin<br><span class="hljs-keyword">from</span> fmath <span class="hljs-keyword">import</span> fsin <span class="hljs-keyword">as</span> fortran_sin<br><br><span class="hljs-meta">@profile</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_profiler</span>():<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">100000</span>):<br>        r = random.random()<br>        a = numpy_sin(r)<br>        b = math_sin(r)<br>        <span class="hljs-comment"># c = cupy_sin(r)</span><br>        d = cmath_sin(r)<br>        e = fortran_sin(r)<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    test_profiler()<br></code></pre></td></tr></table></figure>
+<p>这里<code>line_profiler</code>的定义跟前面定义的例子一致，我们主要测试的对象为<code>numpy,math,cmath</code>四个开源库的正弦函数实现以及自己实现的一个fortran的正弦函数，通过上面介绍的<code>f2py</code>构造的动态链接库跟python实现无缝对接。由于这里的<code>cupy</code>库没有安装成功，所以这里暂时没办法测试而注释掉了。接下来还是一样的，通过<code>kernprof</code>进行编译构建：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# kernprof -l sin_profiler_test.py <br>Wrote profile results to sin_profiler_test.py.lprof<br></code></pre></td></tr></table></figure>
+<p>最后通过<code>python3</code>来执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# python3 -m line_profiler sin_profiler_test.py.lprof <br>Timer unit: 1e-06 s<br><br>Total <span class="hljs-keyword">time</span>: 0.261304 s<br>File: sin_profiler_test.py<br>Function: test_profiler at line 10<br><br>Line <span class="hljs-comment">#      Hits         Time  Per Hit   % Time  Line Contents</span><br>==============================================================<br>    10                                           @profile<br>    11                                           def test_profiler():<br>    12    100001      28032.0      0.3     10.7      <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> range(100000):<br>    13    100000      33995.0      0.3     13.0          r = random.random()<br>    14    100000      86870.0      0.9     33.2          a = numpy_sin(r)<br>    15    100000      33374.0      0.3     12.8          b = math_sin(r)<br>    16                                                   <span class="hljs-comment"># c = cupy_sin(r)</span><br>    17    100000      40179.0      0.4     15.4          d = cmath_sin(r)<br>    18    100000      38854.0      0.4     14.9          e = fortran_sin(r)<br>    19         1          0.0      0.0      0.0      <span class="hljs-built_in">return</span> None<br></code></pre></td></tr></table></figure>
+<p>从这个结果上我们可以看出，在这测试的四个库中，<code>math</code>的计算效率是最高的，<code>numpy</code>的计算效率是最低的，而我们自己编写的<code>fortran接口函数</code>甚至都比<code>numpy</code>的实现快了一倍，仅次于<code>math</code>的实现。其实，这里值涉及到了单个函数的性能测试，我们还可以通过<code>ipython</code>中自带的<code>timeit</code>来进行测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro line_profiler]# ipython<br>Python 3.8.5 (default, Sep  4 2020, 07:30:14) <br>Type <span class="hljs-string">&#x27;copyright&#x27;</span>, <span class="hljs-string">&#x27;credits&#x27;</span> or <span class="hljs-string">&#x27;license&#x27;</span> <span class="hljs-keyword">for</span> more information<br>IPython 7.19.0 -- An enhanced Interactive Python. Type <span class="hljs-string">&#x27;?&#x27;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.<br><br>In [1]: from fmath import fsin<br><br>In [2]: import random<br><br>In [3]: %timeit fsin(random.random())<br>145 ns ± 2.38 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)<br><br>In [4]: from math import sin as math_sin<br><br>In [5]: %timeit math_sin(random.random())<br>107 ns ± 0.116 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)<br><br>In [6]: from numpy import sin as numpy_sin<br><br>In [7]: %timeit numpy_sin(random.random())<br>611 ns ± 4.28 ns per loop (mean ± std. dev. of 7 runs, 1000000 loops each)<br><br>In [8]: from cmath import sin as cmath_sin<br><br>In [9]: %timeit cmath_sin(random.random())<br>151 ns ± 1.01 ns per loop (mean ± std. dev. of 7 runs, 10000000 loops each)<br></code></pre></td></tr></table></figure>
+<p>在这个结果中我们看到排名的趋势依然跟之前的保持一致，但是由于将<code>random</code>模块和计算模块放在一起，在给出的时间数值上有些差异。</p>
+<h1>总结概要</h1>
+<p>本文重点介绍了python的一款逐行性能分析的工具<code>line_profiler</code>，通过简单的装饰器的调用就可以分析出程序的性能瓶颈，从而进行针对性的优化。另外，在测试的过程中我们还可以发现，不同形式的正弦三角函数实现，性能是存在差异的，只是在日常使用频率较低的情况下是不感知的。需要了解的是，即使是正弦函数也有很多不同的实现方案，比如各种级数展开，而目前最流行、性能最高的计算方式，其实还是通过查表法。因此，不同的算法实现、不同的语言实现，都会导致完全不一样的结果。就测试情况而言，已知的性能排名为：<code>math</code>&lt;<code>fortran</code>&lt;<code>cmath</code>&lt;<code>numpy</code>从左到右运行时长逐步增加。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/line-profiler.html">https://www.cnblogs.com/dechinphy/p/line-profiler.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/e858e7e6.html">https://dechin-phy.asia/posts/e858e7e6.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-01-20</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-01-20</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/3621ed54.html">用tqdm和rich为固定路径和目标的python算法代码实现进度条</a><a class="next" href="/posts/7170d3b8.html">基于numpy.einsum的张量网络计算</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

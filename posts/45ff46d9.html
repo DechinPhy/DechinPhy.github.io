@@ -1,0 +1,230 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/45ff46d9.html"><meta property="og:type" content="article"><meta property="og:title" content="在Linux上安装和使用免费版本的PyMol"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/45ff46d9.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2023-06-26T01:05:17.000Z"><meta property="article:modified_time" content="2023-06-26T02:42:00.000Z"><title>在Linux上安装和使用免费版本的PyMol | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">在Linux上安装和使用免费版本的PyMol</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">在Linux上安装和使用免费版本的PyMol</h1><div class="post-meta">2023-06-26<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">安装pymol-open-source</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>这篇文章主要介绍在Linux平台下安装开源版PyMol的简单方法。由于官方主要提供商业版的安装方法，而提供whl安装包的平台也只有Windows系统下的编译包。其实在Anaconda的库中是有提供pymol的开源版本的，这里借这篇文章顺便推广一下。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>PyMol是一个类似于VMD的分子可视化工具，也是在PyQt的基础上开发的。但是由于其商业化运营，软件分为了教育版、开源版和商业版三个版本。其中教育版会有水印，商业版要收费，但是官方不提供开源版本的安装方法。按照参考链接1的内容，可以在Windows系统上面安装一个开源版本的PyMol，但是该发行版只有Windows平台的编译包。所以如果需要在Linux上安装PyMol，就只能在Github上面下载源码进行编译构建。</p>
+<p>但是经过数番尝试，在编译过程中会遇到不少问题，尤其是在手动构建netcdf的时候，总是提示无法构建。在经过多个平台的检索之后，最终发现在Anaconda的库中有一个名为<code>pymol-open-source</code>的包，详情可见参考链接2。这个包就是PyMol的开源版本，但是网上几乎很难找到这个包的相关信息。它不仅仅是开源版，还几乎支持了全平台的使用，本文主要简单介绍一下这个包的安装和简单使用。</p>
+<h1>安装pymol-open-source</h1>
+<p>在本地的conda环境下，直接执行如下指令，即可自动完成安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ conda install -c conda-forge pymol-open-source<br>Collecting package metadata (current_repodata.json): <span class="hljs-keyword">done</span><br>Solving environment: <span class="hljs-keyword">done</span><br><br><br>==&gt; WARNING: A newer version of conda exists. &lt;==<br>  current version: 23.1.0<br>  latest version: 23.5.0<br><br>Please update conda by running<br><br>    $ conda update -n base -c defaults conda<br><br>Or to minimize the number of packages updated during conda update use<br><br>     conda install conda=23.5.0<br><br><br><br><span class="hljs-comment">## Package Plan ##</span><br><br>  environment location: /home/dechin/anaconda3/envs/mindsponge<br><br>  added / updated specs:<br>    - pymol-open-source<br><br><br>The following packages will be downloaded:<br><br>    package                    |            build<br>    ---------------------------|-----------------<br>    glm-0.9.9.8                |       h00ab1b0_0         213 KB  conda-forge<br>    hdf5-1.12.2                |nompi_h4df4325_101         3.2 MB  conda-forge<br>    libnetcdf-4.8.1            |nompi_h21705cb_104         1.5 MB  conda-forge<br>    pymol-open-source-2.5.0    |   py39hc95a48e_6         6.8 MB  conda-forge<br>    xorg-libxau-1.0.11         |       hd590300_0          14 KB  conda-forge<br>    ------------------------------------------------------------<br>                                           Total:        11.7 MB<br><br>The following NEW packages will be INSTALLED:<br><br>  c-ares             conda-forge/linux-64::c-ares-1.19.1-hd590300_0 <br>  curl               conda-forge/linux-64::curl-8.1.2-h409715c_0 <br>  dbus               anaconda/pkgs/main/linux-64::dbus-1.13.18-hb2f20db_0 <br>  expat              conda-forge/linux-64::expat-2.5.0-hcb278e6_1 <br>  fontconfig         conda-forge/linux-64::fontconfig-2.14.2-h14ed4e7_0 <br>  gettext            conda-forge/linux-64::gettext-0.21.1-h27087fc_0 <br>  glew               conda-forge/linux-64::glew-2.1.0-h9c3ff4c_2 <br>  glib               conda-forge/linux-64::glib-2.76.3-hfc55251_0 <br>  glib-tools         conda-forge/linux-64::glib-tools-2.76.3-hfc55251_0 <br>  glm                conda-forge/linux-64::glm-0.9.9.8-h00ab1b0_0 <br>  gst-plugins-base   anaconda/pkgs/main/linux-64::gst-plugins-base-1.14.1-h6a678d5_1 <br>  gstreamer          anaconda/pkgs/main/linux-64::gstreamer-1.14.1-h5eee18b_1 <br>  hdf4               conda-forge/linux-64::hdf4-4.2.15-h9772cbc_5 <br>  hdf5               conda-forge/linux-64::hdf5-1.12.2-nompi_h4df4325_101 <br>  icu                conda-forge/linux-64::icu-58.2-hf484d3e_1000 <br>  keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0 <br>  krb5               conda-forge/linux-64::krb5-1.20.1-h81ceb04_0 <br>  libaec             conda-forge/linux-64::libaec-1.0.6-hcb278e6_1 <br>  libclang           anaconda/pkgs/main/linux-64::libclang-10.0.1-default_hb85057a_2 <br>  libcurl            conda-forge/linux-64::libcurl-8.1.2-h409715c_0 <br>  libedit            conda-forge/linux-64::libedit-3.1.20191231-he28a2e2_2 <br>  libev              conda-forge/linux-64::libev-4.33-h516909a_1 <br>  libevent           conda-forge/linux-64::libevent-2.1.12-hf998b51_1 <br>  libexpat           conda-forge/linux-64::libexpat-2.5.0-hcb278e6_1 <br>  libglib            conda-forge/linux-64::libglib-2.76.3-hebfc3b9_0 <br>  libglu             conda-forge/linux-64::libglu-9.0.0-hac7e632_1002 <br>  libiconv           conda-forge/linux-64::libiconv-1.17-h166bdaf_0 <br>  libllvm10          conda-forge/linux-64::libllvm10-10.0.1-he513fc3_3 <br>  libnetcdf          conda-forge/linux-64::libnetcdf-4.8.1-nompi_h21705cb_104 <br>  libnghttp2         conda-forge/linux-64::libnghttp2-1.52.0-h61bc06f_0 <br>  libpq              anaconda/pkgs/main/linux-64::libpq-12.15-hdbd6064_1 <br>  libssh2            conda-forge/linux-64::libssh2-1.11.0-h0841786_0 <br>  libxcb             conda-forge/linux-64::libxcb-1.15-h0b41bf4_0 <br>  libxkbcommon       anaconda/pkgs/main/linux-64::libxkbcommon-1.0.1-hfa300c1_0 <br>  libxml2            anaconda/pkgs/main/linux-64::libxml2-2.9.14-h74e7548_0 <br>  libxslt            anaconda/pkgs/main/linux-64::libxslt-1.1.35-h4e12654_0 <br>  libzip             conda-forge/linux-64::libzip-1.9.2-hc929e4a_1 <br>  nspr               conda-forge/linux-64::nspr-4.35-h27087fc_0 <br>  nss                conda-forge/linux-64::nss-3.89-he45b914_0 <br>  pcre2              conda-forge/linux-64::pcre2-10.40-hc3806b6_0 <br>  ply                conda-forge/noarch::ply-3.11-py_1 <br>  pmw                conda-forge/linux-64::pmw-2.0.1-py39hf3d152e_1007 <br>  pthread-stubs      conda-forge/linux-64::pthread-stubs-0.4-h36c2ea0_1001 <br>  pymol-open-source  conda-forge/linux-64::pymol-open-source-2.5.0-py39hc95a48e_6 <br>  pyqt               anaconda/pkgs/main/linux-64::pyqt-5.15.7-py39h6a678d5_1 <br>  pyqt5-sip          anaconda/pkgs/main/linux-64::pyqt5-sip-12.11.0-py39h6a678d5_1 <br>  qt-main            anaconda/pkgs/main/linux-64::qt-main-5.15.2-h327a75a_7 <br>  qt-webengine       anaconda/pkgs/main/linux-64::qt-webengine-5.15.9-hd2b0992_4 <br>  qtwebkit           anaconda/pkgs/main/linux-64::qtwebkit-5.212-h4eab89a_4 <br>  sip                conda-forge/linux-64::sip-6.6.2-py39h5a03fae_0 <br>  sqlite             anaconda/pkgs/main/linux-64::sqlite-3.41.2-h5eee18b_0 <br>  toml               conda-forge/noarch::toml-0.10.2-pyhd8ed1ab_0 <br>  xorg-kbproto       conda-forge/linux-64::xorg-kbproto-1.0.7-h7f98852_1002 <br>  xorg-libx11        conda-forge/linux-64::xorg-libx11-1.8.6-h8ee46fc_0 <br>  xorg-libxau        conda-forge/linux-64::xorg-libxau-1.0.11-hd590300_0 <br>  xorg-libxdmcp      conda-forge/linux-64::xorg-libxdmcp-1.1.3-h7f98852_0 <br>  xorg-libxext       conda-forge/linux-64::xorg-libxext-1.3.4-h0b41bf4_2 <br>  xorg-xextproto     conda-forge/linux-64::xorg-xextproto-7.3.0-h0b41bf4_1003 <br>  xorg-xproto        conda-forge/linux-64::xorg-xproto-7.0.31-h7f98852_1007 <br><br>The following packages will be SUPERSEDED by a higher-priority channel:<br><br>  ca-certificates    anaconda/pkgs/main::ca-certificates-2~ --&gt; conda-forge::ca-certificates-2023.5.7-hbcca054_0 <br>  certifi            anaconda/pkgs/main/linux-64::certifi-~ --&gt; conda-forge/noarch::certifi-2023.5.7-pyhd8ed1ab_0 <br><br><br>Proceed ([y]/n)? y<br><br><br>Downloading and Extracting Packages<br>                                                                                  <br>Preparing transaction: <span class="hljs-keyword">done</span>                                                       <br>Verifying transaction: <span class="hljs-keyword">done</span>                                                       <br>Executing transaction: <span class="hljs-keyword">done</span>  <br></code></pre></td></tr></table></figure>
+<p>安装完成后，直接在终端命令行窗口输入<code>pymol</code>即可打开PyMol的界面。我们可以点击File-&gt;Open来导入相关的分子构象输入文件，比如pdb文件等，如下所示是一个导入pdb文件后的效果图。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170107419.png" alt=""></p>
+<h1>总结概要</h1>
+<p>这篇文章主要介绍在Linux平台下安装开源版PyMol的简单方法。由于官方主要提供商业版的安装方法，而提供whl安装包的平台也只有Windows系统下的编译包。其实在Anaconda的库中是有提供pymol的开源版本的，这里借这篇文章顺便推广一下。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pymol.html">https://www.cnblogs.com/dechinphy/p/pymol.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/MurphyStar/article/details/106904126">https://blog.csdn.net/MurphyStar/article/details/106904126</a></li>
+<li><a target="_blank" rel="noopener" href="https://anaconda.org/conda-forge/pymol-open-source">https://anaconda.org/conda-forge/pymol-open-source</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/45ff46d9.html">https://dechin-phy.asia/posts/45ff46d9.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2023-06-26</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2023-06-26</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/14fc2133.html">在Python中使用LooseVersion进行软件版本号比对</a><a class="next" href="/posts/34f9e8a8.html">使用numpy计算分子内坐标</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/d1c61bd2.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSpore导入CUDA算子"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/d1c61bd2.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-01-31T02:46:29.000Z"><meta property="article:modified_time" content="2024-01-31T07:29:00.000Z"><title>MindSpore导入CUDA算子 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSpore导入CUDA算子</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSpore导入CUDA算子</h1><div class="post-meta">2024-01-31<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 8</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">程序结构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">一维张量求和</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">自定义算子反向传播</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了在MindSpore标准格式下进行CUDA算子开发的方法和流程，可以让开发者在现有的AI框架下仍然可以调用基于CUDA实现的高性能的算子。并且，除了常规的数值计算之外，在MindSpore框架下，我们还可以通过实现一个bprop函数，使得我们手写的这个CUDA算子也可以使用MindSpore框架本身自带的自动微分-端到端微分技术。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>当今众多的基于Python的AI框架（如MindSpore、PyTorch等）给了开发者非常便利的编程的条件，我们可以用Python的简单的语法写代码，然后由框架在后端自动编译成可以在GPU上高效计算的程序。而对于一些定制化比较高的算法，MindSpore也支持了相关的接口，允许开发者自己开发相应的CUDA算子（需要统一接口），然后编译成<code>.so</code>动态链接库，再用MindSpore内置的函数加载为本地算子。本文针对这种方案写一个简单的示例。</p>
+<h1>程序结构</h1>
+<p>本地自己手写一个CUDA算子，一般至少需要两个文件和一个nvcc的环境，最好是在安装完成MindSpore的GPU版本之后，再尝试CUDA算子的引入。具体MindSpore的安装方法，可以参考<a target="_blank" rel="noopener" href="https://www.mindspore.cn/install">MindSpore官网</a>，这里不做赘述。我这里使用的环境是10.1版本的nvcc：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ nvcc -V<br>nvcc: NVIDIA (R) Cuda compiler driver<br>Copyright (c) 2005-2019 NVIDIA Corporation<br>Built on Sun_Jul_28_19:07:16_PDT_2019<br>Cuda compilation tools, release 10.1, V10.1.243<br>$ python3 -m pip show mindspore<br>Name: mindspore<br>Version: 2.1.0<br>Summary: MindSpore is a new open <span class="hljs-built_in">source</span> deep learning training/inference framework that could be used <span class="hljs-keyword">for</span> mobile, edge and cloud scenarios.<br>Home-page: https://www.mindspore.cn<br>Author: The MindSpore Authors<br>Author-email: contact@mindspore.cn<br>License: Apache 2.0<br>Location: /home/dechin/anaconda3/envs/mindspore-latest/lib/python3.7/site-packages<br>Requires: numpy, protobuf, pillow, astunparse, scipy, psutil, asttokens, packaging<br>Required-by: <br></code></pre></td></tr></table></figure>
+<p>需要准备的两个文件，一个是CUDA算子本身的<code>.cu</code>文件，另一个是用来调用CUDA算子的<code>.py</code>文件。操作流程是：先按照自己的需求写好CUDA算子，然后用nvcc进行编译，编译输出为<code>.so</code>的动态链接库，然后在python脚本中使用<code>mindspore.ops.Custom</code>生成相应的算子。在MindSpore2.1之后的版本中，对于本地CUDA算子的调用定义了统一的接口，其格式为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs C"><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">int</span> <span class="hljs-title function_">CustomFunc</span><span class="hljs-params">(<span class="hljs-type">int</span> nparam, <span class="hljs-type">void</span> **params, <span class="hljs-type">int</span> *ndims, <span class="hljs-type">int64_t</span> **shapes, <span class="hljs-type">const</span> <span class="hljs-type">char</span> **dtypes, <span class="hljs-type">void</span> *stream, <span class="hljs-type">void</span> *extra)</span>;<br></code></pre></td></tr></table></figure>
+<p>具体方法可以参考官网的这一篇<a target="_blank" rel="noopener" href="https://www.mindspore.cn/tutorials/experts/zh-CN/r2.2/operation/op_custom.html#aot%E7%B1%BB%E5%9E%8B%E7%9A%84%E8%87%AA%E5%AE%9A%E4%B9%89%E7%AE%97%E5%AD%90%E5%BC%80%E5%8F%91">文档说明</a>。这样的话，在<code>.cu</code>文件中至少有两个函数，一个是原本用于计算的<code>Kernel函数</code>，另一个是用于统一标准接口的<code>CustomFunc函数</code>。需要说明的是，旧版本的MindSpore是没有这样的规范的，所以旧版本的算子没有<code>CustomFunc函数</code>也能够用nvcc编译，但是无法在新版本的MindSpore中调用。</p>
+<h1>一维张量求和</h1>
+<p>我们用一个一维的张量求和的示例来演示一下如何在本地写一个可以用MindSpore来调用的CUDA算子，一维张量求和的算法是比较简单的：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>C</mi><mi>i</mi></msub><mo>=</mo><msub><mi>A</mi><mi>i</mi></msub><mo>+</mo><msub><mi>B</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">C_i=A_i+B_i
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.07153em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">A</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05017em;">B</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.05017em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<p>那么对应的CUDA算子的代码如下所示：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs C"><span class="hljs-comment">// custom_add.cu</span><br><span class="hljs-comment">// nvcc --shared -Xcompiler -fPIC -o custom_add.so custom_add.cu</span><br><span class="hljs-comment">// 常量，一般可以放在.cuh头文件中</span><br><span class="hljs-type">constexpr</span> <span class="hljs-type">int</span> THREADS = <span class="hljs-number">1024</span>;<br><span class="hljs-comment">// 用于CUDA计算的Kernel函数</span><br>__global__ <span class="hljs-type">void</span> <span class="hljs-title function_">CustomAddKernel</span><span class="hljs-params">(<span class="hljs-type">float</span> *input1, <span class="hljs-type">float</span> *input2, <span class="hljs-type">float</span> *output, <span class="hljs-type">size_t</span> size)</span> &#123;<br>    <span class="hljs-keyword">auto</span> idx = blockIdx.x * THREADS + threadIdx.x;<br>    <span class="hljs-keyword">if</span> (idx &lt; size) &#123;<br>        <span class="hljs-comment">// 逐元素操作，CUDA算子的基本写法</span><br>        output[idx] = input1[idx] + input2[idx];<br>    &#125;<br>&#125;<br><span class="hljs-comment">// 标准算子接口</span><br><span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> <span class="hljs-type">int</span> <span class="hljs-title function_">CustomAdd</span><span class="hljs-params">(<span class="hljs-type">int</span> nparam, <span class="hljs-type">void</span> **params, <span class="hljs-type">int</span> *ndims, <span class="hljs-type">int64_t</span> **shapes, <span class="hljs-type">const</span> <span class="hljs-type">char</span> **dtypes, <span class="hljs-type">void</span> *stream,</span><br><span class="hljs-params">                         <span class="hljs-type">void</span> *extra)</span> &#123;<br>    cudaStream_t custream = static_cast&lt;cudaStream_t&gt;(stream);<br>    <span class="hljs-comment">// 输出变量的位置</span><br>    <span class="hljs-type">constexpr</span> <span class="hljs-type">int</span> OUTPUT_INDEX = <span class="hljs-number">2</span>;<br>    <span class="hljs-comment">// 传入的参数都是指针形式</span><br>    <span class="hljs-type">float</span> *input1 = static_cast&lt;<span class="hljs-type">float</span> *&gt;(params[<span class="hljs-number">0</span>]);<br>    <span class="hljs-type">float</span> *input2 = static_cast&lt;<span class="hljs-type">float</span> *&gt;(params[<span class="hljs-number">1</span>]);<br>    <span class="hljs-type">float</span> *output = static_cast&lt;<span class="hljs-type">float</span> *&gt;(params[<span class="hljs-number">2</span>]);<br>    <span class="hljs-comment">// 获取输入张量的大小</span><br>    <span class="hljs-type">int</span> size = shapes[OUTPUT_INDEX][<span class="hljs-number">0</span>];<br>    <span class="hljs-comment">// GPU运算中的block和thread，一般要求block*thread大于或者等于size即可</span><br>    <span class="hljs-type">int</span> blocks = <span class="hljs-built_in">ceil</span>(size / THREADS) + <span class="hljs-number">1</span>;<br>    <span class="hljs-comment">// 调用Kernel函数</span><br>    CustomAddKernel&lt;&lt;&lt;blocks, THREADS, <span class="hljs-number">0</span>, custream&gt;&gt;&gt;(input1, input2, output, size);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>值得注意的是，上述CustomAdd函数中的params有3个输入，但是实际上其中一个是返回值，这也是MindSpore对于标准接口的设定，不需要我们额外传入一个变量。保存好上述的CUDA算子代码之后，可以用如下指令直接编译成python可以调用的动态链接库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ nvcc --shared -Xcompiler -fPIC -o custom_add.so custom_add.cu<br></code></pre></td></tr></table></figure>
+<p>编译完成后，会在当前目录下生成一个新的<code>.so</code>文件，然后就可以在python代码中进行调用：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test_custom_ops.py</span><br><span class="hljs-comment"># python3 test_custom_ops.py</span><br><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> ops, Tensor, context<br>ms.set_context(device_target=<span class="hljs-string">&quot;GPU&quot;</span>, mode=context.GRAPH_MODE)<br><br>t1 = Tensor([<span class="hljs-number">1.</span>, <span class="hljs-number">2.</span>, <span class="hljs-number">3.</span>], ms.float32)<br>t2 = Tensor([<span class="hljs-number">3.</span>, <span class="hljs-number">2.</span>, <span class="hljs-number">1.</span>], ms.float32)<br>CustomAdd = ops.Custom(<span class="hljs-string">&quot;./custom_add.so:CustomAdd&quot;</span>,<br>                       out_shape=[t1.shape[<span class="hljs-number">0</span>]],<br>                       out_dtype=ms.float32,<br>                       func_type=<span class="hljs-string">&quot;aot&quot;</span><br>                       )<br>res = CustomAdd(t1, t2)<br>ops.print_(res)<br></code></pre></td></tr></table></figure>
+<p>上述的CustomAdd就是我们导入的基于CUDA算子来写的本地MindSpore算子，并且这种算子还可以使用MindSpore进行注册，这样就不需要每次使用都去加载这个动态链接库，感兴趣的童鞋可以自己研究一下算子注册的方法。上述Python代码的运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 test_custom_ops.py <br>Tensor(shape=[3], dtype=Float32, value= [ 4.00000000e+00,  4.00000000e+00,  4.00000000e+00])<br></code></pre></td></tr></table></figure>
+<p>可见跟我们预期的结果是一致的，那么就完成了一个本地CUDA算子的实现和调用。</p>
+<h1>自定义算子反向传播</h1>
+<p>在前面的章节里面我们已经实现了一个本地的一维张量求和算子，但是这还不是一个完整的算子实现，因为我们在AI框架中一般要求算子可自动微分，光实现一个算子是不完整的，因此这里我们再通过bprop函数，来实现一下自定义算子的反向传播：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test_custom_ops.py</span><br><span class="hljs-comment"># python3 test_custom_ops.py</span><br><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> ops, Tensor, context<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, grad<br>ms.set_context(device_target=<span class="hljs-string">&quot;GPU&quot;</span>, mode=context.GRAPH_MODE)<br><br>t1 = Tensor([<span class="hljs-number">1.</span>, <span class="hljs-number">2.</span>, <span class="hljs-number">3.</span>], ms.float32)<br>t2 = Tensor([<span class="hljs-number">3.</span>, <span class="hljs-number">2.</span>, <span class="hljs-number">1.</span>], ms.float32)<br>CustomAdd = ops.Custom(<span class="hljs-string">&quot;./custom_add.so:CustomAdd&quot;</span>,<br>                       out_shape=[t1.shape[<span class="hljs-number">0</span>]],<br>                       out_dtype=ms.float32,<br>                       func_type=<span class="hljs-string">&quot;aot&quot;</span><br>                       )<br>为了自动微分，我们需要定义一个Cell类来封装我们的自定义算子：<br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Add</span>(nn.Cell):<br>    <span class="hljs-comment"># 反向传播函数</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">bprop</span>(<span class="hljs-params">self, x, y, out, dout</span>):<br>        <span class="hljs-keyword">return</span> (y, )<br>    <span class="hljs-comment"># 计算函数</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x, y</span>):<br>        <span class="hljs-keyword">return</span> CustomAdd(x, y)<br><span class="hljs-comment"># 把Cell类加载为custom_add函数</span><br>custom_add = Add()<br><span class="hljs-comment"># 计算求和结果</span><br>res = custom_add(t1, t2)<br><span class="hljs-comment"># 计算自动微分结果</span><br>res_g = grad(custom_add, grad_position=(<span class="hljs-number">0</span>, ))(t1, t2)<br><span class="hljs-built_in">print</span>(res)<br><span class="hljs-built_in">print</span>(res_g)<br></code></pre></td></tr></table></figure>
+<p>在这个代码中，主要就是增加了一个Cell类和两个新的函数<code>bprop</code>和<code>construct</code>，分别用于计算函数的反向传播和正向值，代码运行的结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 test_custom_ops.py <br>[4. 4. 4.]<br>[3. 2. 1.]<br></code></pre></td></tr></table></figure>
+<p>当然，这里我们没有再额外写一个用于返回反向传播值的CUDA算子，但是原则上对于较为复杂的函数，是需要自己手动写一个用于求微分数值的CUDA算子的。</p>
+<h1>总结概要</h1>
+<p>本文介绍了在MindSpore标准格式下进行CUDA算子开发的方法和流程，可以让开发者在现有的AI框架下仍然可以调用基于CUDA实现的高性能的算子。并且，除了常规的数值计算之外，在MindSpore框架下，我们还可以通过实现一个bprop函数，使得我们手写的这个CUDA算子也可以使用MindSpore框架本身自带的自动微分-端到端微分技术。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindspore-cuda.html">https://www.cnblogs.com/dechinphy/p/mindspore-cuda.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/d1c61bd2.html">https://dechin-phy.asia/posts/d1c61bd2.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-01-31</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-01-31</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/d89b0a97.html">关于分子力场中键能项和角能项的思考</a><a class="next" href="/posts/15a21ee3.html">Linux命令行从x度网盘下载数据</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

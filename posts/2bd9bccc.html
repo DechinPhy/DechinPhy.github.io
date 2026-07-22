@@ -1,0 +1,425 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/2bd9bccc.html"><meta property="og:type" content="article"><meta property="og:title" content="氨基酸分子结构和原子命名"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/2bd9bccc.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-06-16T08:40:40.000Z"><meta property="article:modified_time" content="2022-06-21T15:07:00.000Z"><title>氨基酸分子结构和原子命名 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">氨基酸分子结构和原子命名</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">氨基酸分子结构和原子命名</h1><div class="post-meta">2022-06-16<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">同残基不同位置的构象</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">原子命名法则</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>PDB格式的文件是最常用于存储蛋白质构象的一种，其中也是以各个氨基酸(残基)为基本单位，在氨基酸内部对原子进行唯一性的命名。本文先通过展示各种氨基酸在蛋白质链的不同位置的结构，介绍各类氨基酸的基础构象。再通过丙氨酸和色氨酸两个案例，详细介绍了在蛋白质链的中的各种氨基酸内部的原子命名法则。需要注意的是，atom_name和atom_type是不一样的，atom_name是一个唯一的标识符，atom_type则是用于导出力场参数的重要标记。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pdb.html">文章</a>中，我们讲述了蛋白质的组成结构，一共是20种氨基酸。由这20种氨基酸的排列组合，可以得到一条相应的蛋白质链，而这条蛋白质链经过各种螺旋和折叠，会得到一个最终稳定的蛋白质构象，也是我们日常生活中所能够接触到的蛋白质的存在形态。那么在上一篇文章中的表格里面，我们可以看到众多的氨基酸在蛋白质链的中间时候的构象，本文将要讲述一些其他位置所对应的构象，以及其中原子的命名法则。</p>
+<h1>同残基不同位置的构象</h1>
+<p>即使是同一个残基，在位于蛋白质链的不同位置时，也有可能表现出不同的构象。比如在蛋白质的头部时，有可能会出现一些氢离子跟氮原子的成键。而残基位于蛋白质链的中部时，我们往往会略去其中的一个<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>2</mn></msub><mi>O</mi></mrow><annotation encoding="application/x-tex">H_2O</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.08125em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span></span></span></span>，跟两侧的其他残基形成2个肽键。具体结构如下表所示：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">英文名</th>
+<th style="text-align:center">中文名</th>
+<th style="text-align:center">三字母缩写</th>
+<th style="text-align:center">单字母缩写</th>
+<th style="text-align:center">三维结构图</th>
+<th style="text-align:center">N起始点结构图</th>
+<th style="text-align:center">C终点结构图</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Alanine</td>
+<td style="text-align:center">丙氨酸</td>
+<td style="text-align:center">Ala</td>
+<td style="text-align:center">A</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500137.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616163551814-1469818965.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459149.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Arginine</td>
+<td style="text-align:center">精氨酸</td>
+<td style="text-align:center">Arg</td>
+<td style="text-align:center">R</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507104617173-1258258958.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164208849-109126603.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459191.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Asparagine</td>
+<td style="text-align:center">天冬酰胺</td>
+<td style="text-align:center">Asn</td>
+<td style="text-align:center">N</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507104930400-829906203.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164346947-1201493218.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459225.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Asparticacid</td>
+<td style="text-align:center">天冬氨酸</td>
+<td style="text-align:center">Asp</td>
+<td style="text-align:center">D</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105029669-1063806573.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164457959-1352955320.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459264.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Cysteine</td>
+<td style="text-align:center">半胱氨酸</td>
+<td style="text-align:center">Cys</td>
+<td style="text-align:center">C</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105354587-147198142.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164622907-365857586.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459311.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glutamine</td>
+<td style="text-align:center">谷氨酰胺</td>
+<td style="text-align:center">Gln</td>
+<td style="text-align:center">Q</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105528619-1856489452.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164728552-1754699486.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459355.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glutamicacid</td>
+<td style="text-align:center">谷氨酸</td>
+<td style="text-align:center">Glu</td>
+<td style="text-align:center">E</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105627423-681216789.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164830808-1321873423.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459397.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glycine</td>
+<td style="text-align:center">甘氨酸</td>
+<td style="text-align:center">Gly</td>
+<td style="text-align:center">G</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105711942-1717438535.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616164950287-969817560.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459439.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Histidine</td>
+<td style="text-align:center">组氨酸</td>
+<td style="text-align:center">His</td>
+<td style="text-align:center">H</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105816547-2046245703.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165105606-973348457.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459481.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Isoleucine</td>
+<td style="text-align:center">异亮氨酸</td>
+<td style="text-align:center">Ile</td>
+<td style="text-align:center">I</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105857553-539582156.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165221911-1830019574.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459532.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Leucine</td>
+<td style="text-align:center">亮氨酸</td>
+<td style="text-align:center">Leu</td>
+<td style="text-align:center">L</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507105949218-1194449475.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165339382-1655388808.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459572.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Lysine</td>
+<td style="text-align:center">赖氨酸</td>
+<td style="text-align:center">Lys</td>
+<td style="text-align:center">K</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110033488-1761911638.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165447939-1138263581.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459612.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Methionine</td>
+<td style="text-align:center">甲硫氨酸（蛋氨酸）</td>
+<td style="text-align:center">Met</td>
+<td style="text-align:center">M</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110115808-434808146.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165600604-1628359784.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459658.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Phenylalanine</td>
+<td style="text-align:center">苯丙氨酸</td>
+<td style="text-align:center">Phe</td>
+<td style="text-align:center">F</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110155932-940361433.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165721294-1709809473.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459707.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Proline</td>
+<td style="text-align:center">脯氨酸</td>
+<td style="text-align:center">Pro</td>
+<td style="text-align:center">P</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110248741-2145369047.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616165853843-1729100986.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459762.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Serine</td>
+<td style="text-align:center">丝氨酸</td>
+<td style="text-align:center">Ser</td>
+<td style="text-align:center">S</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110322349-52703156.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616170004842-1782575657.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459822.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Threonine</td>
+<td style="text-align:center">苏氨酸</td>
+<td style="text-align:center">Thr</td>
+<td style="text-align:center">T</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110400266-17020800.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616172117782-752423784.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459876.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Tryptophan</td>
+<td style="text-align:center">色氨酸</td>
+<td style="text-align:center">Trp</td>
+<td style="text-align:center">W</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500242.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616172233405-2010768135.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170459931.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Tyrosine</td>
+<td style="text-align:center">酪氨酸</td>
+<td style="text-align:center">Tyr</td>
+<td style="text-align:center">Y</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110512569-739475348.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616172346330-214328045.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500007.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Valine</td>
+<td style="text-align:center">缬氨酸</td>
+<td style="text-align:center">Val</td>
+<td style="text-align:center">V</td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202205/2277440-20220507110556757-964057686.png" alt=""></td>
+<td style="text-align:center"><img src="https://img2022.cnblogs.com/blog/2277440/202206/2277440-20220616172507095-1160898201.png" alt=""></td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500070.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h1>原子命名法则</h1>
+<p>当我们把这些生成的构象存储成PDB文件时，我们会发现其中每一个原子在所处的残基内的命名都是唯一的。我们以丙氨酸为例，来解读一下其中的命名法则。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500137.png" alt=""></p>
+<p>在上面这个结构图中，绿色的代表碳原子，灰色代表氢原子，红色代表氧原子，蓝色代表氮原子。一般我们先找到当前氨基酸的氮基碳原子，由于丙氨酸中只有一个氮原子，因此与氮原子成键的这个碳原子就是我们要找的氮基碳原子，我们将其命名为&quot;CA&quot;，对应的氮原子命名为&quot;N&quot;。一般我们会发现，这个氮基碳原子并不是位于主链的顶点，也就是在氨基酸内部还会连接至少2个其他的重原子。我们找到其连接的带氧原子的那个碳原子，将其命名为&quot;C&quot;，对应的氧原子命名为&quot;O&quot;，&quot;CA&quot;表示的是这个碳原子处于<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>位。另外一个被氮基碳原子所连接的碳原子，被命名为&quot;CB&quot;，也就是<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>位的碳。按照与氮基碳原子的远近关系，分别用&quot;A,B,G,D,E,Z,H&quot;来标记这些重原子，对应的希腊字母是&quot;<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo separator="true">,</mo><mi>β</mi><mo separator="true">,</mo><mi>γ</mi><mo separator="true">,</mo><mi>δ</mi><mo separator="true">,</mo><mi>ϵ</mi><mo separator="true">,</mo><mi>ζ</mi><mo separator="true">,</mo><mi>η</mi></mrow><annotation encoding="application/x-tex">\alpha,\beta,\gamma,\delta,\epsilon,\zeta,\eta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03785em;">δ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal">ϵ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.07378em;">ζ</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">η</span></span></span></span>&quot;。那么这就是丙氨酸的所有重原子在PDB文件中的命名，如下图是一个含有丙氨酸的蛋白质的PDB文件。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500188.png" alt=""></p>
+<p>对于氢原子来说，命名是取决于其所连接的碳原子的位置，比如连接氮的氢原子，可以直接命名为&quot;H&quot;，连接<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>碳的氢原子，可以命名为&quot;HA&quot;。而<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>位的碳连接了3个氢原子，因此需要加上额外的数字标记，那么对应的命名就是&quot;HB1,HB2,HB3&quot;。并且，这种加数字编号的方法对于重原子也是同样适用的，比如下图所示的色氨酸：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500242.png" alt=""></p>
+<p>同样的方法我们可以找到氮基碳原子和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span></span></span></span>位的氧基碳原子，这样我们就可以按照连接的远近关系对其中的重原子进行命名。比如我们可以<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span></span></span></span>位有1个碳，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>位也是1个碳，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>δ</mi></mrow><annotation encoding="application/x-tex">\delta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.03785em;">δ</span></span></span></span>位是2个碳，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϵ</mi></mrow><annotation encoding="application/x-tex">\epsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathnormal">ϵ</span></span></span></span>位有1个氮原子和2个碳原子，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ζ</mi></mrow><annotation encoding="application/x-tex">\zeta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.07378em;">ζ</span></span></span></span>位有2个碳原子，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>η</mi></mrow><annotation encoding="application/x-tex">\eta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">η</span></span></span></span>位有1个碳原子。那么综合下来，我们将会得到的重原子的命名就是：&quot;C,N,O,CA,CB,CG,CD1,CD2,NE1,CE2,CE3,CZ2,CZ3,CH2&quot;，下图是一个真实蛋白质PDB文件中的色氨酸的命名：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170500296.png" alt=""></p>
+<h1>总结概要</h1>
+<p>PDB格式的文件是最常用于存储蛋白质构象的一种，其中也是以各个氨基酸(残基)为基本单位，在氨基酸内部对原子进行唯一性的命名。本文先通过展示各种氨基酸在蛋白质链的不同位置的结构，介绍各类氨基酸的基础构象。再通过丙氨酸和色氨酸两个案例，详细介绍了在蛋白质链的中的各种氨基酸内部的原子命名法则。需要注意的是，atom_name和atom_type是不一样的，atom_name是一个唯一的标识符，atom_type则是用于导出力场参数的重要标记。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cnaminos.html">https://www.cnblogs.com/dechinphy/p/cnaminos.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/2bd9bccc.html">https://dechin-phy.asia/posts/2bd9bccc.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-06-16</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-06-21</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/7cc5b677.html">从Hadder看蛋白质分子中的加氢算法</a><a class="next" href="/posts/769bb3bd.html">git添加被.gitignore忽略的文件</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

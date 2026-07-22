@@ -1,0 +1,251 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/4de687b0.html"><meta property="og:type" content="article"><meta property="og:title" content="从Python语言的角度看C++的指针"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/4de687b0.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-03-01T08:28:03.000Z"><meta property="article:modified_time" content="2024-03-05T02:54:00.000Z"><title>从Python语言的角度看C++的指针 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">从Python语言的角度看C++的指针</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">从Python语言的角度看C++的指针</h1><div class="post-meta">2024-03-01<span> | </span><span class="category"><a href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">内存地址赋值</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">多重索引</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">数组指针</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">指针应用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文主要是站在一个有一定的Python经验的C++新手的角度，学习一下C++中的指针使用方法。指针其实就是一个内存地址的标记，同时在用法上也跟Python中的迭代器很相似，可以通过指针移位来标记下一个需要读取或者更新的位置。通过这一篇文章，可以掌握指针对象的赋值、多重指针的使用和数组指针的使用，以及最后我们介绍了一个基于指针数组来实现的空间格点划分算法。由于是C++初学者，代码质量不高，也可能有更好的实现方式。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>从一个Python Coder的角度来说，其实很羡慕C++里面指针类型的用法，即时指针这种用法有可能会给程序带来众多的不稳定因素（据C++老Coder所说）。本文主要站在一个C++初学者的角度来学习一下指针的用法，当然，最好是带着一定的Python基础再去学习C++的逻辑，会更容易一些。</p>
+<h1>内存地址赋值</h1>
+<p>一般认为，指针就是一个内存地址。其实Python中也可以获取内存地址，但如果直接使用Python的内存地址作为指针，那会是一个非常hacky的操作。使用内存地址有一个非常重要的好处，就是可以在不改动指针的情况下，直接在其他函数内修改指针对应的数据，直接避免了非必要的传参。比如下面这个示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Check</span>&#123;<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-type">int</span>* p;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">func_1</span><span class="hljs-params">(<span class="hljs-type">int</span>* p)</span></span>;<br>&#125;;<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Check::func_1</span><span class="hljs-params">(<span class="hljs-type">int</span>* p)</span></span>&#123;<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d\n&quot;</span>, *p);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> var = <span class="hljs-number">1</span>;<br>    Check new_check;<br>    new_check.p = &amp;var;<br>    new_check.<span class="hljs-built_in">func_1</span>(new_check.p);<br>    var++;<br>    new_check.<span class="hljs-built_in">func_1</span>(new_check.p);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>在这个示例中，我们把var这个变量的内存地址作为new_check的一个属性值，然后在不改变new_check对象本身的情况下，我们在外部修改了var的值。那么在修改var前后，同样使用new_check的一个打印函数去打印指针所指向的内容，我们发现指针指向的内容已经被改变了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ g++ main.cpp -o main &amp;&amp; ./main<br>1<br>2<br></code></pre></td></tr></table></figure>
+<p>在Python的常规编程中，如果不直接对new_check.p进行修改或者重新复制，我们是没办法改变new_check.p的值的，这是使用C++指针的好处之一。</p>
+<h1>多重索引</h1>
+<p>多重的指针，有点类似于一个链表的数据结构，在Python中必须要实现一个链表或者使用多层赋值的NamedTuple，但是在C++里面用起来就非常的自然：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Check</span>&#123;<br>    <span class="hljs-keyword">public</span>:<br>        <span class="hljs-type">int</span>** p;<br>    <span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">func_1</span><span class="hljs-params">(<span class="hljs-type">int</span>** p)</span></span>;<br>&#125;;<br><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">Check::func_1</span><span class="hljs-params">(<span class="hljs-type">int</span>** p)</span></span>&#123;<br>    <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d\n&quot;</span>, **p);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> var = <span class="hljs-number">1</span>;<br>    <span class="hljs-type">int</span> num = <span class="hljs-number">2</span>;<br>    <span class="hljs-type">int</span>* p_out = &amp;var;<br>    Check new_check;<br>    new_check.p = &amp;p_out;<br>    new_check.<span class="hljs-built_in">func_1</span>(new_check.p);<br>    p_out = &amp;num;<br>    new_check.<span class="hljs-built_in">func_1</span>(new_check.p);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这里我们修改的是第二重指针指向的变量，从原来的指向var，变成了指向num的一个指针。由于我们把这个第二重的指针赋值给了第一重指针的索引，所以这里我们改变第二重指针指向的变量之后，第一重指针指向的最终变量也会发生变化：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ g++ main.cpp -o main &amp;&amp; ./main<br>1<br>2<br></code></pre></td></tr></table></figure>
+<h1>数组指针</h1>
+<p>C++中可以用一个指针<code>ptr</code>指向数组的第一个元素，然后通过迭代指针的方法，例如使用<code>ptr++</code>来指向数组的下一个元素。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> var[] = &#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>&#125;;<br>    vector&lt;<span class="hljs-type">int</span>&gt; g&#123;<span class="hljs-number">-1</span>&#125;, l&#123;<span class="hljs-number">-1</span>&#125;;<br>    <span class="hljs-type">int</span> *t = <span class="hljs-literal">nullptr</span>;<br>    <span class="hljs-type">int</span> len = <span class="hljs-built_in">sizeof</span>(var) / <span class="hljs-built_in">sizeof</span>(var[<span class="hljs-number">0</span>]);<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;len; i++)&#123;<br>        <span class="hljs-keyword">if</span> (var[i] &lt;= <span class="hljs-number">2</span>)&#123;<br>            l.<span class="hljs-built_in">push_back</span>(var[i]);<br>        &#125;<br>        <span class="hljs-keyword">else</span>&#123;<br>            g.<span class="hljs-built_in">push_back</span>(var[i]);<br>        &#125;<br>    &#125;<br>    g.<span class="hljs-built_in">push_back</span>(<span class="hljs-number">6</span>);<br>    t = &amp;g[<span class="hljs-number">0</span>];<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;g.<span class="hljs-built_in">size</span>()<span class="hljs-number">-1</span>; i++)&#123;<br>        t++;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d\n&quot;</span>, *t);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>输出的结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ g++ main.cpp -o main &amp;&amp; ./main<br>3<br>4<br>5<br>6<br></code></pre></td></tr></table></figure>
+<p>这里需要注意的一点是，在这个代码中把数组的第一个元素赋值给指针是在数组完成更新之后操作的。如果在这之前操作，会因为<code>push_back</code>的操作导致指针移位，使得定义好的指针不再有意义，输出的结果也会是不可预测的随机值。只有这种原位替换，才不会影响到指针的指向：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> var[] = &#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>&#125;;<br>    <span class="hljs-type">int</span> *t = <span class="hljs-literal">nullptr</span>;<br>    <span class="hljs-type">int</span> len = <span class="hljs-built_in">sizeof</span>(var) / <span class="hljs-built_in">sizeof</span>(var[<span class="hljs-number">0</span>]);<br>    t = &amp;var[<span class="hljs-number">0</span>];<br>    var[<span class="hljs-number">1</span>] *= <span class="hljs-number">-1</span>;<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;len; i++)&#123;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d\n&quot;</span>, *t);<br>        t++;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这个案例中我们在定义了数组指针之后，又修改了数组var的第二个元素，输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">1<br>-2<br>3<br>4<br>5<br></code></pre></td></tr></table></figure>
+<p>这里我们就可以看到，第二个元素被成功修改，但通过指针还是可以正常的索引到这个数组。</p>
+<h1>指针应用</h1>
+<p>这里我们用指针来完成一个“打格点的任务”。简单描述就是，将三维空间划分成若干个网格，然后将处于同一个网格的原子序号输出出来。这里使用的空间坐标，我们用c++的随机数生成器产生一个均匀分布的随机二维矩阵：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;random&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><br>vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">random_crd</span>(<span class="hljs-type">int</span> random_seed, <span class="hljs-type">int</span> n_atoms, <span class="hljs-type">int</span> dimensions)&#123;<br>    std::default_random_engine e;<br>    <span class="hljs-comment">// 产生[-0.5, 0.5]之间的均匀分布随机数</span><br>    <span class="hljs-function">std::uniform_real_distribution&lt;<span class="hljs-type">double</span>&gt; <span class="hljs-title">u</span><span class="hljs-params">(<span class="hljs-number">-0.5</span>, <span class="hljs-number">0.5</span>)</span></span>;<br>    e.<span class="hljs-built_in">seed</span>(random_seed);<br>    <span class="hljs-comment">// 初始化一个shape为(n_atoms, dimensions)的矩阵，所有的元素初始化为0</span><br>    vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">crd</span>(n_atoms, <span class="hljs-built_in">vector</span>&lt;<span class="hljs-type">float</span>&gt;(dimensions, <span class="hljs-number">0</span>));<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;n_atoms; i++)&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j=<span class="hljs-number">0</span>; j&lt;dimensions; j++)&#123;<br>            crd[i][j] = <span class="hljs-built_in">u</span>(e);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> crd;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这个产生的向量的形式大致是这样的：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;random&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><br>vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">random_crd</span>(<span class="hljs-type">int</span> random_seed, <span class="hljs-type">int</span> n_atoms, <span class="hljs-type">int</span> dimensions)&#123;<br>    std::default_random_engine e;<br>    <span class="hljs-function">std::uniform_real_distribution&lt;<span class="hljs-type">double</span>&gt; <span class="hljs-title">u</span><span class="hljs-params">(<span class="hljs-number">-0.5</span>, <span class="hljs-number">0.5</span>)</span></span>;<br>    e.<span class="hljs-built_in">seed</span>(random_seed);<br>    vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">crd</span>(n_atoms, <span class="hljs-built_in">vector</span>&lt;<span class="hljs-type">float</span>&gt;(dimensions, <span class="hljs-number">0</span>));<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;n_atoms; i++)&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j=<span class="hljs-number">0</span>; j&lt;dimensions; j++)&#123;<br>            crd[i][j] = <span class="hljs-built_in">u</span>(e);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> crd;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> N = <span class="hljs-number">10</span>;<br>    <span class="hljs-type">int</span> D = <span class="hljs-number">3</span>;<br>    vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; crd = <span class="hljs-built_in">random_crd</span>(<span class="hljs-number">0</span>, N, D);<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;N; i++)&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j=<span class="hljs-number">0</span>; j&lt;D; j++)&#123;<br>            <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%f,&quot;</span>, crd[i][j]);<br>        &#125;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\n&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>打印输出结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">-0.368462,-0.041350,-0.281041,<br>0.178865,0.434693,0.019416,<br>-0.465428,0.029700,-0.492302,<br>-0.433158,0.186773,0.430436,<br>0.026929,0.153919,0.201191,<br>0.262198,-0.452535,-0.171766,<br>0.256410,-0.134661,0.482550,<br>0.253356,-0.427314,0.384707,<br>-0.063589,-0.022268,-0.225093,<br>-0.333493,0.397656,-0.439436,<br></code></pre></td></tr></table></figure>
+<p>我们可以先简单的假设把这个-0.5到0.5的范围切成8个正方体，或者叫8个Grid。总粒子数为N，然后可以假设每个Grid中的粒子数有一个上限M。这样一来我们可以构造一个(8,M)的矩阵用于存储每一个Grid中的原子序号，然后用一个大小为N的指针数组来定位每一个Grid中当前的索引记录。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// g++ main.cpp -o main &amp;&amp; ./main</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;vector&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;random&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-comment">// 产生一个随机初始化的空间坐标</span><br>vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">random_crd</span>(<span class="hljs-type">int</span> random_seed, <span class="hljs-type">int</span> n_atoms, <span class="hljs-type">int</span> dimensions)&#123;<br>    std::default_random_engine e;<br>    <span class="hljs-function">std::uniform_real_distribution&lt;<span class="hljs-type">double</span>&gt; <span class="hljs-title">u</span><span class="hljs-params">(<span class="hljs-number">-0.5</span>, <span class="hljs-number">0.5</span>)</span></span>;<br>    e.<span class="hljs-built_in">seed</span>(random_seed);<br>    vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; <span class="hljs-built_in">crd</span>(n_atoms, <span class="hljs-built_in">vector</span>&lt;<span class="hljs-type">float</span>&gt;(dimensions, <span class="hljs-number">0</span>));<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;n_atoms; i++)&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j=<span class="hljs-number">0</span>; j&lt;dimensions; j++)&#123;<br>            crd[i][j] = <span class="hljs-built_in">u</span>(e);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> crd;<br>&#125;<br><span class="hljs-comment">// 将空间格点化，输出位于每一个格点中的原子序号</span><br>vector&lt;vector&lt;<span class="hljs-type">int</span>&gt;&gt; <span class="hljs-built_in">grids</span>(vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; crd, <span class="hljs-type">int</span> *grid_ptr[<span class="hljs-number">8</span>], <span class="hljs-type">int</span> max_atoms)&#123;<br>    <span class="hljs-type">int</span> grid_index = <span class="hljs-number">0</span>;<br>    vector&lt;vector&lt;<span class="hljs-type">int</span>&gt;&gt; <span class="hljs-built_in">grid_atoms</span>(<span class="hljs-number">8</span>, <span class="hljs-built_in">vector</span>&lt;<span class="hljs-type">int</span>&gt;(max_atoms, <span class="hljs-number">-1</span>));<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;crd.<span class="hljs-built_in">size</span>(); i++)&#123;<br>        <span class="hljs-comment">// 计算当前原子的坐标所处的格点序号</span><br>        grid_index += <span class="hljs-number">4</span> * <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(crd[i][<span class="hljs-number">0</span>] &gt; <span class="hljs-number">0</span>);<br>        grid_index += <span class="hljs-number">2</span> * <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(crd[i][<span class="hljs-number">1</span>] &gt; <span class="hljs-number">0</span>);<br>        grid_index += <span class="hljs-number">1</span> * <span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(crd[i][<span class="hljs-number">2</span>] &gt; <span class="hljs-number">0</span>);<br>        <span class="hljs-comment">// 向对应格点矩阵中添加原子序号</span><br>        <span class="hljs-keyword">if</span> (grid_ptr[grid_index] == <span class="hljs-literal">nullptr</span>)&#123;<br>            grid_atoms[grid_index][<span class="hljs-number">0</span>] = i;<br>            grid_ptr[grid_index] = &amp;grid_atoms[grid_index][<span class="hljs-number">0</span>];<br>        &#125;<br>        <span class="hljs-keyword">else</span>&#123;<br>            <span class="hljs-comment">// 指针移位</span><br>            grid_ptr[grid_index]++;<br>            *(grid_ptr[grid_index]) = i;<br>        &#125;<br>        grid_index = <span class="hljs-number">0</span>;<br>    &#125;<br>    <span class="hljs-keyword">return</span> grid_atoms;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span>&#123;<br>    <span class="hljs-type">int</span> N = <span class="hljs-number">10</span>;<br>    <span class="hljs-type">int</span> D = <span class="hljs-number">3</span>;<br>    <span class="hljs-type">int</span> M = <span class="hljs-number">4</span>;<br>    vector&lt;vector&lt;<span class="hljs-type">float</span>&gt;&gt; crd = <span class="hljs-built_in">random_crd</span>(<span class="hljs-number">0</span>, N, D);<br>    <span class="hljs-comment">// 初始化一个nullptr空指针</span><br>    <span class="hljs-type">int</span> *grid_ptr[<span class="hljs-number">8</span>];<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;<span class="hljs-number">8</span>; i++)&#123;<br>        grid_ptr[i] = <span class="hljs-literal">nullptr</span>;<br>    &#125;<br>    <span class="hljs-comment">// 计算格点化</span><br>    vector&lt;vector&lt;<span class="hljs-type">int</span>&gt;&gt; grid_atoms = <span class="hljs-built_in">grids</span>(crd, grid_ptr, M);<br>    <span class="hljs-comment">// 打印输出</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>; i&lt;<span class="hljs-number">8</span>; i++)&#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j=<span class="hljs-number">0</span>; j&lt;M; j++)&#123;<br>            <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;%d,&quot;</span>, grid_atoms[i][j]);<br>        &#125;<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;\n&quot;</span>);<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上述代码的运行结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ g++ main.cpp -o main &amp;&amp; ./main<br>0,8,-1,-1,<br>-1,-1,-1,-1,<br>2,9,-1,-1,<br>3,-1,-1,-1,<br>5,-1,-1,-1,<br>6,7,-1,-1,<br>-1,-1,-1,-1,<br>1,4,-1,-1,<br></code></pre></td></tr></table></figure>
+<p>如果把参数改为：20个原子、单格点最大原子数为5，得到的输出结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">0,8,11,-1,-1,<br>-1,-1,-1,-1,-1,<br>2,9,17,-1,-1,<br>3,15,18,-1,-1,<br>5,10,12,16,19,<br>6,7,13,-1,-1,<br>-1,-1,-1,-1,-1,<br>1,4,14,-1,-1,<br></code></pre></td></tr></table></figure>
+<p>整体来说这个实现方法用起来还是比较灵活的。</p>
+<h1>总结概要</h1>
+<p>本文主要是站在一个有一定的Python经验的C++新手的角度，学习一下C++中的指针使用方法。指针其实就是一个内存地址的标记，同时在用法上也跟Python中的迭代器很相似，可以通过指针移位来标记下一个需要读取或者更新的位置。通过这一篇文章，可以掌握指针对象的赋值、多重指针的使用和数组指针的使用，以及最后我们介绍了一个基于指针数组来实现的空间格点划分算法。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pointer.html">https://www.cnblogs.com/dechinphy/p/pointer.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/4de687b0.html">https://dechin-phy.asia/posts/4de687b0.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-03-01</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-03-05</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/56458c70.html">C++中的不规则二维数组</a><a class="next" href="/posts/5c71710f.html">MindSponge分子动力学模拟——使用MDAnalysis工具进行后分析（2024.02）</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

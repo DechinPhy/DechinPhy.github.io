@@ -1,0 +1,262 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/936eb8a8.html"><meta property="og:type" content="article"><meta property="og:title" content="Python中的分布式框架Ray的安装与使用"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/936eb8a8.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-08-28T02:37:40.000Z"><meta property="article:modified_time" content="2024-08-28T03:24:00.000Z"><title>Python中的分布式框架Ray的安装与使用 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Python中的分布式框架Ray的安装与使用</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Python中的分布式框架Ray的安装与使用</h1><div class="post-meta">2024-08-28<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 12</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">启动和连接服务</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">基础使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">查看和管理任务</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了基于Python的分布式框架Ray的基本安装与使用。Ray框架下不仅可以通过conda和Python十分方便的构建一个集群，还可以自动的对分布式任务进行并发处理，且支持GPU分布式任务的提交，极大的简化了手动分布式开发的工作量。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>假设我们在一个局域网内有多台工作站（不是服务器），那么有没有一个简单的方案可以实现一个小集群，提交分布式的任务呢？<a target="_blank" rel="noopener" href="https://docs.ray.io/en/latest/ray-overview/index.html">Ray</a>为我们提供了一个很好的解决方案，允许你通过conda和Python灵活的构建集群环境，并提交分布式的任务。其基本架构为：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164643126.png" alt=""></p>
+<p>那么本文简单的介绍一下Ray的安装与基本使用。</p>
+<h1>安装</h1>
+<p>由于是一个Python的框架，Ray可以直接使用pip进行安装和管理：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">$ python3 -m pip install ray[default]<br></code></pre></td></tr></table></figure>
+<p>但是需要注意的是，在所有需要构建集群的设备上，需要统一Python和Ray的版本，因此建议先使用conda创建同样的虚拟环境之后，再安装统一版本的ray。否则在添加集群节点的时候就有可能出现如下问题：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">RuntimeError: Version mismatch: The cluster was started with:<br>    Ray: 2.7.2<br>    Python: 3.7.13<br>This process on node 172.17.0.2 was started with:<br>    Ray: 2.7.2<br>    Python: 3.7.5<br></code></pre></td></tr></table></figure>
+<h1>启动和连接服务</h1>
+<p>一般在配置集群的时候可以先配置下密钥登陆：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ssh-keygen -t rsa<br>$ ssh-copy-id user_name@ip_address<br></code></pre></td></tr></table></figure>
+<p>就这么两步，就可以配置远程服务器ssh免密登陆（配置的过程中有可能需要输入一次密码）。然后在主节点（配置一个master节点）启动ray服务：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ray start --<span class="hljs-built_in">head</span> --dashboard-host=<span class="hljs-string">&#x27;0.0.0.0&#x27;</span> --dashboard-port=8265<br>Usage stats collection is enabled. To <span class="hljs-built_in">disable</span> this, add `--disable-usage-stats` to the <span class="hljs-built_in">command</span> that starts the cluster, or run the following <span class="hljs-built_in">command</span>: `ray disable-usage-stats` before starting the cluster. See https://docs.ray.io/en/master/cluster/usage-stats.html <span class="hljs-keyword">for</span> more details.<br><br>Local node IP: xxx.xxx.xxx.xxx<br><br>--------------------<br>Ray runtime started.<br>--------------------<br><br>Next steps<br>  To add another node to this Ray cluster, run<br>    ray start --address=<span class="hljs-string">&#x27;xxx.xxx.xxx.xxx:6379&#x27;</span><br><br>  To connect to this Ray cluster:<br>    import ray<br>    ray.init()<br><br>  To submit a Ray job using the Ray Jobs CLI:<br>    RAY_ADDRESS=<span class="hljs-string">&#x27;http://xxx.xxx.xxx.xxx:8265&#x27;</span> ray job submit --working-dir . -- python my_script.py<br><br>  See https://docs.ray.io/en/latest/cluster/running-applications/job-submission/index.html<br>  <span class="hljs-keyword">for</span> more information on submitting Ray <span class="hljs-built_in">jobs</span> to the Ray cluster.<br><br>  To terminate the Ray runtime, run<br>    ray stop<br><br>  To view the status of the cluster, use<br>    ray status<br><br>  To monitor and debug Ray, view the dashboard at<br>    xxx.xxx.xxx.xxx:8265<br><br>  If connection to the dashboard fails, check your firewall settings and network configuration.<br></code></pre></td></tr></table></figure>
+<p>这就启动完成了，并给你指示了下一步的操作，例如在另一个节点上配置添加到集群中，可以使用指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ray start --address=<span class="hljs-string">&#x27;xxx.xxx.xxx.xxx:6379&#x27;</span><br></code></pre></td></tr></table></figure>
+<p>但是前面提到了，这里要求Python和Ray版本要一致，如果版本不一致就会出现这样的报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">RuntimeError: Version mismatch: The cluster was started with:<br>    Ray: 2.7.2<br>    Python: 3.7.13<br>This process on node 172.17.0.2 was started with:<br>    Ray: 2.7.2<br>    Python: 3.7.5<br></code></pre></td></tr></table></figure>
+<p>到这里其实Ray集群就已经部署完成了，非常的简单方便。</p>
+<h1>基础使用</h1>
+<p>我们先用一个最简单的案例来测试一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test_ray.py </span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> ray<br><br>ray.init()<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;&#x27;&#x27;This cluster consists of</span><br><span class="hljs-string">    &#123;&#125; nodes in total</span><br><span class="hljs-string">    &#123;&#125; CPU resources in total</span><br><span class="hljs-string">&#x27;&#x27;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(ray.nodes()), ray.cluster_resources()[<span class="hljs-string">&#x27;CPU&#x27;</span>]))<br></code></pre></td></tr></table></figure>
+<p>这个Python脚本打印了远程节点的计算资源，那么我们可以用这样的方式去提交一个本地的job：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ RAY_ADDRESS=<span class="hljs-string">&#x27;http://xxx.xxx.xxx.xxx:8265&#x27;</span> ray job submit --working-dir . -- python test_ray.py <br>Job submission server address: http://xxx.xxx.xxx.xxx:8265<br>2024-08-27 07:35:10,751 INFO dashboard_sdk.py:338 -- Uploading package gcs://_ray_pkg_4b79155b5de665ce.zip.<br>2024-08-27 07:35:10,751 INFO packaging.py:518 -- Creating a file package <span class="hljs-keyword">for</span> <span class="hljs-built_in">local</span> directory <span class="hljs-string">&#x27;.&#x27;</span>.<br><br>-------------------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_7Uqy8LjP4dxjZxGa&#x27;</span> submitted successfully<br>-------------------------------------------------------<br><br>Next steps<br>  Query the logs of the job:<br>    ray job logs raysubmit_7Uqy8LjP4dxjZxGa<br>  Query the status of the job:<br>    ray job status raysubmit_7Uqy8LjP4dxjZxGa<br>  Request the job to be stopped:<br>    ray job stop raysubmit_7Uqy8LjP4dxjZxGa<br><br>Tailing logs <span class="hljs-keyword">until</span> the job exits (<span class="hljs-built_in">disable</span> with --no-wait):<br>2024-08-27 15:35:14,079 INFO worker.py:1330 -- Using address xxx.xxx.xxx.xxx:6379 <span class="hljs-built_in">set</span> <span class="hljs-keyword">in</span> the environment variable RAY_ADDRESS<br>2024-08-27 15:35:14,079 INFO worker.py:1458 -- Connecting to existing Ray cluster at address: xxx.xxx.xxx.xxx:6379...<br>2024-08-27 15:35:14,103 INFO worker.py:1639 -- Connected to Ray cluster. View the dashboard at http://xxx.xxx.xxx.xxx:8265 <br>This cluster consists of<br>    1 nodes <span class="hljs-keyword">in</span> total<br>    48.0 CPU resources <span class="hljs-keyword">in</span> total<br><br><br>------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_7Uqy8LjP4dxjZxGa&#x27;</span> succeeded<br>------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>这里的信息说明，远程的集群只有一个节点，该节点上有48个可用的CPU核资源。这些输出信息不仅可以在终端窗口上看到，还可以从这里给出的dashboard链接里面看到更加详细的任务管理情况：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164643170.png" alt=""></p>
+<p>这里也顺便提交一个输出软件位置信息的指令，确认下任务是在远程执行而不是在本地执行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> ray<br><br>ray.init()<br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-built_in">print</span> (np.__file__)<br></code></pre></td></tr></table></figure>
+<p>返回的日志为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ RAY_ADDRESS=<span class="hljs-string">&#x27;http://xxx.xxx.xxx.xxx:8265&#x27;</span> ray job submit --working-dir . -- python test_ray.py <br>Job submission server address: http://xxx.xxx.xxx.xxx:8265<br>2024-08-27 07:46:10,645 INFO dashboard_sdk.py:338 -- Uploading package gcs://_ray_pkg_5bba1a7144beb522.zip.<br>2024-08-27 07:46:10,658 INFO packaging.py:518 -- Creating a file package <span class="hljs-keyword">for</span> <span class="hljs-built_in">local</span> directory <span class="hljs-string">&#x27;.&#x27;</span>.<br><br>-------------------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_kQ3XgE4Hxp3dkmuU&#x27;</span> submitted successfully<br>-------------------------------------------------------<br><br>Next steps<br>  Query the logs of the job:<br>    ray job logs raysubmit_kQ3XgE4Hxp3dkmuU<br>  Query the status of the job:<br>    ray job status raysubmit_kQ3XgE4Hxp3dkmuU<br>  Request the job to be stopped:<br>    ray job stop raysubmit_kQ3XgE4Hxp3dkmuU<br><br>Tailing logs <span class="hljs-keyword">until</span> the job exits (<span class="hljs-built_in">disable</span> with --no-wait):<br>2024-08-27 15:46:12,456 INFO worker.py:1330 -- Using address xxx.xxx.xxx.xxx:6379 <span class="hljs-built_in">set</span> <span class="hljs-keyword">in</span> the environment variable RAY_ADDRESS<br>2024-08-27 15:46:12,457 INFO worker.py:1458 -- Connecting to existing Ray cluster at address: xxx.xxx.xxx.xxx:6379...<br>2024-08-27 15:46:12,470 INFO worker.py:1639 -- Connected to Ray cluster. View the dashboard at http://xxx.xxx.xxx.xxx:8265 <br>/home/dechin/anaconda3/envs/mindspore-latest/lib/python3.7/site-packages/numpy/__init__.py<br><br>------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_kQ3XgE4Hxp3dkmuU&#x27;</span> succeeded<br>------------------------------------------<br><br>$ python3 -m pip show numpy<br>Name: numpy<br>Version: 1.21.6<br>Summary: NumPy is the fundamental package <span class="hljs-keyword">for</span> array computing with Python.<br>Home-page: https://www.numpy.org<br>Author: Travis E. Oliphant et al.<br>Author-email: <br>License: BSD<br>Location: /usr/local/python-3.7.5/lib/python3.7/site-packages<br>Requires: <br>Required-by: CyFES, h5py, hadder, matplotlib, mindinsight, mindspore, mindspore-serving, pandas, ray, scikit-learn, scipy<br></code></pre></td></tr></table></figure>
+<p>这里可以看到，提交的任务中numpy是保存在mindspore-latest虚拟环境中的，而本地的numpy不在虚拟环境中，说明任务确实是在远程执行的。类似的可以在dashboard上面看到提交日志：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164643203.png" alt=""></p>
+<p>接下来测试一下分布式框架ray的并发特性：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> ray<br><br>ray.init()<br><br><span class="hljs-meta">@ray.remote(<span class="hljs-params">num_returns=<span class="hljs-number">1</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">cpu_task</span>():<br>    <span class="hljs-keyword">import</span> time<br>    time.sleep(<span class="hljs-number">2</span>)<br>    <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>    nums = <span class="hljs-number">100000</span><br>    arr = np.random.random((<span class="hljs-number">2</span>, nums))<br>    arr2 = arr[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span> + arr[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span><br>    pi = np.where(arr2&lt;=<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>).<span class="hljs-built_in">sum</span>() * <span class="hljs-number">4</span> / nums<br>    <span class="hljs-keyword">return</span> pi<br><br>num_conc = <span class="hljs-number">10</span><br>res = ray.get([cpu_task.remote() <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num_conc)])<br><span class="hljs-built_in">print</span> (<span class="hljs-built_in">sum</span>(res) / num_conc)<br></code></pre></td></tr></table></figure>
+<p>这个案例的内容是用蒙特卡洛算法计算圆周率的值，一次提交10个任务，每个任务中撒点100000个，并休眠2s。那么如果是顺序执行的话，理论上需要休眠20s。而这里提交任务之后，输出如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-keyword">time</span> RAY_ADDRESS=<span class="hljs-string">&#x27;http://xxx.xxx.xxx.xxx:8265&#x27;</span> ray job submit --working-dir . --entrypoint-num-cpus 10 -- python te<br>st_ray.py <br>Job submission server address: http://xxx.xxx.xxx.xxx:8265<br>2024-08-27 08:30:13,315 INFO dashboard_sdk.py:385 -- Package gcs://_ray_pkg_d66b052eb6944465.zip already exists, skipping upload.<br><br>-------------------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_Ur6MAvP7DYiCT6Uz&#x27;</span> submitted successfully<br>-------------------------------------------------------<br><br>Next steps<br>  Query the logs of the job:<br>    ray job logs raysubmit_Ur6MAvP7DYiCT6Uz<br>  Query the status of the job:<br>    ray job status raysubmit_Ur6MAvP7DYiCT6Uz<br>  Request the job to be stopped:<br>    ray job stop raysubmit_Ur6MAvP7DYiCT6Uz<br><br>Tailing logs <span class="hljs-keyword">until</span> the job exits (<span class="hljs-built_in">disable</span> with --no-wait):<br>2024-08-27 16:30:15,032 INFO worker.py:1330 -- Using address xxx.xxx.xxx.xxx:6379 <span class="hljs-built_in">set</span> <span class="hljs-keyword">in</span> the environment variable RAY_ADDRESS<br>2024-08-27 16:30:15,033 INFO worker.py:1458 -- Connecting to existing Ray cluster at address: xxx.xxx.xxx.xxx:6379...<br>2024-08-27 16:30:15,058 INFO worker.py:1639 -- Connected to Ray cluster. View the dashboard at http://xxx.xxx.xxx.xxx:8265 <br>3.141656<br><br>------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_Ur6MAvP7DYiCT6Uz&#x27;</span> succeeded<br>------------------------------------------<br><br><br>real    0m7.656s<br>user    0m0.414s<br>sys     0m0.010s<br></code></pre></td></tr></table></figure>
+<p>总的运行时间在7.656秒，其中5s左右的时间是来自网络delay。所以实际上并发之后的总运行时间就在2s左右，跟单任务休眠的时间差不多。也就是说，远程提交的任务确实是并发执行的。最终返回的结果进行加和处理，得到的圆周率估计为：<code>3.141656</code>。而且除了普通的CPU任务之外，还可以上传GPU任务：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> ray<br><br>ray.init()<br><br><span class="hljs-meta">@ray.remote(<span class="hljs-params">num_returns=<span class="hljs-number">1</span>, num_gpus=<span class="hljs-number">1</span></span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">test_ms</span>():<br>    <span class="hljs-keyword">import</span> os<br>    os.environ[<span class="hljs-string">&#x27;GLOG_v&#x27;</span>]=<span class="hljs-string">&#x27;4&#x27;</span><br>    os.environ[<span class="hljs-string">&#x27;CUDA_VISIBLE_DEVICE&#x27;</span>]=<span class="hljs-string">&#x27;0&#x27;</span><br>    <span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br>    ms.set_context(device_target=<span class="hljs-string">&quot;GPU&quot;</span>, device_id=<span class="hljs-number">0</span>)<br>    a = ms.Tensor([<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>], ms.float32)<br>    <span class="hljs-keyword">return</span> a.asnumpy().<span class="hljs-built_in">sum</span>()<br><br>res = ray.get(test_ms.remote())<br>ray.shutdown()<br><span class="hljs-built_in">print</span> (res)<br></code></pre></td></tr></table></figure>
+<p>这个任务是用mindspore简单创建了一个Tensor，并计算了Tensor的总和返回给本地，输出内容为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ RAY_ADDRESS=<span class="hljs-string">&#x27;http://xxx.xxx.xxx.xxx:8265&#x27;</span> ray job submit --working-dir . --entrypoint-num-gpus 1 -- python test_ray.py <br>Job submission server address: http://xxx.xxx.xxx.xxx:8265<br>2024-08-28 01:16:38,712 INFO dashboard_sdk.py:338 -- Uploading package gcs://_ray_pkg_10019cd9fa9bdc38.zip.<br>2024-08-28 01:16:38,712 INFO packaging.py:518 -- Creating a file package <span class="hljs-keyword">for</span> <span class="hljs-built_in">local</span> directory <span class="hljs-string">&#x27;.&#x27;</span>.<br><br>-------------------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_RUvkEqnkjNitKmnJ&#x27;</span> submitted successfully<br>-------------------------------------------------------<br><br>Next steps<br>  Query the logs of the job:<br>    ray job logs raysubmit_RUvkEqnkjNitKmnJ<br>  Query the status of the job:<br>    ray job status raysubmit_RUvkEqnkjNitKmnJ<br>  Request the job to be stopped:<br>    ray job stop raysubmit_RUvkEqnkjNitKmnJ<br><br>Tailing logs <span class="hljs-keyword">until</span> the job exits (<span class="hljs-built_in">disable</span> with --no-wait):<br>2024-08-28 09:16:41,960 INFO worker.py:1330 -- Using address xxx.xxx.xxx.xxx:6379 <span class="hljs-built_in">set</span> <span class="hljs-keyword">in</span> the environment variable RAY_ADDRESS<br>2024-08-28 09:16:41,960 INFO worker.py:1458 -- Connecting to existing Ray cluster at address: xxx.xxx.xxx.xxx:6379...<br>2024-08-28 09:16:41,974 INFO worker.py:1639 -- Connected to Ray cluster. View the dashboard at http://xxx.xxx.xxx.xxx:8265 <br>6.0<br><br>------------------------------------------<br>Job <span class="hljs-string">&#x27;raysubmit_RUvkEqnkjNitKmnJ&#x27;</span> succeeded<br>------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>返回的计算结果是6.0，那么也是正确的。</p>
+<h1>查看和管理任务</h1>
+<p>前面的任务输出信息中，都有相应的job_id，我们可以根据这个job_id在主节点上面查看相关任务的执行情况：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ray job status raysubmit_RUvkEqnkjNitKmnJ<br></code></pre></td></tr></table></figure>
+<p>可以查看该任务的输出内容：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ray job logs raysubmit_RUvkEqnkjNitKmnJ<br></code></pre></td></tr></table></figure>
+<p>还可以终止该任务的运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ray job stop raysubmit_RUvkEqnkjNitKmnJ<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>本文介绍了基于Python的分布式框架Ray的基本安装与使用。Ray框架下不仅可以通过conda和Python十分方便的构建一个集群，还可以自动的对分布式任务进行并发处理，且支持GPU分布式任务的提交，极大的简化了手动分布式开发的工作量。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ray.html">https://www.cnblogs.com/dechinphy/p/ray.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/936eb8a8.html">https://dechin-phy.asia/posts/936eb8a8.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-08-28</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-08-28</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/b08d9c8b.html">解决auditwheel repair过程rpath被修改的问题</a><a class="next" href="/posts/cff8f1d0.html">PEP 508：为不同版本Python指定不同依赖</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

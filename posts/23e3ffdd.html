@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/23e3ffdd.html"><meta property="og:type" content="article"><meta property="og:title" content="关于python中显存回收的问题"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/23e3ffdd.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-12-14T09:16:06.000Z"><meta property="article:modified_time" content="2021-12-14T09:16:00.000Z"><title>关于python中显存回收的问题 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">关于python中显存回收的问题</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">关于python中显存回收的问题</h1><div class="post-meta">2021-12-14<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">问题复现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">解决思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>在使用一些python的GPU模块，或者写CUDA时，有时会发现显存被无端占用的场景，即时执行了cudaFree()或者python的del操作，也无法消除这一块的显存占用。最终我们发现，可以通过额外开启一个子进程的方法来封装相关的操作，通过对进程的存活控制来实现对GPU显存占用的控制，有可能是一个临时规避问题的思路。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>笔者在执行一个Jax的任务中，又发现了一个奇怪的问题，就是明明只分配了很小的矩阵空间，但是在多次的任务执行之后，显存突然就爆了。而且此时已经按照Jax的官方说明配置了<code>XLA_PYTHON_CLIENT_PREALLOCATE</code>这个参数为<code>false</code>，也就是不进行显存的预分配（默认会分配90%的显存空间以供使用）。然后在网上找到了一些类似的问题，比如参考链接中的1、2、3、4，都是在一些操作后发现未释放显存，这里提供一个实例问题和处理的思路，如果有更好的方案欢迎大家在评论区留言。</p>
+<h1>问题复现</h1>
+<p>在未执行任何GPU的任务时，我们可以看到此时<code>nvidia-smi</code>的输出如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs bash">Tue Dec 14 16:14:32 2021       <br>+-----------------------------------------------------------------------------+<br>| NVIDIA-SMI 470.42.01    Driver Version: 470.42.01    CUDA Version: 11.4     |<br>|-------------------------------+----------------------+----------------------+<br>| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |<br>| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |<br>|                               |                      |               MIG M. |<br>|===============================+======================+======================|<br>|   0  Quadro RTX 4000     On   | 00000000:03:00.0  On |                  N/A |<br>| 30%   43C    P8    20W / 125W |   1260MiB /  7979MiB |     10%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>|   1  Quadro RTX 4000     On   | 00000000:A6:00.0 Off |                  N/A |<br>| 30%   34C    P8     7W / 125W |     10MiB /  7982MiB |      0%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>                                                                               <br>+-----------------------------------------------------------------------------+<br>| Processes:                                                                  |<br>|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |<br>|        ID   ID                                                   Usage      |<br>|=============================================================================|<br>|    0   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                110MiB |<br>|    0   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                661MiB |<br>|    0   N/A  N/A      3251      G   /usr/bin/gnome-shell              132MiB |<br>|    0   N/A  N/A   1142734      G   ...AAAAAAAAA= --shared-files       64MiB |<br>|    0   N/A  N/A   1337710      G   ...AAAAAAAAA= --shared-files       80MiB |<br>|    0   N/A  N/A   1371509      G   ...369783.<span class="hljs-built_in">log</span> --shared-files       63MiB |<br>|    0   N/A  N/A   1506625      G   ...AAAAAAAAA= --shared-files       89MiB |<br>|    1   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                  4MiB |<br>|    1   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                  4MiB |<br>+-----------------------------------------------------------------------------+<br></code></pre></td></tr></table></figure>
+<p>此时启动一个ipython的终端窗口，执行如下的Jax任务：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>In [<span class="hljs-number">2</span>]: <span class="hljs-keyword">import</span> os<br>   ...: os.environ[<span class="hljs-string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>]=<span class="hljs-string">&#x27;1&#x27;</span><br>   ...: os.environ[<span class="hljs-string">&quot;XLA_PYTHON_CLIENT_PREALLOCATE&quot;</span>] = <span class="hljs-string">&quot;false&quot;</span><br><br>In [<span class="hljs-number">3</span>]: <span class="hljs-keyword">from</span> jax <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> jnp<br><br>In [<span class="hljs-number">4</span>]: a = np.ones(<span class="hljs-number">1000000</span>)<br><br>In [<span class="hljs-number">5</span>]: b = jnp.array(a)<br></code></pre></td></tr></table></figure>
+<p>此时再次查看<code>nvidia-smi</code>的结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs bash">Tue Dec 14 16:18:26 2021       <br>+-----------------------------------------------------------------------------+<br>| NVIDIA-SMI 470.42.01    Driver Version: 470.42.01    CUDA Version: 11.4     |<br>|-------------------------------+----------------------+----------------------+<br>| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |<br>| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |<br>|                               |                      |               MIG M. |<br>|===============================+======================+======================|<br>|   0  Quadro RTX 4000     On   | 00000000:03:00.0  On |                  N/A |<br>| 30%   42C    P8    20W / 125W |   1238MiB /  7979MiB |     10%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>|   1  Quadro RTX 4000     On   | 00000000:A6:00.0 Off |                  N/A |<br>| 30%   36C    P0    35W / 125W |    114MiB /  7982MiB |      0%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>                                                                               <br>+-----------------------------------------------------------------------------+<br>| Processes:                                                                  |<br>|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |<br>|        ID   ID                                                   Usage      |<br>|=============================================================================|<br>|    0   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                110MiB |<br>|    0   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                661MiB |<br>|    0   N/A  N/A      3251      G   /usr/bin/gnome-shell              129MiB |<br>|    0   N/A  N/A   1142734      G   ...AAAAAAAAA= --shared-files       44MiB |<br>|    0   N/A  N/A   1337710      G   ...AAAAAAAAA= --shared-files       80MiB |<br>|    0   N/A  N/A   1371509      G   ...369783.<span class="hljs-built_in">log</span> --shared-files       63MiB |<br>|    0   N/A  N/A   1506625      G   ...AAAAAAAAA= --shared-files       89MiB |<br>|    1   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                  4MiB |<br>|    1   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                  4MiB |<br>|    1   N/A  N/A   1743467      C   /usr/local/bin/python             101MiB |<br>+-----------------------------------------------------------------------------+<br></code></pre></td></tr></table></figure>
+<p>此时的结果还是比较符合我们的预期的，这个python的进程占用了101MB的空间。但是此时如果我们在ipython中把这个对象删除了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">6</span>]: <span class="hljs-keyword">del</span> b<br><br>In [<span class="hljs-number">7</span>]: b<br>---------------------------------------------------------------------------<br>NameError                                 Traceback (most recent call last)<br>&lt;ipython-<span class="hljs-built_in">input</span>-<span class="hljs-number">7</span>-89e6c98d9288&gt; <span class="hljs-keyword">in</span> &lt;module&gt;<br>----&gt; <span class="hljs-number">1</span> b<br><br>NameError: name <span class="hljs-string">&#x27;b&#x27;</span> <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> defined<br></code></pre></td></tr></table></figure>
+<p>然后再次查看<code>nvidia-smi</code>的结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs bash">Tue Dec 14 16:21:12 2021       <br>+-----------------------------------------------------------------------------+<br>| NVIDIA-SMI 470.42.01    Driver Version: 470.42.01    CUDA Version: 11.4     |<br>|-------------------------------+----------------------+----------------------+<br>| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |<br>| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |<br>|                               |                      |               MIG M. |<br>|===============================+======================+======================|<br>|   0  Quadro RTX 4000     On   | 00000000:03:00.0  On |                  N/A |<br>| 30%   42C    P5    21W / 125W |   1231MiB /  7979MiB |      0%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>|   1  Quadro RTX 4000     On   | 00000000:A6:00.0 Off |                  N/A |<br>| 30%   35C    P8     7W / 125W |    114MiB /  7982MiB |      0%      Default |<br>|                               |                      |                  N/A |<br>+-------------------------------+----------------------+----------------------+<br>                                                                               <br>+-----------------------------------------------------------------------------+<br>| Processes:                                                                  |<br>|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |<br>|        ID   ID                                                   Usage      |<br>|=============================================================================|<br>|    0   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                110MiB |<br>|    0   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                662MiB |<br>|    0   N/A  N/A      3251      G   /usr/bin/gnome-shell              111MiB |<br>|    0   N/A  N/A   1142734      G   ...AAAAAAAAA= --shared-files       55MiB |<br>|    0   N/A  N/A   1337710      G   ...AAAAAAAAA= --shared-files       80MiB |<br>|    0   N/A  N/A   1371509      G   ...369783.<span class="hljs-built_in">log</span> --shared-files       63MiB |<br>|    0   N/A  N/A   1506625      G   ...AAAAAAAAA= --shared-files       89MiB |<br>|    1   N/A  N/A      1673      G   /usr/lib/xorg/Xorg                  4MiB |<br>|    1   N/A  N/A      3015      G   /usr/lib/xorg/Xorg                  4MiB |<br>|    1   N/A  N/A   1743467      C   /usr/local/bin/python             101MiB |<br>+-----------------------------------------------------------------------------+<br></code></pre></td></tr></table></figure>
+<p>此时我们可以看到，虽然已经把对象给删除了，在python的程序中已然找不到这个对象，但是在显存中的数据并未被消除。而且如果一直不消除，这块显存就会一直占用在那里，直到python进程（此时作为该进程的一个守护进程）的结束。</p>
+<h1>解决思路</h1>
+<p>暂时还不清楚这个问题发生的机制，在一些特定场景下出现僵尸进程的问题似乎跟我复现的这个场景也有所不同。只是考虑到在python的进程结束之后，这一块的显存还是被成功释放了的，因此我考虑直接用进程的方法来解决这个显存分配和清空的方法，以下是一个基于进程实现的案例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br>os.environ[<span class="hljs-string">&#x27;CUDA_VISIBLE_DEVICES&#x27;</span>]=<span class="hljs-string">&#x27;1&#x27;</span><br>os.environ[<span class="hljs-string">&quot;XLA_PYTHON_CLIENT_PREALLOCATE&quot;</span>] = <span class="hljs-string">&quot;false&quot;</span><br><br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> multiprocessing <span class="hljs-keyword">import</span> Pool<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> jax <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> jnp<br><br>a = np.ones(<span class="hljs-number">1000000</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">f</span>(<span class="hljs-params">a</span>):<br>    b = jnp.array(a)<br>    time.sleep(<span class="hljs-number">2</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Array b has been deleted!&#x27;</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span><br><br><span class="hljs-keyword">with</span> Pool(<span class="hljs-number">1</span>) <span class="hljs-keyword">as</span> p:<br>    res = p.<span class="hljs-built_in">map</span>(f, [(a,)])<br><br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Is jax array deleted successfully?\t&#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(res))<br>time.sleep(<span class="hljs-number">6</span>)<br></code></pre></td></tr></table></figure>
+<p>在这个程序中，我们把要执行的相关任务，包含GPU矩阵的转化与分配，都放到了一个函数中，然后通过multiprocessing开启一个子进程，来执行这个任务，并且在任务中甚至不需要手动执行<code>del</code>这个删除的操作。这么一来，我们既可以实现对象的即时销毁，也通过进程控制的机制确保在显存中占用的位置被清空。如果进程执行中存在一些问题，还可以通过<code>terminate</code>的操作来直接杀死进程，同样也可以确保显存占用不会发生堆积的情况。程序的执行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">Array b has been deleted!<br>Is jax array deleted successfully?      [True]<br></code></pre></td></tr></table></figure>
+<p>在程序执行的过程中我们也可以看到，在nvidia-smi中的显存占用，仅仅持续了2秒，也就是我们在函数内部设置的进程sleep参数。而在之后6秒的sleep时间中，这一块内存占用是被清空了的，这也就达到了我们最初的目的。当然，最重要的是，我们依然可以从函数中获取到返回值，这就确保后面有需要存储或者使用到的参数不被同步的销毁。需要注意的是，在同等条件下，如果不使用子进程来执行这个函数，而是直接使用<code>res=f(a)</code>的形式来执行，作为临时变量的b最终依然存在于显存之中，这是一个非常可怕的事情。</p>
+<h1>总结概要</h1>
+<p>在使用一些python的GPU模块，或者写CUDA时，有时会发现显存被无端占用的场景，即时执行了cudaFree()或者python的del操作，也无法消除这一块的显存占用。最终我们发现，可以通过额外开启一个子进程的方法来封装相关的操作，通过对进程的存活控制来实现对GPU显存占用的控制，有可能是一个临时规避问题的思路。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/gc.html">https://www.cnblogs.com/dechinphy/p/gc.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/jzrita/article/details/80719297">https://blog.csdn.net/jzrita/article/details/80719297</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/xxs8457800/article/details/104307283">https://blog.csdn.net/xxs8457800/article/details/104307283</a></li>
+<li><a target="_blank" rel="noopener" href="https://jermine.vdo.pub/python/%E8%A7%A3%E5%86%B3gpu%E6%98%BE%E5%AD%98%E6%9C%AA%E9%87%8A%E6%94%BE%E9%97%AE%E9%A2%98/">https://jermine.vdo.pub/python/解决gpu显存未释放问题/</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_42317730/article/details/116786526?share_token=7ef0f7d6-6d68-4efb-995b-24517000ac11&amp;tt_from=copy_link&amp;utm_source=copy_link&amp;utm_medium=toutiao_android&amp;utm_campaign=client_share?=linux%E6%B8%85%E7%90%86gpu%E5%86%85%E5%AD%98,GPU%E5%86%85%E5%AD%98%E5%9C%A8CUDA%E8%84%9A%E6%9C%AC%E6%89%A7%E8%A1%8C%E5%90%8E%E6%97%A0%E6%B3%95">https://blog.csdn.net/weixin_42317730/article/details/116786526?share_token=7ef0f7d6-6d68-4efb-995b-24517000ac11&amp;tt_from=copy_link&amp;utm_source=copy_link&amp;utm_medium=toutiao_android&amp;utm_campaign=client_share?=linux清理gpu内存,GPU内存在CUDA脚本执行后无法</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/23e3ffdd.html">https://dechin-phy.asia/posts/23e3ffdd.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-12-14</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-12-14</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/d1b08f3b.html">JAX-MD在近邻表的计算中，使用了什么奇技淫巧？（一）</a><a class="next" href="/posts/3e9b55b1.html">GPU随机采样速度比较</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

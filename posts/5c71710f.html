@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/5c71710f.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSponge分子动力学模拟——使用MDAnalysis工具进行后分析（2024.02）"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/5c71710f.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-02-29T02:28:03.000Z"><meta property="article:modified_time" content="2024-02-29T08:37:00.000Z"><title>MindSponge分子动力学模拟——使用MDAnalysis工具进行后分析（2024.02） | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSponge分子动力学模拟——使用MDAnalysis工具进行后分析（2024.02）</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSponge分子动力学模拟——使用MDAnalysis工具进行后分析（2024.02）</h1><div class="post-meta">2024-02-29<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 12</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">环境配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">生成轨迹</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">MDAnalysis分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>这篇文章我们主要介绍了MindSponge分子动力学模拟软件如何跟后分析工具MDAnalysis相配合的方法，其主要操作流程就是调用MindSponge自带的CallBack来输出拓扑文件和轨迹文件给MDAnalysis，然后就可以调用MDAnalysis的相关分析函数接口，十分的方便。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>分子动力学模拟（Molecule Dynamics Simulation，MD），本质上是一门采样技术。通过配置力场参数、拓扑结构和积分器，对一个给定的体系不断的采样，最终得到一系列的轨迹。那么得到分子动力学模拟的轨迹之后，如何使用后分析工具进行轨迹分析，也是一项很重要的工作。目前来说，基于Python的开源工具MDAnalysis（简称mda）是一个比较常用的MD后分析工具。本文主要介绍基于MindSponge分子动力学模拟框架生成了相应的轨迹之后，如何使用MDAnalysis工具进行分析。</p>
+<h1>环境配置</h1>
+<p>需要说明的是，MindSponge当前主要有两个版本，一个是华为MindSpore下的官方仓库<a target="_blank" rel="noopener" href="https://gitee.com/mindspore/mindscience">MindScience</a>，这里面包含了多个工具的正式发布版本，其中也有MindSponge，相对而言功能比较稳定，但是需要编译构建和安装使用。另外一个仓库是<a target="_blank" rel="noopener" href="https://gitee.com/helloyesterday/mindsponge">MindSponge</a>，是MindSponge开发团队维护的一个develop版本，这个仓库只要<code>git clone</code>下来就可以测试和使用。本文章中的相关代码是基于<a target="_blank" rel="noopener" href="https://gitee.com/helloyesterday/mindsponge">后者</a>来实现的，暂时没上正式版仓库。关于MindSponge的安装和基本使用方法，可以参考下<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/collections/5620">之前的文章</a>，所有的内容都是开源免费的。</p>
+<p>然后MDAnalysis可以用pip直接安装（这里我们使用的是pip清华源）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install mdanalysis --upgrade<br>Looking <span class="hljs-keyword">in</span> indexes: https://pypi.tuna.tsinghua.edu.cn/simple<br>Requirement already satisfied: mdanalysis <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (2.7.0)<br>Requirement already satisfied: numpy&lt;2.0,&gt;=1.22.3 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (1.24.0)<br>Requirement already satisfied: GridDataFormats&gt;=0.4.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (1.0.2)<br>Requirement already satisfied: mmtf-python&gt;=1.0.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (1.1.3)<br>Requirement already satisfied: joblib&gt;=0.12 <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.9/site-packages (from mdanalysis) (1.2.0)<br>Requirement already satisfied: scipy&gt;=1.5.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (1.10.1)<br>Requirement already satisfied: matplotlib&gt;=1.5.1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (3.7.1)<br>Requirement already satisfied: tqdm&gt;=4.43.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (4.65.0)<br>Requirement already satisfied: threadpoolctl <span class="hljs-keyword">in</span> /home/dechin/.local/lib/python3.9/site-packages (from mdanalysis) (3.1.0)<br>Requirement already satisfied: packaging <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (23.0)<br>Requirement already satisfied: fasteners <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (0.19)<br>Requirement already satisfied: mda-xdrlib <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mdanalysis) (0.2.0)<br>Requirement already satisfied: mrcfile <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from GridDataFormats&gt;=0.4.0-&gt;mdanalysis) (1.5.0)<br>Requirement already satisfied: contourpy&gt;=1.0.1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (1.0.7)<br>Requirement already satisfied: cycler&gt;=0.10 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (0.11.0)<br>Requirement already satisfied: fonttools&gt;=4.22.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (4.38.0)<br>Requirement already satisfied: kiwisolver&gt;=1.0.1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (1.4.4)<br>Requirement already satisfied: pillow&gt;=6.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (9.4.0)<br>Requirement already satisfied: pyparsing&gt;=2.3.1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (3.0.9)<br>Requirement already satisfied: python-dateutil&gt;=2.7 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (2.8.2)<br>Requirement already satisfied: importlib-resources&gt;=3.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from matplotlib&gt;=1.5.1-&gt;mdanalysis) (5.12.0)<br>Requirement already satisfied: msgpack&gt;=1.0.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from mmtf-python&gt;=1.0.0-&gt;mdanalysis) (1.0.5)<br>Requirement already satisfied: zipp&gt;=3.1.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from importlib-resources&gt;=3.2.0-&gt;matplotlib&gt;=1.5.1-&gt;mdanalysis) (3.11.0)<br>Requirement already satisfied: six&gt;=1.5 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindsponge/lib/python3.9/site-packages (from python-dateutil&gt;=2.7-&gt;matplotlib&gt;=1.5.1-&gt;mdanalysis) (1.16.0)<br></code></pre></td></tr></table></figure>
+<p>安装完成后，就可以先用MindSponge生成一个用于后分析的轨迹，再调用MDAnalysis进行分析。</p>
+<h1>生成轨迹</h1>
+<p>这里我们使用的案例轨迹，还是<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cv.html">前一篇文章</a>中所用到的能量极小化的一个案例。模拟的分子是这个样子的：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163850366.png" alt=""></p>
+<p>分子动力学模拟的相关代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> sys<br><span class="hljs-comment"># 添加sponge所在的路径，这样就不需要安装即可直接使用</span><br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;../..&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD, SaveLastPdb<br><span class="hljs-keyword">from</span> sponge.colvar <span class="hljs-keyword">import</span> Distance, Angle, Torsion<br><br><span class="hljs-comment"># 配置MindSpore的执行环境</span><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">1</span>)<br><span class="hljs-comment"># 配置全局单位</span><br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br><br><span class="hljs-comment"># 定义一个基于case1.pdb的分子系统</span><br>system = Protein(<span class="hljs-string">&#x27;../pdb/case1.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">True</span>)<br><span class="hljs-comment"># 定义一个amber.ff99sb的力场</span><br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF99SB&#x27;</span>])<br><span class="hljs-comment"># 定义一个学习率为1e-03的Adam优化器</span><br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br><br>cv_bond = Distance([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>])<br>cv_angle = Angle([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>])<br>cv_dihedral = Torsion([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>])<br><span class="hljs-comment"># 定义一个用于执行分子模拟的Sponge实例</span><br>md = Sponge(system, potential=energy, optimizer=min_opt, metrics=&#123;<span class="hljs-string">&#x27;bond&#x27;</span>: cv_bond, <span class="hljs-string">&#x27;angle&#x27;</span>: cv_angle,<br>                                                                  <span class="hljs-string">&#x27;dihedral&#x27;</span>: cv_dihedral&#125;)<br><br><span class="hljs-comment"># RunInfo这个回调函数可以在屏幕上根据指定频次输出能量参数</span><br>run_info = RunInfo(<span class="hljs-number">20</span>)<br><span class="hljs-comment"># WriteH5MD回调函数，可以将轨迹、能量、力和速度等参数保留到一个hdf5文件中，文件后缀为h5md</span><br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>, save_last_pdb=<span class="hljs-string">&#x27;last_pdb.pdb&#x27;</span>)<br><span class="hljs-comment"># 保存PDB文件</span><br>bonds = np.array([[<span class="hljs-number">0</span>, <span class="hljs-number">56</span>], [<span class="hljs-number">6</span>, <span class="hljs-number">10</span>]], np.int32)<br><span class="hljs-comment"># 开始执行分子动力学模拟，运行2000次迭代</span><br>md.run(<span class="hljs-number">200</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>运行结束后，会在当前路径下生成一个名为<code>last_pdb.pdb</code>的构象文件和一个<code>test.h5md</code>的轨迹文件。关于h5md格式的轨迹文件，可以用<code>silx</code>这个工具来进行直观的可视化：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163850403.png" alt=""></p>
+<p>这是体系能量极小化过程中的能量变化曲线：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163850434.png" alt=""></p>
+<p>并且保存了轨迹数据：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163850470.png" alt=""></p>
+<h1>MDAnalysis分析</h1>
+<p>使用MDAnalysis进行分析的主要流程，就是用拓扑结构文件和轨迹文件构建两个<code>MDAnalysis.Universe</code>对象。这里拓扑结构文件可以使用pdb文件，但要求pdb文件中包含有CONECT成键相互关系，否则跟成键相互作用相关的内容使用mda无法分析，MindSponge所生成的pdb文件中是包含了成键关系信息的。再者就是h5md也是mda所支持的轨迹文件扩展名，使用MindSponge生成的轨迹可以直接用mda加载：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> MDAnalysis <span class="hljs-keyword">as</span> mda<br>u = mda.Universe(<span class="hljs-string">&#x27;last_pdb.pdb&#x27;</span>, <span class="hljs-string">&#x27;test.h5md&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>加载完之后，我们可以打印其中的一些关键信息，比如原子类型和残基类型等：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Atom Types List:\n&#x27;</span>, u.atoms)<br><span class="hljs-comment"># Atom Types List:</span><br><span class="hljs-comment"># &lt;AtomGroup [&lt;Atom 1: N of type N of resname ALA, resid 1 and segid A and altLoc &gt;, &lt;Atom 2: CA of type C of resname ALA, resid 1 and segid A and altLoc &gt;, &lt;Atom 3: CB of type C of resname ALA, resid 1 and segid A and altLoc &gt;, ..., &lt;Atom 55: HB1 of type H of resname ALA, resid 4 and segid A and altLoc &gt;, &lt;Atom 56: HB2 of type H of resname ALA, resid 4 and segid A and altLoc &gt;, &lt;Atom 57: HB3 of type H of resname ALA, resid 4 and segid A and altLoc &gt;]&gt;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Residue Types List:\n&#x27;</span>, u.residues)<br><span class="hljs-comment"># Residue Types List:</span><br><span class="hljs-comment"># &lt;ResidueGroup [&lt;Residue ALA, 1&gt;, &lt;Residue ARG, 2&gt;, &lt;Residue ALA, 3&gt;, &lt;Residue ALA, 4&gt;]&gt;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Step 0 Coordinates Shape:\n&#x27;</span>, np.array(u.coord).shape)<br><span class="hljs-comment"># Step 0 Coordinates Shape:</span><br><span class="hljs-comment"># (57, 3)</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;C Atoms:\n&#x27;</span>, u.select_atoms(<span class="hljs-string">&#x27;name C&#x27;</span>))<br><span class="hljs-comment"># C Atoms:</span><br><span class="hljs-comment"># &lt;AtomGroup [&lt;Atom 4: C of type C of resname ALA, resid 1 and segid A and altLoc &gt;, &lt;Atom 22: C of type C of resname ARG, resid 2 and segid A and altLoc &gt;, &lt;Atom 40: C of type C of resname ALA, resid 3 and segid A and altLoc &gt;, &lt;Atom 50: C of type C of resname ALA, resid 4 and segid A and altLoc &gt;]&gt;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Contact Map:\n&#x27;</span>, contact_matrix(np.array(u.coord)))<br><span class="hljs-comment"># Contact Map:</span><br><span class="hljs-comment"># [[ True  True  True ...  True  True  True]</span><br><span class="hljs-comment"># [ True  True  True ...  True  True  True]</span><br><span class="hljs-comment"># [ True  True  True ...  True  True  True]</span><br><span class="hljs-comment"># ...</span><br><span class="hljs-comment"># [ True  True  True ...  True  True  True]</span><br><span class="hljs-comment"># [ True  True  True ...  True  True  True]</span><br><span class="hljs-comment"># [ True  True  True ...  True  True  True]]</span><br><span class="hljs-built_in">print</span>(u.bonds)<br><span class="hljs-comment"># &lt;TopologyGroup containing 56 bonds&gt;</span><br></code></pre></td></tr></table></figure>
+<p>然后是一些跟轨迹相关的条目：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Number of Frames in Trajectory:\n&#x27;</span>, u.trajectory.n_frames)<br><span class="hljs-comment"># Number of Frames in Trajectory:</span><br><span class="hljs-comment"># 20</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Number of Atoms:\n&#x27;</span>, u.trajectory.n_atoms)<br><span class="hljs-comment"># Number of Atoms:</span><br><span class="hljs-comment"># 57</span><br><span class="hljs-built_in">print</span>(u.trajectory.has_positions)<br><span class="hljs-comment"># True</span><br><span class="hljs-built_in">print</span>(u.trajectory.ts.positions.shape)<br><span class="hljs-comment"># (57, 3)</span><br><span class="hljs-built_in">print</span>(u.trajectory.ts.has_velocities)<br><span class="hljs-comment"># False</span><br><span class="hljs-built_in">print</span>(u.trajectory.ts.has_forces)<br><span class="hljs-comment"># False</span><br><span class="hljs-built_in">print</span>(u.trajectory[<span class="hljs-number">0</span>].data)<br><span class="hljs-comment"># &#123;&#x27;trajectory&#x27;: 10, &#x27;time&#x27;: 0.010000000707805157, &#x27;step&#x27;: 10&#125;</span><br><span class="hljs-built_in">print</span>(u.trajectory[<span class="hljs-number">1</span>].positions[<span class="hljs-number">0</span>])<br><span class="hljs-comment"># [ -0.11355944 -11.455442    -0.79421705]</span><br></code></pre></td></tr></table></figure>
+<p>因为我们在定义CallBack的时候没有在轨迹中保存速度参量和力参量，因此这里<code>has_velocities</code>和<code>has_forces</code>两个的值都是<code>False</code>，但实际上我们是可以支持在中间轨迹把这两个参量写入到h5md文件中的。由于轨迹有很多帧，在mda里面我们可以直接对<code>u.trajectory</code>使用索引，来定位到特定的某一帧，再导出自己所需要的参量。除了单点分析，我们还可以定义一个reference trajectory来计算RMSD等参数：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">ref = mda.Universe(<span class="hljs-string">&#x27;last_pdb.pdb&#x27;</span>, <span class="hljs-string">&#x27;test.h5md&#x27;</span>)<br>R = RMSD(u, ref, select=<span class="hljs-string">&quot;backbone&quot;</span>, groupselections=[<span class="hljs-string">&#x27;backbone and resid 1-4&#x27;</span>])<br>R.run()<br>rmsd = R.results.rmsd.T<br><span class="hljs-built_in">print</span> (rmsd[<span class="hljs-number">2</span>])<br></code></pre></td></tr></table></figure>
+<p>更多的MDAnalysis工具的使用方法和函数接口，可以参考<a target="_blank" rel="noopener" href="https://www.mdanalysis.org/">MDAnalysis官方文档</a>或者是这个<a target="_blank" rel="noopener" href="https://www.osgeo.cn/mdanalysis/documentation_pages/overview.html">中文翻译版文档</a>。</p>
+<h1>总结概要</h1>
+<p>这篇文章我们主要介绍了MindSponge分子动力学模拟软件如何跟后分析工具MDAnalysis相配合的方法，其主要操作流程就是调用MindSponge自带的CallBack来输出拓扑文件和轨迹文件给MDAnalysis，然后就可以调用MDAnalysis的相关分析函数接口，十分的方便。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mda-mds.html">https://www.cnblogs.com/dechinphy/p/mda-mds.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/5c71710f.html">https://dechin-phy.asia/posts/5c71710f.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-02-29</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-02-29</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/4de687b0.html">从Python语言的角度看C++的指针</a><a class="next" href="/posts/aac63f21.html">Python报错symbol lookup error: xxx.so: undefined symbol: cufftxxx解决办法</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

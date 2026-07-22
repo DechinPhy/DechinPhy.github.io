@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/4edf83e7.html"><meta property="og:type" content="article"><meta property="og:title" content="用Zettlr写Latex Beamer风格的演示文档"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/4edf83e7.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2026-07-07T08:15:29.000Z"><meta property="article:modified_time" content="2026-07-08T07:16:00.000Z"><title>用Zettlr写Latex Beamer风格的演示文档 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">用Zettlr写Latex Beamer风格的演示文档</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">用Zettlr写Latex Beamer风格的演示文档</h1><div class="post-meta">2026-07-07<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Zettlr下载</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">TinyTex下载安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Ctex中文支持</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">Zettlr Beamer格式配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>Latex Beamer是我个人非常喜欢的一个演示文稿风格，该文稿类型，不仅对于公式、代码块有很好的展示效果，同时在演示文稿的架构上有非常清晰的层次感，甚至可以直接支持mermaid这样的流程图，内容专业而丰富。所以我也一直有在探索有什么工具可以更好的结合Markdown的简明语法和Latex Beamer的专业演示，从这点上来说，我觉得Zettlr是一个不错的开始。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的几篇文章中，我们介绍过<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/rmarkdown.html">在RMarkdown中编写Latex Beamer风格的演讲文档</a>，还有<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18630783/pandoc">使用pandoc直接编译Markdown文档为Beamer的方法</a>。pandoc是这些不同方案背后的核心编译工具，核心用法还是把markdown转译成Beamer风格的tex文件，然后再用latex编译器将其编译为pdf格式的文档。目前除了RMarkdown之外，还有一些VSCode插件的方法可以用。但是本文我要推荐的是另外一个Markdown撰写工具：<code>Zettlr</code>。非常简洁的一个开源软件，有所见即所得模式和源码模式，而且配置好之后，还可以直接输出Latex Beamer风格的文档。</p>
+<h1>Zettlr下载</h1>
+<p>重要的事情说三遍：<code>不要从官网下载</code>！<code>不要从官网下载</code>！<code>不要从官网下载</code>！这个软件近期都还在开源仓库上有更新，可以直接从<a target="_blank" rel="noopener" href="https://github.com/Zettlr/Zettlr/releases/tag/v4.6.0">Github的release</a>中下载一个最新版本的tag，例如当前的最新版本是4.6.0：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170556213.png" alt=""></p>
+<p>我这里使用的是Windows的平台，下载完exe文件之后，直接双击就可以开始安装和使用了。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170556236.png" alt=""></p>
+<h1>TinyTex下载安装</h1>
+<p>前面有提到，要生成Latex Beamer风格的演示文档，需要用到pandoc来进行转译，而pandoc转为tex之后，又需要通过xelatex来进行编译构建，所以我们还是需要一个latex的编译器。而TinyTex是一个不错的选择，它的大包中就包含了xelatex，所以我们可以直接从<a target="_blank" rel="noopener" href="https://github.com/rstudio/tinytex-releases/releases/tag/v2026.07">tinytex-releases</a>这个开源的release项目中下载最新版本的TinyTex安装包。需要注意的是，这里每一个平台都提供了三个安装包选项，我们选择体积最大的那个即可。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170556266.png" alt=""></p>
+<p>下载解压缩运行之后，要把这个<code>bin/windows</code>的路径添加到系统路径中。如果配置正确，在Power Shell中应该可以运行得到：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">&gt; xelatex --version<br>XeTeX 3.141592653-2.6-0.999998 (TeX Live 2026)<br>kpathsea version 6.4.2<br>Copyright 2026 SIL International, Jonathan Kew and Khaled Hosny.<br>There is NO warranty.  Redistribution of this software is<br>covered by the terms of both the XeTeX copyright and<br>the Lesser GNU General Public License.<br>For more information about these matters, see the file<br>named COPYING and the XeTeX <span class="hljs-built_in">source</span>.<br>Primary author of XeTeX: Jonathan Kew.<br>Compiled with ICU version 78.2; using 78.2<br>Compiled with zlib version 1.3.2; using 1.3.2<br>Compiled with FreeType2 version 2.14.1; using 2.14.1<br>Compiled with Graphite2 version 1.3.14; using 1.3.14<br>Compiled with HarfBuzz version 12.3.2; using 12.3.2<br>Compiled with libpng version 1.6.55; using 1.6.55<br>Compiled with pplib version v2.2<br>Compiled with fontconfig version 2.15.0; using 2.15.0<br></code></pre></td></tr></table></figure>
+<h1>Ctex中文支持</h1>
+<p>像latex这样的产品，对于中文的直接支持还是差一点，有可能编译出来会是一个方框。如果需要中文支持的话，可以按照如下方式装一个ctex：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><code class="hljs bash">&gt; tlmgr update --self<br>tlmgr.pl: package repository https://tlnet.yihui.org (not verified: gpg unavailable)<br>tlmgr.pl: Preparing TeX Live infrastructure update...<br>DO NOT CLOSE THIS WINDOW!<br>TeX Live infrastructure update <span class="hljs-keyword">in</span> progress ...<br>Detailed <span class="hljs-built_in">command</span> logging to <span class="hljs-string">&quot;S:\TinyTex\TinyTeX\temp\update-self.log&quot;</span><br>self update: texlive.infra (79365 -&gt; 79511)<br>Infrastructure update finished successfully.<br>You may now close this window.<br><br>&gt; tlmgr install ctex<br>tlmgr.pl: package repository https://tlnet.yihui.org (not verified: gpg unavailable)<br>[1/44, ??:??/??:??] install: adobemapping [2128k]<br>[2/44, 00:04/02:37] install: arphic [26742k]<br>[3/44, 00:23/01:06] install: chinese-jfm [3k]<br>[4/44, 00:24/01:09] install: cjk [58k]<br>[5/44, 00:25/01:12] install: cjkpunct [4k]<br>[6/44, 00:26/01:15] install: cns [2916k]<br>[7/44, 00:32/01:24] install: ctablestack [2k]<br>[8/44, 00:33/01:26] install: ctex [131k]<br>[9/44, 00:34/01:29] install: everyhook [3k]<br>[10/44, 00:34/01:29] install: fandol [21077k]<br>[11/44, 00:44/01:09] install: fonts-tlwg [4932k]<br>[12/44, 00:47/01:07] install: garuda-c90 [4k]<br>[13/44, 00:49/01:10] install: l3backend-dev [17k]<br>[14/44, 00:49/01:10] install: l3kernel-dev [187k]<br>[15/44, 00:51/01:13] install: latex-base-dev [258k]<br>[16/44, 00:52/01:14] install: latex-firstaid-dev [5k]<br>[17/44, 00:53/01:15] install: luatexbase [4k]<br>[18/44, 00:54/01:17] install: luatexja [196k]<br>[19/44, 00:55/01:18] install: mptopdf.windows [3k]<br>[20/44, 00:55/01:18] install: mptopdf [37k]<br>[21/44, 00:56/01:19] install: norasi-c90 [9k]<br>[22/44, 00:57/01:21] install: platex.windows [3k]<br>[23/44, 00:58/01:22] install: platex [42k]<br>[24/44, 00:58/01:22] install: platex-tools [9k]<br>[25/44, 00:59/01:24] install: ptex.windows [1156k]<br>[26/44, 01:01/01:25] install: ptex [1k]<br>[27/44, 01:01/01:25] install: ptex-base [10k]<br>[28/44, 01:02/01:26] install: ptex-fonts [14k]<br>[29/44, 01:03/01:28] install: ttfutils.windows [519k]<br>[30/44, 01:04/01:28] install: ttfutils [107k]<br>[31/44, 01:05/01:29] install: uhc [3516k]<br>[32/44, 01:16/01:39] install: uplatex.windows [3k]<br>[33/44, 01:17/01:40] install: uplatex [15k]<br>[34/44, 01:18/01:41] install: uptex.windows [1398k]<br>[35/44, 01:19/01:41] install: uptex [1k]<br>[36/44, 01:20/01:42] install: uptex-base [10k]<br>[37/44, 01:22/01:44] install: uptex-fonts [165k]<br>[38/44, 01:23/01:45] install: wadalab [17357k]<br>[39/44, 01:39/01:39] install: xcjk2uni [196k]<br>[40/44, 01:41/01:41] install: xecjk [231k]<br>[41/44, 01:42/01:42] install: xpinyin [197k]<br>[42/44, 01:43/01:43] install: zhmetrics [59k]<br>[43/44, 01:47/01:47] install: zhmetrics-uptex [31k]<br>[44/44, 01:47/01:47] install: zhnumber [9k]<br>running mktexlsr ...<br><span class="hljs-keyword">done</span> running mktexlsr.<br>running updmap-sys ...<br><span class="hljs-keyword">done</span> running updmap-sys.<br>regenerating fmtutil.cnf <span class="hljs-keyword">in</span> S:/TinyTex/TinyTeX/texmf-dist<br>running fmtutil-sys --byengine euptex --no-error-if-no-format --no-error-if-no-engine=luametatex,luajithbtex,luajittex,mfluajit,xetex --status-file=C:\Users\dechi\AppData\Local\Temp\YhLR1fpn3j\ENydfFIEH2 ...<br>  OK: euptex.fmt/euptex uptex.fmt/euptex uplatex.fmt/euptex platex-dev.fmt/euptex ptex.fmt/euptex eptex.fmt/euptex platex.fmt/euptex uplatex-dev.fmt/euptex<br>running fmtutil-sys --byfmt mptopdf --no-error-if-no-engine=luametatex,luajithbtex,luajittex,mfluajit,xetex --status-file=C:\Users\dechi\AppData\Local\Temp\YhLR1fpn3j\ENydfFIEH2 ...<br>  OK: euptex.fmt/euptex uptex.fmt/euptex uplatex.fmt/euptex platex-dev.fmt/euptex ptex.fmt/euptex eptex.fmt/euptex platex.fmt/euptex uplatex-dev.fmt/euptex mptopdf.fmt/pdftex<br>tlmgr.pl: package <span class="hljs-built_in">log</span> updated: S:/TinyTex/TinyTeX/texmf-var/web2c/tlmgr.log<br>tlmgr.pl: <span class="hljs-built_in">command</span> <span class="hljs-built_in">log</span> updated: S:/TinyTex/TinyTeX/texmf-var/web2c/tlmgr-commands.log<br></code></pre></td></tr></table></figure>
+<h1>Zettlr Beamer格式配置</h1>
+<p>重启Zettlr，配置一个Beamer输出格式：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170556300.png" alt=""></p>
+<p>内容为：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">reader:</span> <span class="hljs-string">markdown</span><br><span class="hljs-attr">writer:</span> <span class="hljs-string">beamer</span><br><br><span class="hljs-attr">pdf-engine:</span> <span class="hljs-string">xelatex</span><br><span class="hljs-attr">variables:</span><br>  <span class="hljs-attr">documentclass:</span> <span class="hljs-string">beamer</span><br>  <span class="hljs-attr">classoption:</span> <span class="hljs-string">aspectratio=169</span><br></code></pre></td></tr></table></figure>
+<p>就可以编译出Beamer格式的pdf了</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170556333.png" alt=""></p>
+<p>这个演示文档所对应的Markdown原文内容为：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs markdown">---<br>title: &quot;My Beamer&quot;<br>author: &quot;Dechin&quot; <br>institute: &quot;My Institute&quot;<br>date: &quot;2025-01-20&quot;<br>documentclass: beamer<br>header-includes:<br><span class="hljs-bullet">  -</span> \usetheme&#123;Dresden&#125;<br><span class="hljs-section">  - \usepackage&#123;ctex&#125; </span><br><span class="hljs-section">---</span><br><br><span class="hljs-section"># Markdown </span><br>This is an Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <span class="language-xml">&lt;http://rmarkdown.rstudio.com&gt;</span>. <br><br>When you click the <span class="hljs-strong">**Knit**</span> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. <br><br><span class="hljs-section"># Slide with Bullets </span><br><span class="hljs-bullet">-</span> Bullet 1<br><span class="hljs-bullet">-</span> Bullet 2<br><span class="hljs-bullet">-</span> Bullet 3<br><br><span class="hljs-section"># Slide with Python Output </span><br>\<span class="hljs-code">`\`</span>\`python<br>import numpy as np <br>print (&#x27;This is a python code block&#x27;) <br>\<span class="hljs-code">`\`</span>\` <br><br><span class="hljs-section"># Slide with Equation </span><br>Test Equation input <br>$$ -i\hbar\frac&#123;\partial&#125;&#123;\partial t&#125;\left|\psi\right&gt;=E\left|\psi\right&gt; $$<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>Latex Beamer是我个人非常喜欢的一个演示文稿风格，该文稿类型，不仅对于公式、代码块有很好的展示效果，同时在演示文稿的架构上有非常清晰的层次感，甚至可以直接支持mermaid这样的流程图，内容专业而丰富。所以我也一直有在探索有什么工具可以更好的结合Markdown的简明语法和Latex Beamer的专业演示，从这点上来说，我觉得Zettlr是一个不错的开始。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/zettlr.html">https://www.cnblogs.com/dechinphy/p/zettlr.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/4edf83e7.html">https://dechin-phy.asia/posts/4edf83e7.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2026-07-07</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2026-07-08</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a><a class="next" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

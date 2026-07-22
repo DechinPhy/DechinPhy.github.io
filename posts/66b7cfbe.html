@@ -1,0 +1,282 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/66b7cfbe.html"><meta property="og:type" content="article"><meta property="og:title" content="Git基本操作流程"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/66b7cfbe.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-26T04:11:44.000Z"><meta property="article:modified_time" content="2021-03-26T06:14:00.000Z"><title>Git基本操作流程 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Git基本操作流程</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Git基本操作流程</h1><div class="post-meta">2021-03-26<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">拷贝仓库</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">拉取仓库</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">提交更新</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">多次提交</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">变基</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">远程链接</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">提交PR</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">补充示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">10.</span> <span class="toc-text">修改编辑器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">11.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">12.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>在本文中我们通过一个实例来介绍了Git的基本用法，包括提交代码、远程链接以及变基等，这使得我们可以更美观更简洁的去维护我们自己的开源代码仓库。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>Gitee是一款国内的git托管服务，对于国内用户较为友好，用户可以访问<a target="_blank" rel="noopener" href="https://gitee.com/">Gitee地址</a>来创建自己的帐号和项目，并托管在Gitee平台上。既然是git的托管服务，那我们就可以先看看git的一些基本用法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro ~]$ git --<span class="hljs-built_in">help</span><br>用法：git [--version] [--<span class="hljs-built_in">help</span>] [-C &lt;路径&gt;] [-c &lt;名称&gt;=&lt;取值&gt;]<br>           [--exec-path[=&lt;路径&gt;]] [--html-path] [--man-path] [--info-path]<br>           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]<br>           [--git-dir=&lt;路径&gt;] [--work-tree=&lt;路径&gt;] [--namespace=&lt;名称&gt;]<br>           &lt;命令&gt; [&lt;参数&gt;]<br><br>这些是各种场合常见的 Git 命令：<br><br>开始一个工作区（参见：git <span class="hljs-built_in">help</span> tutorial）<br>   <span class="hljs-built_in">clone</span>             克隆仓库到一个新目录<br>   init              创建一个空的 Git 仓库或重新初始化一个已存在的仓库<br><br>在当前变更上工作（参见：git <span class="hljs-built_in">help</span> everyday）<br>   add               添加文件内容至索引<br>   <span class="hljs-built_in">mv</span>                移动或重命名一个文件、目录或符号链接<br>   restore           恢复工作区文件<br>   <span class="hljs-built_in">rm</span>                从工作区和索引中删除文件<br>   sparse-checkout   初始化及修改稀疏检出<br><br>检查历史和状态（参见：git <span class="hljs-built_in">help</span> revisions）<br>   bisect            通过二分查找定位引入 bug 的提交<br>   diff              显示提交之间、提交和工作区之间等的差异<br>   grep              输出和模式匹配的行<br>   <span class="hljs-built_in">log</span>               显示提交日志<br>   show              显示各种类型的对象<br>   status            显示工作区状态<br><br>扩展、标记和调校您的历史记录<br>   branch            列出、创建或删除分支<br>   commit            记录变更到仓库<br>   merge             合并两个或更多开发历史<br>   rebase            在另一个分支上重新应用提交<br>   reset             重置当前 HEAD 到指定状态<br>   switch            切换分支<br>   tag               创建、列出、删除或校验一个 GPG 签名的标签对象<br><br>协同（参见：git <span class="hljs-built_in">help</span> workflows）<br>   fetch             从另外一个仓库下载对象和引用<br>   pull              获取并整合另外的仓库或一个本地分支<br>   push              更新远程引用和相关的对象<br><br>命令 <span class="hljs-string">&#x27;git help -a&#x27;</span> 和 <span class="hljs-string">&#x27;git help -g&#x27;</span> 显示可用的子命令和一些概念帮助。<br>查看 <span class="hljs-string">&#x27;git help &lt;命令&gt;&#x27;</span> 或 <span class="hljs-string">&#x27;git help &lt;概念&gt;&#x27;</span> 以获取给定子命令或概念的<br>帮助。<br>有关系统的概述，查看 <span class="hljs-string">&#x27;git help git&#x27;</span>。<br></code></pre></td></tr></table></figure>
+<p>如果git安装成功，就会有上述的执行反馈。我们可以在git命令行上进行操作，比如执行代码的提交等任务。</p>
+<h1>拷贝仓库</h1>
+<p>首先我们在Gitee上面创建好一个项目，或者我们可以查看其他已经创建好的项目的首页，一般是如下的形式：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437242.png" alt="">
+我们可以点击这里的Fork，将该仓库fork到自己的帐号下。一般如果我们没有原仓库的developer权限的话，只能通过提交Pull Request来进行代码提交。因此操作逻辑变成了：先把代码仓Fork到自己的帐号下，在自己的帐号下进行修改，将Fork仓库的代码更新到源仓库代码中。Fork成功后可以在自己的帐号下看到这样的一个项目：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437265.png" alt=""></p>
+<h1>拉取仓库</h1>
+<p>在通过上一章节的方法拷贝了仓库到自己的帐号下之后，我们可以将该仓库下载到本地进行操作，使用<code>git clone</code>即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro 2021-quantum]$ git <span class="hljs-built_in">clone</span> https://gitee.com/dechin/your_library.git<br>正克隆到 <span class="hljs-string">&#x27;your_library&#x27;</span>...<br>Username <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://gitee.com&#x27;</span>: dechin<br>Password <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://dechin@gitee.com&#x27;</span>: <br>remote: Enumerating objects: 200, <span class="hljs-keyword">done</span>.<br>remote: Counting objects: 100% (200/200), <span class="hljs-keyword">done</span>.<br>remote: Compressing objects: 100% (113/113), <span class="hljs-keyword">done</span>.<br>remote: Total 200 (delta 85), reused 200 (delta 85), pack-reused 0<br>接收对象中: 100% (200/200), 2.01 MiB | 433.00 KiB/s, 完成.<br>处理 delta 中: 100% (85/85), 完成.<br></code></pre></td></tr></table></figure>
+<p>下载仓库完成后，可以看到本地新建了一个名为<code>your_library</code>的目录，点击进去就是我们下载下来的仓库代码。</p>
+<p>这里我们顺带介绍一下在本地用vim操作的一些简单技巧，比如显示行号及其效果图片：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">:<span class="hljs-built_in">set</span> nu<br></code></pre></td></tr></table></figure>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437292.png" alt=""></p>
+<p>取消行号显示及其效果图片：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">:<span class="hljs-built_in">set</span> nonu<br></code></pre></td></tr></table></figure>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437329.png" alt=""></p>
+<h1>提交更新</h1>
+<p>在上一章节中我们介绍了如何将代码下载到本地，下载到本地之后我们可以使用各种的编辑器和IDE进行代码增加修改与测试。譬如完成了某一项任务之后，修改了一个名为<code>_circuit_level_count_test.py</code>的文件，那我们就可以将这个代码文件用<code>git add</code>提交到远程仓库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tests]$ git add _circuit_level_count_test.py <br></code></pre></td></tr></table></figure>
+<p>为了使得代码库的历史更加明了，我们最好规范一下提交信息，比如下述示例介绍了一个案例，修复了<code>#i3CDFM</code>这个Issue，那么我们就可以将提交信息按照如下写法进行编写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tests]$ git commit -m <span class="hljs-string">&#x27;Fix issue #i3CDFM&#x27;</span><br>作者身份未知<br><br>*** 请告诉我你是谁。<br><br>运行<br><br>  git config --global user.email <span class="hljs-string">&quot;you@example.com&quot;</span><br>  git config --global user.name <span class="hljs-string">&quot;Your Name&quot;</span><br><br>来设置您账号的缺省身份标识。<br>如果仅在本仓库设置身份标识，则省略 --global 参数。<br>fatal: 无法自动探测邮件地址（得到 <span class="hljs-string">&#x27;dechin@dechin-manjaro.(none)&#x27;</span>）<br></code></pre></td></tr></table></figure>
+<p>一开始任务进行的不太顺利，按照提示中的说法，是因为我们没有配置帐号和邮箱，这里我们可以用提示的指令进行配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tests]$ git config --global user.email <span class="hljs-string">&quot;your_email@gmail.com&quot;</span><br>[dechin@dechin-manjaro tests]$ git config --global user.name <span class="hljs-string">&quot;dechin&quot;</span><br></code></pre></td></tr></table></figure>
+<p>配置完基本信息之后，我们再次尝试代码提交信息的编写：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tests]$ git commit -m <span class="hljs-string">&#x27;Fix issue #i3CDFM&#x27;</span>[master 591f9cf] Fix issue <span class="hljs-comment">#i3CDFM</span><br> 1 file changed, 2 insertions(+), 5 deletions(-)<br></code></pre></td></tr></table></figure>
+<p>在上述信息出现之后，就表示执行成功了，那么我们就可以进行远程代码提交了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tests]$ git push<br>Username <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://gitee.com&#x27;</span>: dechin<br>Password <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://dechin@gitee.com&#x27;</span>: <br>枚举对象中: 7, 完成.<br>对象计数中: 100% (7/7), 完成.<br>使用 8 个线程进行压缩<br>压缩对象中: 100% (4/4), 完成.<br>写入对象中: 100% (4/4), 411 字节 | 411.00 KiB/s, 完成.<br>总共 4（差异 3），复用 0（差异 0），包复用 0<br>remote: Powered by GITEE.COM [GNK-5.0]<br>To https://gitee.com/dechin/your_library.git<br>   6e345ad..591f9cf  master -&gt; master<br></code></pre></td></tr></table></figure>
+<p>提交过程中有可能要求我们输入Gitee平台的用户名和密码，我们按照提示进行输入即可。需要注意的是，如果提交的不是默认分支，最好可以指定一个分支进行提交，比如<code>git push origin master</code>。</p>
+<h1>多次提交</h1>
+<p>一般在一次特性提交的过程中，会涉及到不止一次的提交，我们也可以将这些提交同步刷新到同一个分支下，相关的操作都在上一章节中介绍过，这里我们仅简单展示一下这个流程：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro drivers]$ git add _save_molecule.py <br>[dechin@dechin-manjaro drivers]$ git commit -m <span class="hljs-string">&#x27;Fix issue&#x27;</span><br>[master bff0b02] Fix issue<br> 1 file changed, 3 insertions(+), 6 deletions(-)<br>[dechin@dechin-manjaro drivers]$ git push<br>Username <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://gitee.com&#x27;</span>: dechin<br>Password <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://dechin@gitee.com&#x27;</span>: <br>枚举对象中: 11, 完成.<br>对象计数中: 100% (11/11), 完成.<br>使用 8 个线程进行压缩<br>压缩对象中: 100% (5/5), 完成.<br>写入对象中: 100% (6/6), 526 字节 | 526.00 KiB/s, 完成.<br>总共 6（差异 4），复用 0（差异 0），包复用 0<br>remote: Powered by GITEE.COM [GNK-5.0]<br>To https://gitee.com/dechin/your_library.git<br>   591f9cf..bff0b02  master -&gt; master<br></code></pre></td></tr></table></figure>
+<p>提交成功2次之后，我们可以用如下指令查看历史提交信息，这里的<code>-n 5</code>表示我们只查询最近的5条提交信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git <span class="hljs-built_in">log</span> --oneline --graph -n 5<br>* bff0b02 (HEAD -&gt; master, origin/master, origin/HEAD) Fix issue<br>* 591f9cf Fix issue <span class="hljs-comment">#i3CDFM</span><br>* 6e345ad update README.md.<br>* 591af5d update README.md.<br>* 664d276 modify the setup.py<br></code></pre></td></tr></table></figure>
+<p>这里编号<code>bff0b02</code>和编号<code>591f9cf</code>的commit就是我们刚才所更新的两条，我们还可以在这里看到commit的信息。</p>
+<h1>变基</h1>
+<p>在上一章节中，我们可以看到过往的2条commit实际上是在执行同一个任务，比如修复某一个issue。但是这里的commit信息却有2条，因为我们是分了2次来提交的，这显得提交的信息和内容非常的不简洁，变基（rebase）就是优化这个commit信息显示的方案，我们可以将过往的2条相同的提交记录合并成1条：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git rebase --interactive HEAD~2<br>成功变基并更新 refs/heads/master。<br></code></pre></td></tr></table></figure>
+<p>这里省略了一些编辑的流程，实际上我们要进入到一个rebase的编辑界面，我们<code>pick</code>需要保留的commit。对于不需要保留的commit信息，我们可以直接将前面的<code>pick</code>改成<code>fixup</code>，然后删除后面的commit信息。变基执行完毕之后，需要强行push：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git push --force<br>Username <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://gitee.com&#x27;</span>: dechin<br>Password <span class="hljs-keyword">for</span> <span class="hljs-string">&#x27;https://dechin@gitee.com&#x27;</span>: <br>枚举对象中: 15, 完成.<br>对象计数中: 100% (15/15), 完成.<br>使用 8 个线程进行压缩<br>压缩对象中: 100% (7/7), 完成.<br>写入对象中: 100% (8/8), 731 字节 | 731.00 KiB/s, 完成.<br>总共 8（差异 6），复用 0（差异 0），包复用 0<br>remote: Powered by GITEE.COM [GNK-5.0]<br>To https://gitee.com/dechin/your_library.git<br> + bff0b02...7ffc12a master -&gt; master (forced update)<br></code></pre></td></tr></table></figure>
+<h1>远程链接</h1>
+<p>我们可以使用<code>git remote -v</code>查看当前仓库的远程链接状态，如果要从我们Fork的仓库向原始仓库提交PR的话，就需要创建两者的链接。如果是链接未建立的情况，该命令的返回结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git remote -v<br>origin  https://gitee.com/dechin/your_library.git (fetch)<br>origin  https://gitee.com/dechin/your_library.git (push)<br></code></pre></td></tr></table></figure>
+<p>这里只显示了Fork之后的仓库的地址，说明我们还没有跟原始仓库建立起链接，这时候需要执行upstream指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git remote add upstream https://gitee.com/origin_library.git<br></code></pre></td></tr></table></figure>
+<p>此时再运行<code>git remote -v</code>，我们就可以看到新的远程链接：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro your_library]$ git remote -v<br>origin  https://gitee.com/dechin/your_library.git (fetch)<br>origin  https://gitee.com/dechin/your_library.git (push)<br>upstream        https://gitee.com/origin_library.git (fetch)<br>upstream        https://gitee.com/origin_library.git (push)<br></code></pre></td></tr></table></figure>
+<h1>提交PR</h1>
+<p>在上述操作流程都结束后，我们可以准备在Gitee界面上直接提交Pull Request了。首先找到我们Fork过来的仓库：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437369.png" alt="">
+点击新建Pull Request，选择源分支为我们Fork过来的分支，目标分支选择原始仓库中的目标分支，然后往下拉可以看到我们提交的更新内容，这里我们所有的提交内容被压成了一个commit：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437411.png" alt="">
+最后提交PR，等待审批人审批即可。</p>
+<h1>补充示例</h1>
+<p>前面我们说到修改<code>pick</code>为<code>fixup</code>，但是缺少了一个示例图，这里重新再提交一个新的commit，来展示这个过程。首先我们执行rebase的时候会弹出这样的一个命令行界面：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437451.png" alt="">
+这里可以直接编辑，因此我们将第二行，也就是我们需要合并的提交，修改为<code>fixup</code>，并且去掉了后面的commit信息：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437508.png" alt="">
+最后同样的提交上去，我们可以在PR里面看到commit仍然只有一条信息，但是代码修改是有同步的。
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163437555.png" alt="">
+这里也需要额外说明一下，在同一条PR未关闭的情况下，所有在源分支上的提交都会被同步到这个PR里面来。</p>
+<h1>修改编辑器</h1>
+<p>在上一章节中我们看到了一个很奇怪的编辑器，这是因为git默认的编辑器不是vim，但是我们可以手动将其配置为本地的vim编辑器。执行<code>vim ~/.gitconfig</code>编辑git的配置文件，我们发现在这个文件中已经有我们此前配置过的部分信息:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[user]<br>        email = your_email@gmail.com<br>        name = dechin<br></code></pre></td></tr></table></figure>
+<p>这里我们增加一个<code>editor</code>的配置即可使用vim来编辑git执行中的指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[user]<br>        email = your_email@gmail.com<br>        name = dechin<br>[core]<br>        editor = /usr/bin/vim<br></code></pre></td></tr></table></figure>
+<p>如果坚持要使用原本的编辑器，那么在编辑结束之后，需要执行<code>ctrl+X</code>退出，选择<code>Y</code>选项保存修改，最后回车退出修改状态，同样也是可以的，只是使用vim对于大部分人来说会更加的顺手。</p>
+<h1>总结概要</h1>
+<p>在本文中我们通过一个实例来介绍了Git的基本用法，包括提交代码、远程链接以及变基等，这使得我们可以更美观更简洁的去维护我们自己的开源代码仓库。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/git.html">https://www.cnblogs.com/dechinphy/p/git.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/66b7cfbe.html">https://dechin-phy.asia/posts/66b7cfbe.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-26</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-26</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/7bbf9850.html">python3表格数据处理</a><a class="next" href="/posts/10901626.html">python3查看文件是否存在，以及读、写与执行的属性</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

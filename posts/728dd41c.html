@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/728dd41c.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSponge分子动力学模拟——增强采样（2024.11）"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/728dd41c.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-10-31T09:39:42.000Z"><meta property="article:modified_time" content="2024-11-01T07:17:00.000Z"><title>MindSponge分子动力学模拟——增强采样（2024.11） | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSponge分子动力学模拟——增强采样（2024.11）</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSponge分子动力学模拟——增强采样（2024.11）</h1><div class="post-meta">2024-10-31<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">普通MD案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">MetaDynamics案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了在MindSponge中进行分子动力学模拟以及增强采样的实现方法。通过使用MetaDynamics增强采样算法，我们可以将分子模拟的采样子空间，从某个能量极小值区域，扩大到尽可能大的采样子空间。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>关于增强采样（Enhanced Sampling）算法的具体原理，这里暂不做具体介绍，感兴趣的童鞋可以直接参考下这篇综述文章：<a target="_blank" rel="noopener" href="https://doi.org/10.1063/1.5109531">Enhanced sampling in molecular dynamics</a>。大致的作用就是，通过统计力学的方法，使得目标分子的CV（Collective Variables）具有一个尽可能大的采样子空间，并且可以将其还原回真实的自由能面。常用的增强采样算法，有早期的伞形采样，到后来大家常用的MetaDynamics以及高老师的温度积分增强采样算法（ITS）。在MindSponge中已经实现了MetaDynamics算法和ITS算法，本文我们使用MetaDynamics算法来做一个演示。</p>
+<h1>准备工作</h1>
+<p>使用MindSponge，可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/collections/5620">本系列文章</a>先了解一下MindSponge的安装和基本使用方法。这里我们用一个比较简单的多肽体系进行一个测试，相应的pdb文件为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs txt">CRYST1    0.000    0.000    0.000  90.00  90.00  90.00 P 1           1<br>ATOM      1  H1  ACE A   1      -1.838  -6.570  -0.492  0.00  0.00      <br>     <br>ATOM      2  CH3 ACE A   1      -0.764  -6.587  -0.283  0.00  0.00      <br>     <br>ATOM      3  H2  ACE A   1      -0.392  -7.533  -0.746  0.00  0.00      <br>     <br>ATOM      4  H3  ACE A   1      -0.592  -6.446   0.740  0.00  0.00      <br>     <br>ATOM      5  C   ACE A   1      -0.006  -5.404  -0.828  0.00  0.00      <br>     <br>ATOM      6  O   ACE A   1      -0.544  -4.619  -1.673  0.00  0.00      <br>     <br>ATOM      7  N   ALA A   2       1.278  -5.323  -0.423  0.00  0.00      <br>     <br>ATOM      8  H   ALA A   2       1.622  -5.845   0.368  0.00  0.00      <br>     <br>ATOM      9  CA  ALA A   2       2.284  -4.164  -0.399  0.00  0.00      <br>     <br>ATOM     10  HA  ALA A   2       2.098  -3.653   0.505  0.00  0.00      <br>     <br>ATOM     11  CB  ALA A   2       3.651  -4.787  -0.566  0.00  0.00      <br>     <br>ATOM     12  HB1 ALA A   2       4.274  -4.031  -0.972  0.00  0.00      <br>     <br>ATOM     13  HB2 ALA A   2       3.977  -5.106   0.419  0.00  0.00      <br>     <br>ATOM     14  HB3 ALA A   2       3.697  -5.612  -1.274  0.00  0.00      <br>     <br>ATOM     15  C   ALA A   2       1.995  -3.152  -1.576  0.00  0.00      <br>     <br>ATOM     16  O   ALA A   2       1.544  -2.065  -1.221  0.00  0.00      <br>     <br>ATOM     17  N   NME A   3       2.255  -3.614  -2.845  0.00  0.00      <br>     <br>ATOM     18  H   NME A   3       2.788  -4.485  -2.929  0.00  0.00      <br>     <br>ATOM     19  CH3 NME A   3       1.991  -2.802  -4.055  0.00  0.00      <br>     <br>ATOM     20 HH31 NME A   3       2.561  -1.891  -3.988  0.00  0.00      <br>     <br>ATOM     21 HH32 NME A   3       1.897  -3.419  -4.937  0.00  0.00      <br>     <br>ATOM     22 HH33 NME A   3       0.985  -2.388  -3.930  0.00  0.00      <br><br>END<br></code></pre></td></tr></table></figure>
+<p>该构象可以保存成pdb文件然后直接用VMD进行可视化：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163917513.png" alt=""></p>
+<p>其他的力场文件我们直接使用MindSponge已经自带的<code>amber.ff14sb</code>力场即可。</p>
+<h1>普通MD案例</h1>
+<p>在测试增强采样算法之前，我们可以先跑一段普通的分子模拟测试一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br><span class="hljs-comment"># 固定随机种子，确保朗之万控温的随机数可以被复现</span><br>ms.set_seed(<span class="hljs-number">0</span>)<br><span class="hljs-comment"># 这里使用的是一个未编译版本的mindsponge，所以要把sponge所在路径添加到系统路径中</span><br><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;../..&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein, UpdaterMD, WithEnergyCell<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD<br><span class="hljs-keyword">from</span> sponge.colvar <span class="hljs-keyword">import</span> Torsion<br><span class="hljs-keyword">from</span> sponge.function <span class="hljs-keyword">import</span> PI<br><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>)<br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br><br>system = Protein(<span class="hljs-string">&#x27;mol.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">False</span>)<br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF14SB&#x27;</span>], use_pme=<span class="hljs-literal">False</span>)<br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br><br>dihedrals = Torsion([[<span class="hljs-number">4</span>, <span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>], [<span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>, <span class="hljs-number">16</span>]])<br>run_info = RunInfo(<span class="hljs-number">20</span>)<br><br>opt = UpdaterMD(system=system,<br>                time_step=<span class="hljs-number">1e-3</span>,<br>                integrator=<span class="hljs-string">&#x27;velocity_verlet&#x27;</span>,<br>                temperature=<span class="hljs-number">300</span>,<br>                thermostat=<span class="hljs-string">&#x27;langevin&#x27;</span>)<br><br>sim = WithEnergyCell(system, energy)<br>md = Sponge(sim, optimizer=opt, metrics=&#123;<span class="hljs-string">&#x27;dihedrals&#x27;</span>: dihedrals&#125;)<br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test_meta.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>)<br>md.run(<span class="hljs-number">5000</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>运行之后会在本地保存一个h5md格式的轨迹文件，可以在vscode中使用h5web拓展工具打开：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163917562.png" alt=""></p>
+<p>找到dihedral的value，用matrix的形式查看，然后可以导出csv格式（如：<code>path_sink.csv</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163917647.png" alt=""></p>
+<p>导出csv之后，可以使用如下的python脚本进行绘图：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gaussian2</span>(<span class="hljs-params">x1, x2, sigma1=<span class="hljs-number">1.0</span>, sigma2=<span class="hljs-number">1.0</span>, A=<span class="hljs-number">0.5</span></span>):<br>    <span class="hljs-keyword">return</span> np.<span class="hljs-built_in">sum</span>(A*np.exp(-<span class="hljs-number">0.5</span>*(x1**<span class="hljs-number">2</span>/sigma1**<span class="hljs-number">2</span>+x2**<span class="hljs-number">2</span>/sigma2**<span class="hljs-number">2</span>))/np.pi/sigma1/sigma2, axis=-<span class="hljs-number">1</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">potential_energy</span>(<span class="hljs-params">position, psi, phi, sigma1, sigma2</span>):<br>    <span class="hljs-comment"># (A, )</span><br>    psi_, phi_ = position[:, <span class="hljs-number">0</span>], position[:, <span class="hljs-number">1</span>]<br>    <span class="hljs-comment"># (A, R)</span><br>    delta_psi = psi_[:, <span class="hljs-literal">None</span>] - psi[<span class="hljs-literal">None</span>]<br>    delta_phi = phi_[:, <span class="hljs-literal">None</span>] - phi[<span class="hljs-literal">None</span>]<br>    <span class="hljs-comment"># (A, )</span><br>    Z = -np.log(gaussian2(delta_psi, delta_phi, sigma1=sigma1, sigma2=sigma2, A=<span class="hljs-number">2.0</span>)+<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">return</span> Z<br><br>data = np.genfromtxt(<span class="hljs-string">&#x27;./path_sink.csv&#x27;</span>, delimiter=<span class="hljs-string">&#x27;,&#x27;</span>)<br>phi = data[:, <span class="hljs-number">0</span>]<br>psi = data[:, <span class="hljs-number">1</span>]<br><br>num_grids = <span class="hljs-number">100</span><br>num_levels = <span class="hljs-number">10</span><br>psi_grids = np.linspace(-np.pi, np.pi, num_grids)<br>phi_grids = np.linspace(-np.pi, np.pi, num_grids)<br>grids = np.array(np.meshgrid(psi_grids, phi_grids)).T.reshape((-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>))<br><br>Z = potential_energy(grids, phi, psi, <span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>).reshape((psi_grids.shape[<span class="hljs-number">0</span>], phi_grids.shape[<span class="hljs-number">0</span>])).T<br>X,Y = np.meshgrid(psi_grids, phi_grids)<br>levels = np.linspace(np.<span class="hljs-built_in">min</span>(Z), np.<span class="hljs-built_in">max</span>(Z), num_levels)<br><br>plt.figure()<br>plt.title(<span class="hljs-string">&quot;Biased MD Traj&quot;</span>)<br>plt.xlabel(<span class="hljs-string">r&#x27;$\phi$&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">r&#x27;$\psi$&#x27;</span>)<br>fc = plt.contourf(X, Y, Z, cmap=<span class="hljs-string">&#x27;Greens&#x27;</span>, levels=levels)<br>plt.colorbar(fc)<br><br>plt.xlim(-np.pi, np.pi)<br>plt.ylim(-np.pi, np.pi)<br>plt.plot(phi, psi, <span class="hljs-string">&#x27;o&#x27;</span>, alpha=<span class="hljs-number">0.4</span>, color=<span class="hljs-string">&#x27;red&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;meta.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>画出来的轨迹效果如下图所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163917708.png" alt=""></p>
+<p>可以发现，在不加任何的Bias的时候，整个轨迹还是比较集中的在一个区域，一般该区域就是对应了一个能量极小值点附近的区域。</p>
+<h1>MetaDynamics案例</h1>
+<p>从上一个章节的结果中可以看出，常规的分子模拟采样方法很容易陷入到一个局部区域中，这样使得我们很难可以观测到其他采样子空间所对应的构象和相关信息，因此我们可以引入一个MetaDynamics增强采样算法，做一个有偏估计：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br>ms.set_seed(<span class="hljs-number">0</span>)<br><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;../..&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein, UpdaterMD, WithEnergyCell<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD<br><span class="hljs-keyword">from</span> sponge.colvar <span class="hljs-keyword">import</span> Torsion<br><span class="hljs-keyword">from</span> sponge.function <span class="hljs-keyword">import</span> PI<br><span class="hljs-keyword">from</span> sponge.sampling <span class="hljs-keyword">import</span> Metadynamics<br><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>)<br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br><br>system = Protein(<span class="hljs-string">&#x27;mol.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">False</span>)<br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF14SB&#x27;</span>], use_pme=<span class="hljs-literal">False</span>)<br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br><br><span class="hljs-comment"># 这里定义的CV是phi和psi角，是一个2维的CV</span><br>dihedrals = Torsion([[<span class="hljs-number">4</span>, <span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>], [<span class="hljs-number">6</span>, <span class="hljs-number">8</span>, <span class="hljs-number">14</span>, <span class="hljs-number">16</span>]])<br>run_info = RunInfo(<span class="hljs-number">20</span>)<br><br><span class="hljs-comment"># 配置Meta的参数，主要是高斯波包的高度、宽度、更新频率、CV范围、CV格点数等等</span><br>metad = Metadynamics(<br>    colvar=dihedrals,<br>    update_pace=<span class="hljs-number">10</span>,<br>    height=<span class="hljs-number">2.5</span>,<br>    sigma=<span class="hljs-number">0.4</span>,<br>    grid_min=-PI,<br>    grid_max=PI,<br>    grid_bin=<span class="hljs-number">50</span>,<br>    temperature=<span class="hljs-number">300</span>,<br>    bias_factor=<span class="hljs-number">100</span>,<br>    use_cutoff=<span class="hljs-literal">True</span>,<br>)<br><br>opt = UpdaterMD(system=system,<br>                time_step=<span class="hljs-number">1e-3</span>,<br>                integrator=<span class="hljs-string">&#x27;velocity_verlet&#x27;</span>,<br>                temperature=<span class="hljs-number">300</span>,<br>                thermostat=<span class="hljs-string">&#x27;langevin&#x27;</span>)<br><br>sim = WithEnergyCell(system, energy, bias=metad)<br>md = Sponge(sim, optimizer=opt, metrics=&#123;<span class="hljs-string">&#x27;dihedrals&#x27;</span>: dihedrals&#125;)<br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test_meta.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>)<br>md.run(<span class="hljs-number">5000</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>用类似的方法，可以计算得增强采样之后的CV轨迹：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163917768.png" alt=""></p>
+<p>可以看到，采样子空间在Meta的作用下已经扩展到几乎整个CV空间，这使得我们可以更快的去分析整个采样空间各处的自由能的相对大小。</p>
+<h1>总结概要</h1>
+<p>本文介绍了在MindSponge中进行分子动力学模拟以及增强采样的实现方法。通过使用MetaDynamics增强采样算法，我们可以将分子模拟的采样子空间，从某个能量极小值区域，扩大到尽可能大的采样子空间。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindsponge-meta.html">https://www.cnblogs.com/dechinphy/p/mindsponge-meta.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/728dd41c.html">https://dechin-phy.asia/posts/728dd41c.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-10-31</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-11-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/334ae96.html">Jax中关于Device ID的配置</a><a class="next" href="/posts/f4b5d932.html">PME算法简单Python实现</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
