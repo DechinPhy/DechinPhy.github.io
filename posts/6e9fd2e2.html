@@ -326,7 +326,7 @@ async function fetchRecentComments() {
     let html = '<ul class="giscus-recent-comments-list">';
     allComments.forEach((comment) => {
       html += '<li class="giscus-comment-item">';
-      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<span class="giscus-comment-author">' + comment.author + '</span>';
       html += '<span class="giscus-comment-date">' + formatDate(comment.createdAt) + '</span>';
       html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
       html += '</li>';
@@ -343,7 +343,7 @@ async function fetchRecentComments() {
         let html = '<ul class="giscus-recent-comments-list">';
         comments.forEach((comment) => {
           html += '<li class="giscus-comment-item">';
-          html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+          html += '<span class="giscus-comment-author">' + comment.author + '</span>';
           html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + comment.body.substring(0, 50) + '...</a></p>';
           html += '</li>';
         });
