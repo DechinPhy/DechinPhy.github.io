@@ -1,0 +1,241 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/c456594.html"><meta property="og:type" content="article"><meta property="og:title" content="使用fdopen对python进程产生的文件进行权限最小化配置"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/c456594.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-01-25T07:13:59.000Z"><meta property="article:modified_time" content="2021-01-25T07:24:00.000Z"><title>使用fdopen对python进程产生的文件进行权限最小化配置 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用fdopen对python进程产生的文件进行权限最小化配置</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用fdopen对python进程产生的文件进行权限最小化配置</h1><div class="post-meta">2021-01-25<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">需求背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">常用方法及其缺陷分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">改进后的python文件创建方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">参考链接</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>通过一定的文件访问权限的指定，我们可以使用fdopen来替代经常使用的内置的open库，来进行文件的创建和读写的操作，这使得我们可以在文件创建的时候就指定好权限配置，避免在创建后再对其进行修改。</p>
+<span id="more"></span>
+<h1>需求背景</h1>
+<p>用python进行文件的创建和读写操作时，我们很少关注所创建的文件的权限配置。对于一些安全性较高的系统，如果我们创建的文件权限其他用户或者同一用户组里的其他用户有可读权限的话，有可能导致不必要的信息泄漏的风险。因此，除了创建一个更加安全和隐私的个人环境之外（如容器环境等），我们还可以对生成的文件的配置进行权限最小化处理。</p>
+<h1>常用方法及其缺陷分析</h1>
+<p>常用的python文件创建和读写方法，是直接通过内置的<code>open</code>函数创建一个文件。这里如果是使用<code>with</code>语法来创建的，结束语句后会自动关闭被打开的对象。而如果是直接使用<code>open</code>函数来定义一个对象，则需要在任务结束时手动的执行<code>close</code>操作。以下演示内置函数<code>open</code>的用法及其文件操作属性，首先创建一个名为<code>file-test.py</code>的文件：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># file-test.py</span><br><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test1.txt&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    file.write(<span class="hljs-string">&#x27;hello world!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>该任务的内容为：在当前目录下创建一个名为<code>test1.txt</code>的文件，清空该文件的内容后，在文件中写入<code>hello world!</code>这个字符串。接下来用<code>python3</code>执行该文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro os_security]$ python3 file-test.py <br>[dechin@dechin-manjaro os_security]$ ll<br>总用量 8<br>-rw-r--r-- 1 dechin dechin 83  1月 25 13:43 file-test.py<br>-rw-r--r-- 1 dechin dechin 12  1月 25 13:43 test1.txt<br></code></pre></td></tr></table></figure>
+<p>这里我们发现，在执行之后成功产生了<code>test1.txt</code>这个文件，其权限配置为<code>644</code>，与前面创建的<code>file-test.py</code>保持一致。在不清楚内置函数<code>open</code>的实现原理时，原本以为这个产生的文件权限配置是与当前的<code>py</code>文件保持一致的。然而经过进一步的测试，将<code>py</code>文件的权限配置为<code>440</code>之后再重新执行该文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro os_security]$ <span class="hljs-built_in">chmod</span> 440 file-test.py <br>[dechin@dechin-manjaro os_security]$ ll<br>总用量 8<br>-r--r----- 1 dechin dechin 83  1月 25 13:43 file-test.py<br>-rw-r--r-- 1 dechin dechin 12  1月 25 13:43 test1.txt<br>[dechin@dechin-manjaro os_security]$ <span class="hljs-built_in">rm</span> test1.txt <br>[dechin@dechin-manjaro os_security]$ python3 file-test.py <br>[dechin@dechin-manjaro os_security]$ ll<br>总用量 8<br>-r--r----- 1 dechin dechin 83  1月 25 13:43 file-test.py<br>-rw-r--r-- 1 dechin dechin 12  1月 25 13:44 test1.txt<br></code></pre></td></tr></table></figure>
+<p>这里从测试结果我们可以看出，python的内置函数<code>open</code>产生的文件类型是与源<code>py</code>文件无关的。关于这里<code>py</code>文件的执行是否需要可执行权限，可以参考这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/excutable.html">博客</a>。</p>
+<h1>改进后的python文件创建方法</h1>
+<p>通过<code>fdopen</code>这个库以及特殊的权限指定，我们可以设置生成文件的访问权限，以下直接展示一个python代码案例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># fdopen-test.py</span><br><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> stat<br><br>file_name = <span class="hljs-string">&#x27;test2.txt&#x27;</span><br>flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL<br>mode = stat.S_IRUSR | stat.S_IWUSR<br><br><span class="hljs-keyword">with</span> os.fdopen(os.<span class="hljs-built_in">open</span>(file_name, flags, mode), <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    file.write(<span class="hljs-string">&#x27;hello world!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>执行之后我们可以发现，当前目录下生成了一个名为<code>test2.txt</code>的文件，其权限配置为<code>600</code>, 对照于我们在代码中设置的<code>mode = stat.S_IRUSR | stat.S_IWUSR</code>。这里我们先对其中的一些参数作一个解释：<code>os.O_WRONLY</code>表示以只写的方式打开，<code>os.O_CREAT</code>表示创建并打开一个新文件，<code>os.O_EXCL</code>表示如果文件已存在则报错。而<code>mode</code>中所配置的权限分别对应<code>rwx</code>配置，其中<code>USR,GRP,OTH</code>又分别对<code>用户、用户组、其他用户</code>进行了细分的配置，从而我们就可以通过改变<code>mode</code>参数来实现所有种类的权限配置。</p>
+<p>我们可以尝试将上述用例中的<code>mode</code>作一个调整，比如添加一个可执行权限变为<code>700</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># fdopen-test.py</span><br><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> stat<br><br>file_name = <span class="hljs-string">&#x27;test3.txt&#x27;</span><br>flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL<br>mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR<br><br><span class="hljs-keyword">with</span> os.fdopen(os.<span class="hljs-built_in">open</span>(file_name, flags, mode), <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    file.write(<span class="hljs-string">&#x27;hello world!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>又或者，我们需要为用户组里的其他用户添加可访问权限，比如<code>640</code>权限：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># fdopen-test.py</span><br><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> stat<br><br>file_name = <span class="hljs-string">&#x27;test4.txt&#x27;</span><br>flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL<br>mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP<br><br><span class="hljs-keyword">with</span> os.fdopen(os.<span class="hljs-built_in">open</span>(file_name, flags, mode), <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    file.write(<span class="hljs-string">&#x27;hello world!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>甚至我们也可以写出系统原生的<code>644</code>文件权限：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># fdopen-test.py</span><br><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> stat<br><br>file_name = <span class="hljs-string">&#x27;test5.txt&#x27;</span><br>flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL<br>mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH<br><br><span class="hljs-keyword">with</span> os.fdopen(os.<span class="hljs-built_in">open</span>(file_name, flags, mode), <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    file.write(<span class="hljs-string">&#x27;hello world!&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>最后，让我们一起看下上面这些python示例执行后得到的结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro os_security]$ ll<br>总用量 28<br>-rw-r--r-- 1 dechin dechin 269  1月 25 14:58 fdopen-test.py<br>-r--r----- 1 dechin dechin  84  1月 25 14:11 file-test.py<br>-rw-r--r-- 1 dechin dechin  12  1月 25 13:44 test1.txt<br>-rw------- 1 dechin dechin  12  1月 25 14:44 test2.txt<br>-rwx------ 1 dechin dechin  12  1月 25 14:48 test3.txt<br>-rw-r----- 1 dechin dechin  12  1月 25 14:56 test4.txt<br>-rw-r--r-- 1 dechin dechin  12  1月 25 14:58 test5.txt<br></code></pre></td></tr></table></figure>
+<p>从结果中我们可以看出，所有产生的文件<code>test*.txt</code>都按照我们预期的文件权限配置生成，到这里我们就完成了所有预期的目标。</p>
+<h1>总结概要</h1>
+<p>使用python进行文件的创建和读写时，常规的内置函数<code>open</code>得到的结果会是一个<code>644</code>权限的文件，这不一定能够满足很多对安全性需求较高的执行环境的要求。因此我们可以通过<code>fdopen</code>来对所创建的文件进行进一步的权限约束，具体的操作方法可以在<code>mode</code>中定义一系列的权限配置，比如带有<code>USR</code>的表示当前用来执行python文件的用户，带有<code>GRP</code>的表示用来执行python文件的整个用户组，而<code>OTH</code>则表示其他的所有的用户。这当中尤其是<code>OTH</code>这个选项往往是不必要开放的权限，我们也可以根据具体的场景需求对创建的文件权限进行配置。这里还有一点补充介绍的是，<code>os.O_EXCL</code>这个指令的开启表示如果存在同名文件就无法创建，需要先使用<code>os.remove</code>操作删除原文件后再进行新的文件操作，避免文件权限被覆盖或者重用，从而导致创建的新文件权限配置与我们所预期的不符合。</p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.itranslater.com/qa/details/2582528972349244416">fdopen使用方法的问答</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/python3/python3-os-open.html">os.open()各配置参数解释</a></li>
+</ol>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/fdopen.html">https://www.cnblogs.com/dechinphy/p/fdopen.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/c456594.html">https://dechin-phy.asia/posts/c456594.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-01-25</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-01-25</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/c69398e5.html">使用bandit对目标python代码进行安全函数扫描</a><a class="next" href="/posts/3621ed54.html">用tqdm和rich为固定路径和目标的python算法代码实现进度条</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

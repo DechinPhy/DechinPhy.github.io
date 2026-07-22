@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/26c416c4.html"><meta property="og:type" content="article"><meta property="og:title" content="python3使用tracemalloc追踪mmap内存变化"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/26c416c4.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-04-09T08:20:12.000Z"><meta property="article:modified_time" content="2021-04-12T03:50:00.000Z"><title>python3使用tracemalloc追踪mmap内存变化 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">python3使用tracemalloc追踪mmap内存变化</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">python3使用tracemalloc追踪mmap内存变化</h1><div class="post-meta">2021-04-09<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">用tracemalloc跟踪python程序内存占用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">用tracemalloc追踪内存变化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">内存占用曲线</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">mmap内存占用测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%86numpy%E6%95%B0%E7%BB%84%E5%86%99%E5%85%A5txt%E6%96%87%E4%BB%B6"><span class="toc-number">5.1.</span> <span class="toc-text">将numpy数组写入txt文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#numpy%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%B5%8B%E8%AF%95"><span class="toc-number">5.2.</span> <span class="toc-text">numpy文件读取测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#mmap%E5%86%85%E5%AD%98%E5%8D%A0%E7%94%A8%E6%B5%8B%E8%AF%95"><span class="toc-number">5.3.</span> <span class="toc-text">mmap内存占用测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了用tracemalloc来进行python程序的内存追踪的技术，以及简单的文件映射技术mmap的使用方法介绍和演示。通过这些案例，我们了解到，对于小规模的计算场景，可以将整个的需要计算的元素包含在内存中，这比较方便也比较快速。而对于大规模的文件场景，还是使用内存映射技术更加的快速，这个速度在本文中介绍的几个案例的运行中也能够体会到。内存映射技术已经有很多应用场景，比如前面介绍过的vaex就是得益于内存映射技术。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/vaex.html">博客</a>中我们介绍了一些用python3处理表格数据的方法，其中重点包含了<code>vaex</code>这样一个大规模数据处理的方案。这个数据处理的方案是基于内存映射（memory map）的技术，通过创建内存映射文件来避免在内存中直接加载源数据而导致的大规模内存占用问题，这使得我们可以在本地电脑内存规模并不是很大的条件下对大规模的数据进行处理。python3中提供了<code>mmap</code>这样一个仓库，可以直接创建内存映射文件。</p>
+<h1>用tracemalloc跟踪python程序内存占用</h1>
+<p>这里我们希望能够对比内存映射技术的实际内存占用，因此我们需要引入一个基于python的内存追踪工具：<code>tracemalloc</code>。我们先看一个简单的案例，创建一个随机数组，观察这个数组的内存占用大小：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>tracemalloc.start()<br><br>length=<span class="hljs-number">10000</span><br>test_array=np.random.randn(length) <span class="hljs-comment"># 分配一个定长随机数组</span><br>snapshot=tracemalloc.take_snapshot() <span class="hljs-comment"># 内存摄像</span><br>top_stats=snapshot.statistics(<span class="hljs-string">&#x27;lineno&#x27;</span>) <span class="hljs-comment"># 内存占用数据获取</span><br><br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;[Top 10]&#x27;</span>)<br><span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]: <span class="hljs-comment"># 打印占用内存最大的10个子进程</span><br>    <span class="hljs-built_in">print</span> (stat)<br></code></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro mmap]$ python3 tracem.py <br>[Top 10]<br>tracem.py:8: size=78.2 KiB, count=2, average=39.1 KiB<br></code></pre></td></tr></table></figure>
+<p>假如我们是使用<code>top</code>指令来直接检测内存的话，毫无疑问占比内存最高的还是谷歌浏览器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">top - 10:04:08 up 6 days, 15:18,  5 <span class="hljs-built_in">users</span>,  load average: 0.23, 0.33, 0.27<br>任务: 309 total,   1 running, 264 sleeping,  23 stopped,  21 zombie<br>%Cpu(s):  0.6 us,  0.2 sy,  0.0 ni, 99.0 <span class="hljs-built_in">id</span>,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st<br>MiB Mem :  39913.6 total,  25450.8 free,   1875.7 used,  12587.1 buff/cache<br>MiB Swap:  16384.0 total,  16384.0 free,      0.0 used.  36775.8 avail Mem <br><br> 进程号 USER      PR  NI    VIRT    RES    SHR    %CPU  %MEM     TIME+ COMMAND               <br> 286734 dechin    20   0   36.6g 175832 117544 S   4.0   0.4   1:02.32 chromium <br></code></pre></td></tr></table></figure>
+<p>因此根据进程号来追踪子进程的内存占用才是使用tracemalloc的一个重点，这里我们发现一个10000大小的numpy矢量的内存占用约为39.1 KiB，这其实是符合我们的预期的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">3</span>]: <span class="hljs-number">39.1</span>*<span class="hljs-number">1024</span>/<span class="hljs-number">4</span><br>Out[<span class="hljs-number">3</span>]: <span class="hljs-number">10009.6</span><br></code></pre></td></tr></table></figure>
+<p>因为这几乎就是10000个float32浮点数的内存占用大小，这表明所有的元素都已经存储在内存中。</p>
+<h1>用tracemalloc追踪内存变化</h1>
+<p>在上面一个章节中我们介绍了snapshot内存快照的使用方法，那么我们很容易可以想到，通过“拍摄”两张内存快照，然后对比一下快照中的变化，不就可以得到内存变化的大小么？接下来做一个简单尝试：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># comp_tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>tracemalloc.start()<br><br>snapshot0=tracemalloc.take_snapshot() <span class="hljs-comment"># 第一张快照</span><br>length=<span class="hljs-number">10000</span><br>test_array=np.random.randn(length)<br>snapshot1=tracemalloc.take_snapshot() <span class="hljs-comment"># 第二张快照</span><br>top_stats=snapshot1.compare_to(snapshot0,<span class="hljs-string">&#x27;lineno&#x27;</span>) <span class="hljs-comment"># 快照对比</span><br><br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;[Top 10 differences]&#x27;</span>)<br><span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]:<br>    <span class="hljs-built_in">print</span> (stat)<br></code></pre></td></tr></table></figure>
+<p>执行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro mmap]$ python3 comp_tracem.py <br>[Top 10 differences]<br>comp_tracem.py:9: size=78.2 KiB (+78.2 KiB), count=2 (+2), average=39.1 KiB<br></code></pre></td></tr></table></figure>
+<p>可以看到这个快照前后的平均内存大小差异就是在39.1 KiB，假如我们把矢量的维度改为1000000：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">length=<span class="hljs-number">1000000</span><br></code></pre></td></tr></table></figure>
+<p>再执行一遍看看效果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro mmap]$ python3 comp_tracem.py  <br>[Top 10 differences]<br>comp_tracem.py:9: size=7813 KiB (+7813 KiB), count=2 (+2), average=3906 KiB<br></code></pre></td></tr></table></figure>
+<p>我们发现结果是3906,相当于被放大了100倍，是比较符合预期的。当然如果我们仔细去算一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">4</span>]: <span class="hljs-number">3906</span>*<span class="hljs-number">1024</span>/<span class="hljs-number">4</span><br>Out[<span class="hljs-number">4</span>]: <span class="hljs-number">999936.0</span><br></code></pre></td></tr></table></figure>
+<p>我们发现这里面并不完全是float32的类型，相比于完全的float32类型缺失了一部分内存大小，这里怀疑是否是中间产生了一些0,被自动的压缩了大小？不过这个问题并不是我们所要重点关注的，我们继续向下测试内存的变化曲线。</p>
+<h1>内存占用曲线</h1>
+<p>延续前面两个章节的内容，我们主要测试一下不同维度的随机数组所需要占用的内存空间，在上述代码模块的基础上增加了一个for循环：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># comp_tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>tracemalloc.start()<br><br>x=[]<br>y=[]<br>multiplier=&#123;<span class="hljs-string">&#x27;B&#x27;</span>:<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;KiB&#x27;</span>:<span class="hljs-number">1024</span>,<span class="hljs-string">&#x27;MiB&#x27;</span>:<span class="hljs-number">1048576</span>&#125;<br>snapshot0=tracemalloc.take_snapshot()<br><span class="hljs-keyword">for</span> length <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1000000</span>,<span class="hljs-number">100000</span>):<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    test_array=np.random.randn(length)<br>    snapshot1=tracemalloc.take_snapshot()<br>    top_stats=snapshot1.compare_to(snapshot0,<span class="hljs-string">&#x27;lineno&#x27;</span>)<br>    <span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]:<br>        <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;comp_tracem.py&#x27;</span> <span class="hljs-keyword">in</span> <span class="hljs-built_in">str</span>(stat): <span class="hljs-comment"># 判断是否属于当前文件所产生的内存占用</span><br>            x.append(length)<br>            mem=<span class="hljs-built_in">str</span>(stat).split(<span class="hljs-string">&#x27;average=&#x27;</span>)[<span class="hljs-number">1</span>].split(<span class="hljs-string">&#x27; &#x27;</span>)<br>            y.append(<span class="hljs-built_in">float</span>(m曲线em[<span class="hljs-number">0</span>])*multiplier[mem[<span class="hljs-number">1</span>]])<br>            <span class="hljs-keyword">break</span><br><br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>plt.figure()<br>plt.plot(x,y,<span class="hljs-string">&#x27;D&#x27;</span>,color=<span class="hljs-string">&#x27;black&#x27;</span>,label=<span class="hljs-string">&#x27;Experiment&#x27;</span>)<br>plt.plot(x,np.dot(x,<span class="hljs-number">4</span>),color=<span class="hljs-string">&#x27;red&#x27;</span>,label=<span class="hljs-string">&#x27;Expect&#x27;</span>) <span class="hljs-comment"># float32的预期占用空间</span><br>plt.title(<span class="hljs-string">&#x27;Memery Difference vs Array Length&#x27;</span>)<br>plt.xlabel(<span class="hljs-string">&#x27;Number Array Length&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">&#x27;Memory Difference&#x27;</span>)<br>plt.legend()<br>plt.savefig(<span class="hljs-string">&#x27;comp_mem.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>画出来的效果图如下所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164600612.png" alt="">
+这里我们又发现，虽然大部分情况下是符合内存占用预期的，但有很多个点比预期占用的要少，我们怀疑是因为存在0元素，因此稍微修改了一下代码，在原代码的基础上增加了一个操作来尽可能的避免0的出现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># comp_tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>tracemalloc.start()<br><br>x=[]<br>y=[]<br>multiplier=&#123;<span class="hljs-string">&#x27;B&#x27;</span>:<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;KiB&#x27;</span>:<span class="hljs-number">1024</span>,<span class="hljs-string">&#x27;MiB&#x27;</span>:<span class="hljs-number">1048576</span>&#125;<br>snapshot0=tracemalloc.take_snapshot()<br><span class="hljs-keyword">for</span> length <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1000000</span>,<span class="hljs-number">100000</span>):<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    test_array=np.random.randn(length)<br>    test_array+=np.ones(length)*np.pi <span class="hljs-comment"># 在原数组基础上加一个圆周率，内存不变</span><br>    snapshot1=tracemalloc.take_snapshot()<br>    top_stats=snapshot1.compare_to(snapshot0,<span class="hljs-string">&#x27;lineno&#x27;</span>)<br>    <span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]:<br>        <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;comp_tracem.py&#x27;</span> <span class="hljs-keyword">in</span> <span class="hljs-built_in">str</span>(stat):<br>            x.append(length)<br>            mem=<span class="hljs-built_in">str</span>(stat).split(<span class="hljs-string">&#x27;average=&#x27;</span>)[<span class="hljs-number">1</span>].split(<span class="hljs-string">&#x27; &#x27;</span>)<br>            y.append(<span class="hljs-built_in">float</span>(mem[<span class="hljs-number">0</span>])*multiplier[mem[<span class="hljs-number">1</span>]])<br>            <span class="hljs-keyword">break</span><br><br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>plt.figure()<br>plt.plot(x,y,<span class="hljs-string">&#x27;D&#x27;</span>,color=<span class="hljs-string">&#x27;black&#x27;</span>,label=<span class="hljs-string">&#x27;Experiment&#x27;</span>)<br>plt.plot(x,np.dot(x,<span class="hljs-number">4</span>),color=<span class="hljs-string">&#x27;red&#x27;</span>,label=<span class="hljs-string">&#x27;Expect&#x27;</span>)<br>plt.title(<span class="hljs-string">&#x27;Memery Difference vs Array Length&#x27;</span>)<br>plt.xlabel(<span class="hljs-string">&#x27;Number Array Length&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">&#x27;Memory Difference&#x27;</span>)<br>plt.legend()<br>plt.savefig(<span class="hljs-string">&#x27;comp_mem.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>经过更新后，得到的结果图如下所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164600636.png" alt="">
+虽然不符合预期的点数少了，但是这里还是有两个点不符合预期的内存占用大小，疑似数据被压缩了。</p>
+<h1>mmap内存占用测试</h1>
+<p>在上面几个章节之后，我们已经基本掌握了内存追踪技术的使用，这里我们将其应用在mmap内存映射技术上，看看有什么样的效果。</p>
+<h2 id="将numpy数组写入txt文件">将numpy数组写入txt文件</h2>
+<p>因为内存映射本质上是一个对系统文件的读写操作，因此这里我们首先将前面用到的numpy数组存储到txt文件中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># write_array.py</span><br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>x=[]<br>y=[]<br><span class="hljs-keyword">for</span> length <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1000000</span>,<span class="hljs-number">100000</span>):<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    test_array=np.random.randn(length)<br>    test_array+=np.ones(length)*np.pi<br>    np.savetxt(<span class="hljs-string">&#x27;numpy_array_length_&#x27;</span>+<span class="hljs-built_in">str</span>(length)+<span class="hljs-string">&#x27;.txt&#x27;</span>,test_array)<br></code></pre></td></tr></table></figure>
+<p>写入完成后，在当前目录下会生成一系列的txt文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">-rw-r--r-- 1 dechin dechin  2500119  4月 12 10:09 numpy_array_length_100001.txt<br>-rw-r--r-- 1 dechin dechin       25  4月 12 10:09 numpy_array_length_1.txt<br>-rw-r--r-- 1 dechin dechin  5000203  4月 12 10:09 numpy_array_length_200001.txt<br>-rw-r--r-- 1 dechin dechin  7500290  4月 12 10:09 numpy_array_length_300001.txt<br>-rw-r--r-- 1 dechin dechin 10000356  4月 12 10:09 numpy_array_length_400001.txt<br>-rw-r--r-- 1 dechin dechin 12500443  4月 12 10:09 numpy_array_length_500001.txt<br>-rw-r--r-- 1 dechin dechin 15000526  4月 12 10:09 numpy_array_length_600001.txt<br>-rw-r--r-- 1 dechin dechin 17500606  4月 12 10:09 numpy_array_length_700001.txt<br>-rw-r--r-- 1 dechin dechin 20000685  4月 12 10:09 numpy_array_length_800001.txt<br>-rw-r--r-- 1 dechin dechin 22500788  4月 12 10:09 numpy_array_length_900001.txt<br></code></pre></td></tr></table></figure>
+<p>我们可以用<code>head</code>或者<code>tail</code>查看前n个或者后n个的元素：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro mmap]$ <span class="hljs-built_in">head</span> -n 5 numpy_array_length_100001.txt <br>4.765938017253034786e+00<br>2.529836239939717846e+00<br>2.613420901326337642e+00<br>2.068624031433622612e+00<br>4.007000282914471967e+00<br></code></pre></td></tr></table></figure>
+<h2 id="numpy文件读取测试">numpy文件读取测试</h2>
+<p>前面几个测试我们是直接在内存中生成的numpy的数组并进行内存监测，这里我们为了严格对比，统一采用文件读取的方式，首先我们需要看一下numpy的文件读取的内存曲线如何：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># npopen_tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>tracemalloc.start()<br><br>x=[]<br>y=[]<br>multiplier=&#123;<span class="hljs-string">&#x27;B&#x27;</span>:<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;KiB&#x27;</span>:<span class="hljs-number">1024</span>,<span class="hljs-string">&#x27;MiB&#x27;</span>:<span class="hljs-number">1048576</span>&#125;<br>snapshot0=tracemalloc.take_snapshot()<br><span class="hljs-keyword">for</span> length <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1000000</span>,<span class="hljs-number">100000</span>):<br>    test_array=np.loadtxt(<span class="hljs-string">&#x27;numpy_array_length_&#x27;</span>+<span class="hljs-built_in">str</span>(length)+<span class="hljs-string">&#x27;.txt&#x27;</span>,delimiter=<span class="hljs-string">&#x27;,&#x27;</span>)<br>    snapshot1=tracemalloc.take_snapshot()<br>    top_stats=snapshot1.compare_to(snapshot0,<span class="hljs-string">&#x27;lineno&#x27;</span>)<br>    <span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]:<br>        <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;/home/dechin/anaconda3/lib/python3.8/site-packages/numpy/lib/npyio.py:1153&#x27;</span> <span class="hljs-keyword">in</span> <span class="hljs-built_in">str</span>(stat):<br>            x.append(length)<br>            mem=<span class="hljs-built_in">str</span>(stat).split(<span class="hljs-string">&#x27;average=&#x27;</span>)[<span class="hljs-number">1</span>].split(<span class="hljs-string">&#x27; &#x27;</span>)<br>            y.append(<span class="hljs-built_in">float</span>(mem[<span class="hljs-number">0</span>])*multiplier[mem[<span class="hljs-number">1</span>]])<br>            <span class="hljs-keyword">break</span><br><br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>plt.figure()<br>plt.plot(x,y,<span class="hljs-string">&#x27;D&#x27;</span>,color=<span class="hljs-string">&#x27;black&#x27;</span>,label=<span class="hljs-string">&#x27;Experiment&#x27;</span>)<br>plt.plot(x,np.dot(x,<span class="hljs-number">8</span>),color=<span class="hljs-string">&#x27;red&#x27;</span>,label=<span class="hljs-string">&#x27;Expect&#x27;</span>)<br>plt.title(<span class="hljs-string">&#x27;Memery Difference vs Array Length&#x27;</span>)<br>plt.xlabel(<span class="hljs-string">&#x27;Number Array Length&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">&#x27;Memory Difference&#x27;</span>)<br>plt.legend()<br>plt.savefig(<span class="hljs-string">&#x27;open_mem.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>需要注意的一点是，这里虽然还是使用numpy对文件进行读取，但是内存占用已经不是名为<code>npopen_tracem.py</code>的源文件了，而是被保存在了<code>npyio.py:1153</code>这个文件中，因此我们在进行内存跟踪的时候，需要调整一下对应的统计位置。最后的输出结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164600658.png" alt="">
+由于读入之后是默认以float64来读取的，因此预期的内存占用大小是<code>元素数量×8</code>，这里读入的数据内存占用是几乎完全符合预期的。</p>
+<h2 id="mmap内存占用测试">mmap内存占用测试</h2>
+<p>伏笔了一大篇幅的文章，最后终于到了内存映射技术的测试，其实内存映射模块mmap的使用方式倒也不难，就是配合os模块进行文件读取，基本上就是一行的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># mmap_tracem.py</span><br><br><span class="hljs-keyword">import</span> tracemalloc<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> mmap<br><span class="hljs-keyword">import</span> os<br>tracemalloc.start()<br><br>x=[]<br>y=[]<br>multiplier=&#123;<span class="hljs-string">&#x27;B&#x27;</span>:<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;KiB&#x27;</span>:<span class="hljs-number">1024</span>,<span class="hljs-string">&#x27;MiB&#x27;</span>:<span class="hljs-number">1048576</span>&#125;<br>snapshot0=tracemalloc.take_snapshot()<br><span class="hljs-keyword">for</span> length <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1000000</span>,<span class="hljs-number">100000</span>):<br>    test_array=mmap.mmap(os.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;numpy_array_length_&#x27;</span>+<span class="hljs-built_in">str</span>(length)+<span class="hljs-string">&#x27;.txt&#x27;</span>,os.O_RDWR),<span class="hljs-number">0</span>) <span class="hljs-comment"># 创建内存映射文件</span><br>    snapshot1=tracemalloc.take_snapshot()<br>    top_stats=snapshot1.compare_to(snapshot0,<span class="hljs-string">&#x27;lineno&#x27;</span>)<br>    <span class="hljs-keyword">for</span> stat <span class="hljs-keyword">in</span> top_stats[:<span class="hljs-number">10</span>]:<br>        <span class="hljs-built_in">print</span> (stat)<br>        <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;mmap_tracem.py&#x27;</span> <span class="hljs-keyword">in</span> <span class="hljs-built_in">str</span>(stat):<br>            x.append(length)<br>            mem=<span class="hljs-built_in">str</span>(stat).split(<span class="hljs-string">&#x27;average=&#x27;</span>)[<span class="hljs-number">1</span>].split(<span class="hljs-string">&#x27; &#x27;</span>)<br>            y.append(<span class="hljs-built_in">float</span>(mem[<span class="hljs-number">0</span>])*multiplier[mem[<span class="hljs-number">1</span>]])<br>            <span class="hljs-keyword">break</span><br><br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>plt.figure()<br>plt.plot(x,y,<span class="hljs-string">&#x27;D&#x27;</span>,color=<span class="hljs-string">&#x27;black&#x27;</span>,label=<span class="hljs-string">&#x27;Experiment&#x27;</span>)<br>plt.title(<span class="hljs-string">&#x27;Memery Difference vs Array Length&#x27;</span>)<br>plt.xlabel(<span class="hljs-string">&#x27;Number Array Length&#x27;</span>)<br>plt.ylabel(<span class="hljs-string">&#x27;Memory Difference&#x27;</span>)<br>plt.legend()<br>plt.savefig(<span class="hljs-string">&#x27;mmap.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>运行结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164600686.png" alt="">
+我们可以看到内存上是几乎没有波动的，因为我们并未把整个数组加载到内存中，而是在内存中加载了其内存映射的文件。使得我们可以读取文件中的任何一个位置的byte，但是不用耗费太大的内存资源。当我们去修改写入文件的时候需要额外的小心，因为对于内存映射技术来说，byte数量是需要保持不变的，否则内存映射就会发生错误。</p>
+<h1>总结概要</h1>
+<p>本文介绍了用tracemalloc来进行python程序的内存追踪的技术，以及简单的文件映射技术mmap的使用方法介绍和演示。通过这些案例，我们了解到，对于小规模的计算场景，可以将整个的需要计算的元素包含在内存中，这比较方便也比较快速。而对于大规模的文件场景，还是使用内存映射技术更加的快速，这个速度在本文中介绍的几个案例的运行中也能够体会到。内存映射技术已经有很多应用场景，比如前面介绍过的vaex就是得益于内存映射技术。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mmap.html">https://www.cnblogs.com/dechinphy/p/mmap.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/26c416c4.html">https://dechin-phy.asia/posts/26c416c4.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-04-09</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-04-12</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/f4dfbd79.html">python3美化表格数据输出结果</a><a class="next" href="/posts/304f40ac.html">Manjaro Linux安装singularity-container</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

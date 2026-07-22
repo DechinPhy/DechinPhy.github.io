@@ -1,0 +1,270 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/ee91d104.html"><meta property="og:type" content="article"><meta property="og:title" content="Python3实现Two-Pass算法检测区域连通性"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/ee91d104.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-08-18T02:35:18.000Z"><meta property="article:modified_time" content="2021-08-19T01:59:00.000Z"><title>Python3实现Two-Pass算法检测区域连通性 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Python3实现Two-Pass算法检测区域连通性</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Python3实现Two-Pass算法检测区域连通性</h1><div class="post-meta">2021-08-18<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 15</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Two-Pass算法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">测试数据的生成</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Two-Pass算法的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.1.</span> <span class="toc-text">算法的执行流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%87%E7%AD%BE%E7%9A%84%E9%87%8D%E6%98%A0%E5%B0%84"><span class="toc-number">4.2.</span> <span class="toc-text">标签的重映射</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B6%E4%BB%96%E7%9A%84%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="toc-number">4.3.</span> <span class="toc-text">其他的测试用例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>在本文中我们主要介绍了利用Two-Pass的算法来检测区域连通性，并给出了Python3的代码实现，当然在实现的过程中因为没有使用到Union这样的数据结构，仅仅用了字典来存储标签之间的关系，因此效率和代码可读性都会低一些，单纯作为用例的演示和小规模区域划分的计算是足够用了。在该代码实现方案中，还有一点与原始算法不一致的是，本实现方案中打新的标签是读取上、上左和左三个方向的格点，但是存储标签的映射关系时，是读取了上、上左、上右和左这四个方向的格点。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>连通性检测是图论中常常遇到的一个问题，我们可以用五子棋的思路来理解这个问题五子棋中，横、竖、斜相邻的两个棋子，被认为是相连接的，而一样的道理，在一个二维的图中，只要在横、竖、斜三个方向中的一个存在相邻的情况，就可以认为图上相连通的。比如以下案例中的python数组，3号元素和5号元素就是相连接的，5号元素和6号元素也是相连接的，因此这三个元素实际上是属于同一个区域的：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">array([[<span class="hljs-number">0</span>, <span class="hljs-number">3</span>, <span class="hljs-number">0</span>],<br>       [<span class="hljs-number">0</span>, <span class="hljs-number">5</span>, <span class="hljs-number">0</span>],<br>       [<span class="hljs-number">6</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>]])<br></code></pre></td></tr></table></figure>
+<p>而再如下面这个例子，其中的1、2、3三个元素是相连的，4、5、6三个元素也是相连的，但是这两个区域不存在连接性，因此这个网格被分成了两个区域：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">array([[<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, <span class="hljs-number">4</span>],<br>       [<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">5</span>],<br>       [<span class="hljs-number">3</span>, <span class="hljs-number">0</span>, <span class="hljs-number">6</span>]])<br></code></pre></td></tr></table></figure>
+<p>那么如何高效的检测一张图片或者一个矩阵中的所有连通区域并打上标签，就是我们所关注的一个问题。</p>
+<h1>Two-Pass算法</h1>
+<p>一个典型的连通性检测的方案是Two-Pass算法，该算法可以用如下的一张动态图来演示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164610954.gif" alt=""></p>
+<p>该算法的核心在于用两次的遍历，为所有的节点打上分区的标签，如果是不同的分区，就会打上不同的标签。其基本的算法步骤可以用如下语言进行概述：</p>
+<ol>
+<li>遍历网格节点，如果网格的上、左、左上三个格点不存在元素，则为当前网格打上新的标签，同时标签编号加一；</li>
+<li>当上、左、左上的网格中存在一个元素时，将该元素值赋值给当前的网格作为标签；</li>
+<li>当上、左、左上的网格中有多个元素时，取最低值作为当前网格的标签；</li>
+<li>在标签赋值时，留意标签上边和左边已经被遍历过的4个元素，将4个元素中的最低值与这四个元素分别添加到Union的数据结构中（参考链接1）；</li>
+<li>再次遍历网格节点，根据Union数据结构中的值刷新网格中的标签值，最终得到划分好区域和标签的元素矩阵。</li>
+</ol>
+<h1>测试数据的生成</h1>
+<p>这里我们以Python3为例，可以用Numpy来产生一系列随机的0-1矩阵，这里我们产生一个20*20大小的矩阵：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># two_pass.py</span><br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    graph = np.random.choice([<span class="hljs-number">0</span>,<span class="hljs-number">1</span>],size=(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>))<br>    <span class="hljs-built_in">print</span> (graph)<br><br>    plt.figure()<br>    plt.imshow(graph)<br>    plt.savefig(<span class="hljs-string">&#x27;random_bin_graph.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>执行的输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 two_pass.py <br>[[1 1 0 0 1 1 1 1 1 0 0 1 0 1 1 0 0 1 0 0]<br> [0 1 0 0 1 0 0 0 1 0 0 0 1 1 1 1 1 0 0 0]<br> [1 1 1 1 1 1 0 1 1 0 0 1 0 0 1 1 1 0 1 0]<br> [0 1 1 0 1 1 1 1 0 0 1 1 0 0 0 0 1 1 1 0]<br> [1 0 0 1 1 0 1 1 0 1 0 0 1 1 1 0 1 1 0 1]<br> [1 1 1 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0]<br> [0 1 1 1 1 1 1 0 0 1 1 0 0 1 0 0 0 1 1 1]<br> [1 1 0 1 0 1 0 0 0 1 1 1 0 1 0 0 0 0 1 0]<br> [1 0 1 1 1 0 0 0 0 0 0 1 0 0 1 0 0 1 1 0]<br> [0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 1 1 1 0]<br> [0 0 0 0 1 1 1 0 1 1 0 0 0 1 1 0 1 1 1 0]<br> [1 1 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 0 1 1]<br> [1 0 1 0 1 0 1 1 1 1 1 1 0 0 1 1 0 0 0 1]<br> [1 0 0 0 0 0 1 1 1 1 1 1 1 0 0 1 0 0 0 1]<br> [0 1 0 1 0 0 0 0 1 1 0 0 0 1 0 1 1 0 0 1]<br> [0 1 0 0 0 1 0 1 0 1 1 1 0 1 0 1 1 1 1 0]<br> [0 1 0 0 0 0 1 1 0 1 1 0 0 1 1 1 1 1 1 1]<br> [0 0 0 0 0 0 0 1 0 0 0 0 0 1 1 1 1 0 0 0]<br> [1 0 1 0 1 0 0 0 0 0 0 1 0 0 0 1 0 1 1 0]<br> [0 1 1 0 1 0 1 0 1 1 0 0 1 0 0 0 0 0 1 1]]<br></code></pre></td></tr></table></figure>
+<p>同时会生成一张网格的图片：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164610985.png" alt="">
+其实从这个图片中我们可以看出，图片的上面部分几乎都是连接在一起的，只有最下面存在几个独立的区域。</p>
+<h1>Two-Pass算法的实现</h1>
+<p>这里需要说明的是，因为我们并没有使用Union的数据结构，而是只使用了Python的字典数据结构，因此代码写起来会比较冗余而且不是那么美观，但是这里我们主要的目的是先用代解决这一实际问题，因此代码乱就乱一点吧。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># two_pass.py</span><br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><span class="hljs-keyword">from</span> copy <span class="hljs-keyword">import</span> deepcopy<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">first_pass</span>(<span class="hljs-params">g</span>) -&gt; <span class="hljs-built_in">list</span>:<br>    graph = deepcopy(g)<br>    height = <span class="hljs-built_in">len</span>(graph)<br>    width = <span class="hljs-built_in">len</span>(graph[<span class="hljs-number">0</span>])<br>    label = <span class="hljs-number">1</span><br>    index_dict = &#123;&#125;<br>    <span class="hljs-keyword">for</span> h <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(height):<br>        <span class="hljs-keyword">for</span> w <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(width):<br>            <span class="hljs-keyword">if</span> graph[h][w] == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> h == <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> w == <span class="hljs-number">0</span>:<br>                graph[h][w] = label<br>                label += <span class="hljs-number">1</span><br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> h == <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> graph[h][w-<span class="hljs-number">1</span>] &gt; <span class="hljs-number">0</span>:<br>                graph[h][w] = graph[h][w-<span class="hljs-number">1</span>]<br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> w == <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> graph[h-<span class="hljs-number">1</span>][w] &gt; <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">if</span> graph[h-<span class="hljs-number">1</span>][w] &lt;= graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]:<br>                    graph[h][w] = graph[h-<span class="hljs-number">1</span>][w]<br>                    index_dict[graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]] = graph[h-<span class="hljs-number">1</span>][w]<br>                <span class="hljs-keyword">elif</span> graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)] &gt; <span class="hljs-number">0</span>:<br>                    graph[h][w] = graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]<br>                    index_dict[graph[h-<span class="hljs-number">1</span>][w]] = graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]<br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> h == <span class="hljs-number">0</span>:<br>                graph[h][w] = label<br>                label += <span class="hljs-number">1</span><br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> w == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">if</span> graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)] &gt; <span class="hljs-number">0</span>:<br>                    graph[h][w] = graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]<br>                    <span class="hljs-keyword">continue</span><br>                graph[h][w] = label<br>                label += <span class="hljs-number">1</span><br>                <span class="hljs-keyword">continue</span><br>            neighbors = [graph[h-<span class="hljs-number">1</span>][w], graph[h][w-<span class="hljs-number">1</span>], graph[h-<span class="hljs-number">1</span>][w-<span class="hljs-number">1</span>], graph[h-<span class="hljs-number">1</span>][<span class="hljs-built_in">min</span>(w+<span class="hljs-number">1</span>, width-<span class="hljs-number">1</span>)]]<br>            neighbors = <span class="hljs-built_in">list</span>(<span class="hljs-built_in">filter</span>(<span class="hljs-keyword">lambda</span> x:x&gt;<span class="hljs-number">0</span>, neighbors))<br>            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(neighbors) &gt; <span class="hljs-number">0</span>:<br>                graph[h][w] = <span class="hljs-built_in">min</span>(neighbors)<br>                <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> neighbors:<br>                    <span class="hljs-keyword">if</span> n <span class="hljs-keyword">in</span> index_dict:<br>                        index_dict[n] = <span class="hljs-built_in">min</span>(index_dict[n], <span class="hljs-built_in">min</span>(neighbors))<br>                    <span class="hljs-keyword">else</span>:<br>                        index_dict[n] = <span class="hljs-built_in">min</span>(neighbors)<br>                <span class="hljs-keyword">continue</span><br>            graph[h][w] = label<br>            label += <span class="hljs-number">1</span><br>    <span class="hljs-keyword">return</span> graph, index_dict<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">remap</span>(<span class="hljs-params">idx_dict</span>) -&gt; <span class="hljs-built_in">dict</span>:<br>    index_dict = deepcopy(idx_dict)<br>    <span class="hljs-keyword">for</span> <span class="hljs-built_in">id</span> <span class="hljs-keyword">in</span> idx_dict:<br>        idv = idx_dict[<span class="hljs-built_in">id</span>]<br>        <span class="hljs-keyword">while</span> idv <span class="hljs-keyword">in</span> idx_dict:<br>            <span class="hljs-keyword">if</span> idv == idx_dict[idv]:<br>                <span class="hljs-keyword">break</span><br>            idv = idx_dict[idv]<br>        index_dict[<span class="hljs-built_in">id</span>] = idv<br>    <span class="hljs-keyword">return</span> index_dict<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">second_pass</span>(<span class="hljs-params">g, index_dict</span>) -&gt; <span class="hljs-built_in">list</span>:<br>    graph = deepcopy(g)<br>    height = <span class="hljs-built_in">len</span>(graph)<br>    width = <span class="hljs-built_in">len</span>(graph[<span class="hljs-number">0</span>])<br>    <span class="hljs-keyword">for</span> h <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(height):<br>        <span class="hljs-keyword">for</span> w <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(width):<br>            <span class="hljs-keyword">if</span> graph[h][w] == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> graph[h][w] <span class="hljs-keyword">in</span> index_dict:<br>                graph[h][w] = index_dict[graph[h][w]]<br>    <span class="hljs-keyword">return</span> graph<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">flatten</span>(<span class="hljs-params">g</span>) -&gt; <span class="hljs-built_in">list</span>:<br>    graph = deepcopy(g)<br>    fgraph = <span class="hljs-built_in">sorted</span>(<span class="hljs-built_in">set</span>(<span class="hljs-built_in">list</span>(graph.flatten())))<br>    flatten_dict = &#123;&#125;<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(fgraph)):<br>        flatten_dict[fgraph[i]] = i<br>    graph = second_pass(graph, flatten_dict)<br>    <span class="hljs-keyword">return</span> graph<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    graph = np.random.choice([<span class="hljs-number">0</span>,<span class="hljs-number">1</span>],size=(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>))<br>    graph_1, idx_dict = first_pass(graph)<br>    idx_dict = remap(idx_dict)<br>    graph_2 = second_pass(graph_1, idx_dict)<br>    graph_3 = flatten(graph_2)<br>    <span class="hljs-built_in">print</span> (graph_3)<br><br>    plt.subplot(<span class="hljs-number">131</span>)<br>    plt.imshow(graph)<br>    plt.subplot(<span class="hljs-number">132</span>)<br>    plt.imshow(graph_3)<br>    plt.subplot(<span class="hljs-number">133</span>)<br>    plt.imshow(graph_3&gt;<span class="hljs-number">0</span>)<br>    plt.savefig(<span class="hljs-string">&#x27;random_bin_graph.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>完整代码的输出如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 two_pass.py <br>[[1 1 0 0 1 1 1 1 1 0 0 1 0 1 1 0 0 1 0 0]<br> [0 1 0 0 1 0 0 0 1 0 0 0 1 1 1 1 1 0 0 0]<br> [1 1 1 1 1 1 0 1 1 0 0 1 0 0 1 1 1 0 1 0]<br> [0 1 1 0 1 1 1 1 0 0 1 1 0 0 0 0 1 1 1 0]<br> [1 0 0 1 1 0 1 1 0 1 0 0 1 1 1 0 1 1 0 1]<br> [1 1 1 0 0 0 0 0 1 1 1 1 1 1 1 0 0 0 0 0]<br> [0 1 1 1 1 1 1 0 0 1 1 0 0 1 0 0 0 1 1 1]<br> [1 1 0 1 0 1 0 0 0 1 1 1 0 1 0 0 0 0 1 0]<br> [1 0 1 1 1 0 0 0 0 0 0 1 0 0 1 0 0 1 1 0]<br> [0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 1 1 1 0]<br> [0 0 0 0 1 1 1 0 1 1 0 0 0 1 1 0 1 1 1 0]<br> [1 1 1 1 0 1 0 0 1 0 1 0 1 1 0 1 1 0 1 1]<br> [1 0 1 0 1 0 1 1 1 1 1 1 0 0 1 1 0 0 0 1]<br> [1 0 0 0 0 0 1 1 1 1 1 1 1 0 0 1 0 0 0 1]<br> [0 1 0 2 0 0 0 0 1 1 0 0 0 1 0 1 1 0 0 1]<br> [0 1 0 0 0 1 0 1 0 1 1 1 0 1 0 1 1 1 1 0]<br> [0 1 0 0 0 0 1 1 0 1 1 0 0 1 1 1 1 1 1 1]<br> [0 0 0 0 0 0 0 1 0 0 0 0 0 1 1 1 1 0 0 0]<br> [3 0 3 0 4 0 0 0 0 0 0 5 0 0 0 1 0 1 1 0]<br> [0 3 3 0 4 0 6 0 7 7 0 0 5 0 0 0 0 0 1 1]]<br></code></pre></td></tr></table></figure>
+<p>同样的我们可以看看此时得到的新的图像：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164611013.png" alt="">
+这里我们并列的画了三张图，第一张图是原图，第二张图是划分好区域和标签的图，第三张是对第二张图进行二元化的结果，以确保在运算过程中没有丢失原本的信息。经过确认这个标签的结果划分是正确的，但是因为涉及到一些算法实现的细节，这里我们还是需要展开来介绍一下。</p>
+<h2 id="算法的执行流程">算法的执行流程</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    np.random.seed(<span class="hljs-number">1</span>)<br>    graph = np.random.choice([<span class="hljs-number">0</span>,<span class="hljs-number">1</span>],size=(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>))<br>    graph_1, idx_dict = first_pass(graph)<br>    idx_dict = remap(idx_dict)<br>    graph_2 = second_pass(graph_1, idx_dict)<br>    graph_3 = flatten(graph_2)<br></code></pre></td></tr></table></figure>
+<p>这个部分是算法的核心框架，在本文中的算法实现流程为：先用<code>first_pass</code>遍历一遍网格节点，按照上一个章节中介绍的Two-Pass算法打上标签，并获得一个映射关系；然后用<code>remap</code>将上面得到的映射关系做一个重映射，确保每一个级别的映射都对应到了最根部（可以联系参考链接1的内容进行理解，虽然这里没有使用Union的数据结构，但是本质上还是一个树形的结构，需要做一个重映射）；然后用<code>second_pass</code>执行Two-Pass算法的第二次遍历，得到一组打上了新的独立标签的网格节点；最后需要用flatten将标签进行压平，因为前面映射的关系，有可能导致标签不连续，所以我们这里又做了一次映射，确保标签是连续变化的，实际应用中可以不使用这一步。</p>
+<h2 id="标签的重映射">标签的重映射</h2>
+<p>关于节点的遍历，大家可以直接看算法代码，这里需要额外讲解的是标签的重映射模块的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">remap</span>(<span class="hljs-params">idx_dict</span>) -&gt; <span class="hljs-built_in">dict</span>:<br>    index_dict = deepcopy(idx_dict)<br>    <span class="hljs-keyword">for</span> <span class="hljs-built_in">id</span> <span class="hljs-keyword">in</span> idx_dict:<br>        idv = idx_dict[<span class="hljs-built_in">id</span>]<br>        <span class="hljs-keyword">while</span> idv <span class="hljs-keyword">in</span> idx_dict:<br>            <span class="hljs-keyword">if</span> idv == idx_dict[idv]:<br>                <span class="hljs-keyword">break</span><br>            idv = idx_dict[idv]<br>        index_dict[<span class="hljs-built_in">id</span>] = idv<br>    <span class="hljs-keyword">return</span> index_dict<br></code></pre></td></tr></table></figure>
+<p>这里的算法是先对得到的标签进行遍历，在字典中获取当前标索引所对应的值，作为新的索引，直到键跟值一致为止，相当于在一个树形的数据结构中重复寻找父节点直到找到根节点。</p>
+<h2 id="其他的测试用例">其他的测试用例</h2>
+<p>这里我们可以再额外测试一些案例，比如增加几个0元素使得网格节点更加稀疏：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">graph = np.random.choice([<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">1</span>],size=(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>))<br></code></pre></td></tr></table></figure>
+<p>得到的结果图片如下所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164611040.png" alt="">
+还可以再稀疏一些：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">graph = np.random.choice([<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">1</span>],size=(<span class="hljs-number">20</span>,<span class="hljs-number">20</span>))<br></code></pre></td></tr></table></figure>
+<p>得到的结果如下图所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164611072.png" alt=""></p>
+<p>越是稀疏的图，得到的分组结果就越分散。</p>
+<h1>总结概要</h1>
+<p>在本文中我们主要介绍了利用Two-Pass的算法来检测区域连通性，并给出了Python3的代码实现，当然在实现的过程中因为没有使用到Union这样的数据结构，仅仅用了字典来存储标签之间的关系，因此效率和代码可读性都会低一些，单纯作为用例的演示和小规模区域划分的计算是足够用了。在该代码实现方案中，还有一点与原始算法不一致的是，本实现方案中打新的标签是读取上、上左和左三个方向的格点，但是存储标签的映射关系时，是读取了上、上左、上右和左这四个方向的格点。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/two-pass.html">https://www.cnblogs.com/dechinphy/p/two-pass.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/lichengyu/article/details/13986521">https://blog.csdn.net/lichengyu/article/details/13986521</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/riddick/p/8280883.html">https://www.cnblogs.com/riddick/p/8280883.html</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/ee91d104.html">https://dechin-phy.asia/posts/ee91d104.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-08-18</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-08-19</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/88cb58cd.html">超过Numpy的速度有多难？试试Numba的GPU加速</a><a class="next" href="/posts/1a9a2a2b.html">PyVista：一款Python的三维可视化软件</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

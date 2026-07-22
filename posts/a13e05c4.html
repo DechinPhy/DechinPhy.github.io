@@ -1,0 +1,235 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/a13e05c4.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSpore保存与加载模型"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/a13e05c4.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-05-16T14:36:04.000Z"><meta property="article:modified_time" content="2021-05-17T03:50:00.000Z"><title>MindSpore保存与加载模型 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSpore保存与加载模型</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSpore保存与加载模型</h1><div class="post-meta">2021-05-16<span> | </span><span class="category"><a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 9</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">保存模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">加载模型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文主要从工程实现的角度测试了一下MindSpore的机器学习模型保存与加载的功能，通过这个功能，我们可以将自己训练好的机器学习模型发布出去供更多的人使用，我们也可以直接使用别人在更好的硬件体系上训练好的模型，或者应用于迁移学习。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>近几年在机器学习和传统搜索算法的结合中，逐渐发展出了一种<code>Search To Optimization</code>的思维，旨在通过构造一个特定的机器学习模型，来替代传统算法中的搜索过程，进而加速经典图论等问题的求解。那么这里面就涉及到一个非常关键的工程步骤：把机器学习中训练出来的模型保存成一个文件或者数据库，使得其他人可以重复的使用这个已经训练出来的模型。甚至是可以发布在云端，通过API接口进行调用。那么本文的内容就是介绍给予MindSpore的模型保存与加载，官方文档可以参考<a target="_blank" rel="noopener" href="https://www.mindspore.cn/tutorial/zh-CN/r1.2/save_load_model.html">这个链接</a>。</p>
+<h1>保存模型</h1>
+<p>这里我们使用的模型来自于<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/nonlinear.html">这篇博客</a>，是一个非常基础的线性神经网络模型，用于拟合一个给定的函数。因为这里我们是基于线性的模型，因此当我们需要去拟合一个更加高阶的函数的话，需要手动的处理，比如这里我们使用的平方函数。总结起来该模型可以抽象为：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">f(x)=ax^2+b
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.9474379999999999em;vertical-align:-0.08333em;"></span><span class="mord mathnormal">a</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathnormal">b</span></span></span></span></span></p>
+<p>而这里产生训练集时，我们是加了一个随机的噪声，也就是：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>b</mi><mo>+</mo><mi>n</mi><mi>o</mi><mi>i</mi><mi>s</mi><mi>e</mi></mrow><annotation encoding="application/x-tex">D(x)=ax^2+b+noise
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.9474379999999999em;vertical-align:-0.08333em;"></span><span class="mord mathnormal">a</span><span class="mord"><span class="mord mathnormal">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.77777em;vertical-align:-0.08333em;"></span><span class="mord mathnormal">b</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathnormal">n</span><span class="mord mathnormal">o</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">e</span></span></span></span></span></p>
+<p>完整的代码如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># save_model.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> dataset <span class="hljs-keyword">as</span> ds<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, Tensor, Model<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> mindspore.train.callback <span class="hljs-keyword">import</span> Callback, LossMonitor, ModelCheckpoint<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_data</span>(<span class="hljs-params">num, a=<span class="hljs-number">2.0</span>, b=<span class="hljs-number">3.0</span></span>):<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(num):<br>        x = np.random.uniform(-<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        noise = np.random.normal(<span class="hljs-number">0</span>, <span class="hljs-number">0.03</span>)<br>        z = a * x ** <span class="hljs-number">2</span> + b + noise<br>        <span class="hljs-comment"># 返回数据的时候就返回数据的平方</span><br>        <span class="hljs-keyword">yield</span> np.array([x**<span class="hljs-number">2</span>]).astype(np.float32), np.array([z]).astype(np.float32)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">create_dataset</span>(<span class="hljs-params">num_data, batch_size=<span class="hljs-number">16</span>, repeat_size=<span class="hljs-number">1</span></span>):<br>    input_data = ds.GeneratorDataset(<span class="hljs-built_in">list</span>(get_data(num_data)), column_names=[<span class="hljs-string">&#x27;x&#x27;</span>,<span class="hljs-string">&#x27;z&#x27;</span>])<br>    input_data = input_data.batch(batch_size)<br>    input_data = input_data.repeat(repeat_size)<br>    <span class="hljs-keyword">return</span> input_data<br><br>data_number = <span class="hljs-number">1600</span> <span class="hljs-comment"># 一共产生1600组数据</span><br>batch_number = <span class="hljs-number">16</span> <span class="hljs-comment"># 分为16组分别进行优化</span><br>repeat_number = <span class="hljs-number">2</span> <span class="hljs-comment"># 重复2次，可以取到更低的损失函数值</span><br><br>ds_train = create_dataset(data_number, batch_size=batch_number, repeat_size=repeat_number)<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LinearNet</span>(nn.Cell):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(LinearNet, <span class="hljs-variable language_">self</span>).__init__()<br>        <span class="hljs-variable language_">self</span>.fc = nn.Dense(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0.02</span>, <span class="hljs-number">0.02</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x</span>):<br>        x = <span class="hljs-variable language_">self</span>.fc(x)<br>        <span class="hljs-keyword">return</span> x<br><br>net = LinearNet()<br>model_params = net.trainable_params()<br><span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Param Shape is: &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(model_params)))<br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br>net_loss = nn.loss.MSELoss()<br><br><span class="hljs-comment"># 设定优化算法，常用的是Momentum和ADAM</span><br>optim = nn.Momentum(net.trainable_params(), learning_rate=<span class="hljs-number">0.005</span>, momentum=<span class="hljs-number">0.9</span>)<br>model = Model(net, net_loss, optim)<br>ckpt_cb = ModelCheckpoint()<br><br>epoch = <span class="hljs-number">1</span><br><span class="hljs-comment"># 设定每8个batch训练完成后就播报一次，这里一共播报25次</span><br>model.train(epoch, ds_train, callbacks=[LossMonitor(<span class="hljs-number">16</span>), ckpt_cb], dataset_sink_mode=<span class="hljs-literal">False</span>)<br><br><span class="hljs-keyword">for</span> net_param <span class="hljs-keyword">in</span> net.trainable_params():<br>    <span class="hljs-built_in">print</span>(net_param, net_param.asnumpy())<br></code></pre></td></tr></table></figure>
+<p>最后是通过<code>ModelCheckpoint</code>这一方法将训练出来的模型保存成<code>.ckpt</code>的checkpoint文件格式。上述代码执行的结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ <span class="hljs-built_in">sudo</span> docker run --<span class="hljs-built_in">rm</span> -v /dev/shm:/dev/shm -v /home/dechin/projects/gitlab/dechin/src/mindspore/:/home/ --runtime=nvidia --privileged=<span class="hljs-literal">true</span> swr.cn-south-1.myhuaweicloud.com/mindspore/mindspore-gpu:1.2.0 /bin/bash -c <span class="hljs-string">&quot;cd /home &amp;&amp; python save_model.py&quot;</span><br>Param Shape is: 2<br>Parameter (name=fc.weight, shape=(1, 1), dtype=Float32, requires_grad=True) [[0.02]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [0.02]<br>epoch: 1 step: 16, loss is 0.9980968<br>epoch: 1 step: 32, loss is 0.3894167<br>epoch: 1 step: 48, loss is 0.090543285<br>epoch: 1 step: 64, loss is 0.060300454<br>epoch: 1 step: 80, loss is 0.014248277<br>epoch: 1 step: 96, loss is 0.015697923<br>epoch: 1 step: 112, loss is 0.014582128<br>epoch: 1 step: 128, loss is 0.008066677<br>epoch: 1 step: 144, loss is 0.007225203<br>epoch: 1 step: 160, loss is 0.0046849623<br>epoch: 1 step: 176, loss is 0.006007362<br>epoch: 1 step: 192, loss is 0.004276552<br>Parameter (name=fc.weight, shape=(1, 1), dtype=Float32, requires_grad=True) [[1.8259585]]<br>Parameter (name=fc.bias, shape=(1,), dtype=Float32, requires_grad=True) [3.0577476]<br></code></pre></td></tr></table></figure>
+<p>可能是由于数据集的问题，可能是由于噪声的问题，使得我们训练出来的参数跟我们最开始所定义的参数有些许的区别，但是具体的误差范围还得通过测试集来验证。运行结束后会在当前目录下生成一系列的<code>.ckpt</code>文件和一个<code>.meta</code>的计算图文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ ll<br>total 148<br>drwxr-xr-x 2 1000 1000  4096 May 16 13:25 ./<br>drwxr-xr-x 1 root root  4096 May 15 01:55 ../<br>-r-------- 1 root root   211 May 16 13:25 CKP-1_196.ckpt<br>-r-------- 1 root root   211 May 16 13:25 CKP-1_197.ckpt<br>-r-------- 1 root root   211 May 16 13:25 CKP-1_198.ckpt<br>-r-------- 1 root root   211 May 16 13:25 CKP-1_199.ckpt<br>-r-------- 1 root root   211 May 16 13:25 CKP-1_200.ckpt<br>-r-------- 1 root root  3705 May 16 13:25 CKP-graph.meta<br>-rw-r--r-- 1 1000 1000  2087 May 16 13:25 save_model.py<br></code></pre></td></tr></table></figure>
+<p>接下来就可以开始加载这些文件中所给出的模型，用于测试集的验证。</p>
+<h1>加载模型</h1>
+<p>在模型的加载中，我们依然还是需要原始的神经网络对象<code>LinearNet</code>，</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># load_model.py</span><br><br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&quot;GPU&quot;</span>)<br><span class="hljs-keyword">import</span> mindspore.dataset <span class="hljs-keyword">as</span> ds<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> load_checkpoint, load_param_into_net<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, Tensor, Model<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">LinearNet</span>(nn.Cell):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(LinearNet, <span class="hljs-variable language_">self</span>).__init__()<br>        <span class="hljs-variable language_">self</span>.fc = nn.Dense(<span class="hljs-number">1</span>,<span class="hljs-number">1</span>,<span class="hljs-number">0.02</span>,<span class="hljs-number">0.02</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">construct</span>(<span class="hljs-params">self, x</span>):<br>        <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;x:&#x27;</span>, x)<br>        x = <span class="hljs-variable language_">self</span>.fc(x)<br>        <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;z:&#x27;</span>, x)<br>        <span class="hljs-keyword">return</span> x<br><br>net = LinearNet()<br>param_dict = load_checkpoint(<span class="hljs-string">&quot;CKP-1_200.ckpt&quot;</span>)<br>load_param_into_net(net, param_dict)<br><br>net_loss = nn.loss.MSELoss()<br>model = Model(net, net_loss, metrics=&#123;<span class="hljs-string">&quot;accuracy&quot;</span>&#125;)<br><br>data = &#123;<span class="hljs-string">&#x27;x&#x27;</span>:np.array([[<span class="hljs-number">0.01</span>],[<span class="hljs-number">0.25</span>],[<span class="hljs-number">1</span>],[<span class="hljs-number">4</span>],[<span class="hljs-number">9</span>]]).astype(np.float32),<br>        <span class="hljs-string">&#x27;z&#x27;</span>:np.array([<span class="hljs-number">3.02</span>,<span class="hljs-number">3.5</span>,<span class="hljs-number">5</span>,<span class="hljs-number">11</span>,<span class="hljs-number">21</span>]).astype(np.float32)&#125;<br>dataset = ds.NumpySlicesDataset(data=data)<br>dataset = dataset.batch(<span class="hljs-number">1</span>)<br><br>acc = model.<span class="hljs-built_in">eval</span>(dataset, dataset_sink_mode=<span class="hljs-literal">False</span>)<br></code></pre></td></tr></table></figure>
+<p>这里我们只是定义了一个非常简单的测试集，在实际场景中往往测试集也是非常大量的数据。这里为了简化本地环境，使用的是Docker的编程环境，并且在Docker容器的拉起中使用了<code>--rm</code>选项，在运行结束后会删除这个容器，确保环境的整洁。关于在Docker容器环境下安装和部署MindSpore的方案，可以参考这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindspore.html">CPU部署博客</a>，以及这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/dmg.html">GPU部署博客</a>。上述代码的执行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/src/mindspore$ <span class="hljs-built_in">sudo</span> docker run --<span class="hljs-built_in">rm</span> -v /dev/shm:/dev/shm -v /home/dechin/projects/gitlab/dechin/src/mindspore/:/home/ --runtime=nvidia --privileged=<span class="hljs-literal">true</span> swr.cn-south-1.myhuaweicloud.com/mindspore/mindspore-gpu:1.2.0 /bin/bash -c <span class="hljs-string">&quot;cd /home &amp;&amp; python load_model.py&quot;</span><br>x:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 9.00000000e+00]])<br>z:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 1.94898682e+01]])<br>x:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 2.50000000e-01]])<br>z:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 3.52294850e+00]])<br>x:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 9.99999978e-03]])<br>z:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 3.08499861e+00]])<br>x:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 1.00000000e+00]])<br>z:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 4.89154148e+00]])<br>x:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 4.00000000e+00]])<br>z:<br>Tensor(shape=[1, 1], dtype=Float32, value=<br>[[ 1.03659143e+01]])<br></code></pre></td></tr></table></figure>
+<p>从这个结果中我们可以看到，由于在训练集中我们使用的数据集中在比较小的范围，因此在测试这个范围外的数据时，误差相较于这个区域内的数据点会更大一些，这也是属于正常的现象。</p>
+<h1>总结概要</h1>
+<p>本文主要从工程实现的角度测试了一下MindSpore的机器学习模型保存与加载的功能，通过这个功能，我们可以将自己训练好的机器学习模型发布出去供更多的人使用，我们也可以直接使用别人在更好的硬件体系上训练好的模型，或者应用于迁移学习。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/sl.html">https://www.cnblogs.com/dechinphy/p/sl.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/a13e05c4.html">https://dechin-phy.asia/posts/a13e05c4.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-05-16</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-05-17</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/c32a1200.html">MindSpore模型验证</a><a class="next" href="/posts/ec1d8020.html">使用ProjectQ生成量子算法指令集</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

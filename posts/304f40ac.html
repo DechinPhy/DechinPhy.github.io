@@ -1,0 +1,266 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/304f40ac.html"><meta property="og:type" content="article"><meta property="og:title" content="Manjaro Linux安装singularity-container"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/304f40ac.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-04-04T13:57:04.000Z"><meta property="article:modified_time" content="2021-06-07T07:49:00.000Z"><title>Manjaro Linux安装singularity-container | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Manjaro Linux安装singularity-container</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Manjaro Linux安装singularity-container</h1><div class="post-meta">2021-04-04<span> | </span><span class="category"><a href="/categories/%E5%AE%B9%E5%99%A8/">容器</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 17</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">非源码安装Singularity</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">从dockerhub拉取ubuntu镜像</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">从dockerhub拉取centos镜像</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">打包镜像文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">获取MindSpore的Docker镜像</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">修改sif镜像文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>这篇文章主要介绍Singularity容器在Manjaro平台的安装，以及一些常见的使用场景：拉取沙箱制作容器镜像、远程制作容器镜像以及修改容器镜像的方法。总体而言Singularity是一个对非root用户非常友好的容器解决方案，在速度上没有实际测试过，只是在一些场景下可以看到比Docker性能要好一些。而且这个容器还支持非root的安装以及非root的使用方法，当然在基于RH的系统下有一些默认的配置项还是需要用root权限去修改后，才能够用非root的账户使用Singularity容器，最典型的就比如要将<code>/proc/sys/user/max_user_namespaces</code>这里面的对应参数配置为非零，否则使用会报错。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>容器化技术在各种生产领域已经得到了广泛的应用，这得益于容器的轻量化（相比于虚拟机而言），安全性（隔离弱于虚拟机，但是权限控制得当的情况下也可以认为是安全隔离的）以及系统级虚拟化带来的高可用性（基于NameSpace和cgroup）。虽然现在各大平台的兼容性有趋同的势头，比如Windows推出了WSL子系统，使得用户在Windows机器上也可以很轻松的搭建Linux环境。但是容器依然保持着它的热度，这说明它的可用性并不是一个系统组件就可以替代的。前面几篇文章中我们介绍过Docker容器和Singularity容器的用法，这里我们再讲讲Singularity容器的非源码安装方法（Manjaro Linux平台），以及修改静态容器镜像文件的方法。</p>
+<h1>非源码安装Singularity</h1>
+<p>Arch Linux平台总是能有一些比较快速的更新，当前CentOS和Manjaro都已经支持了Singularity容器的直接安装，而Ubuntu目前是还不支持这种方式的，只能采取源码安装。这里介绍Manjaro Linux平台下的安装方案，只需要一行命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root sgcontainer]# pacman -S singularity-container<br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (1) singularity-container-3.7.2-2<br><br>下载大小：   16.85 MiB<br>全部安装大小：  107.35 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> singularity-cont...    16.8 MiB  6.61 MiB/s 00:03 [##################] 100%<br>(1/1) 正在检查密钥环里的密钥                       [##################] 100%<br>(1/1) 正在检查软件包完整性                         [##################] 100%<br>(1/1) 正在加载软件包文件                           [##################] 100%<br>(1/1) 正在检查文件冲突                             [##################] 100%<br>(1/1) 正在检查可用存储空间                         [##################] 100%<br>:: 正在处理软件包的变化...<br>(1/1) 正在安装 singularity-container               [##################] 100%<br>:: 正在运行事务后钩子函数...<br>(1/1) Arming ConditionNeedsUpdate...<br></code></pre></td></tr></table></figure>
+<p>安装完成后，可以验证一下Singularity的版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root sgcontainer]# singularity --version<br>singularity version 3.7.2<br></code></pre></td></tr></table></figure>
+<p>这里的3.7.2已经是比较早期的版本了，现在都已经推出了3.8的版本。目前Singularity基本保持半个月一个版本的更新速度，很多CVE基本可以较快的解决，这一点非常重要。关于Singularity的总体用法可以参考这个官方的帮助手册：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro sgcontainer]$ singularity --<span class="hljs-built_in">help</span><br><br>Linux container platform optimized <span class="hljs-keyword">for</span> High Performance Computing (HPC) and<br>Enterprise Performance Computing (EPC)<br><br>Usage:<br>  singularity [global options...]<br><br>Description:<br>  Singularity containers provide an application virtualization layer enabling<br>  mobility of compute via both application and environment portability. With<br>  Singularity one is capable of building a root file system that runs on any <br>  other Linux system <span class="hljs-built_in">where</span> Singularity is installed.<br><br>Options:<br>  -c, --config string   specify a configuration file (<span class="hljs-keyword">for</span> root or<br>                        unprivileged installation only) (default<br>                        <span class="hljs-string">&quot;/etc/singularity/singularity.conf&quot;</span>)<br>  -d, --debug           <span class="hljs-built_in">print</span> debugging information (highest verbosity)<br>  -h, --<span class="hljs-built_in">help</span>            <span class="hljs-built_in">help</span> <span class="hljs-keyword">for</span> singularity<br>      --nocolor         <span class="hljs-built_in">print</span> without color output (default False)<br>  -q, --quiet           suppress normal output<br>  -s, --silent          only <span class="hljs-built_in">print</span> errors<br>  -v, --verbose         <span class="hljs-built_in">print</span> additional information<br>      --version         version <span class="hljs-keyword">for</span> singularity<br><br>Available Commands:<br>  build       Build a Singularity image<br>  cache       Manage the <span class="hljs-built_in">local</span> cache<br>  capability  Manage Linux capabilities <span class="hljs-keyword">for</span> <span class="hljs-built_in">users</span> and <span class="hljs-built_in">groups</span><br>  config      Manage various singularity configuration (root user only)<br>  delete      Deletes requested image from the library<br>  <span class="hljs-built_in">exec</span>        Run a <span class="hljs-built_in">command</span> within a container<br>  <span class="hljs-built_in">help</span>        Help about any <span class="hljs-built_in">command</span><br>  inspect     Show metadata <span class="hljs-keyword">for</span> an image<br>  instance    Manage containers running as services<br>  key         Manage OpenPGP keys<br>  oci         Manage OCI containers<br>  plugin      Manage Singularity plugins<br>  pull        Pull an image from a URI<br>  push        Upload image to the provided URI<br>  remote      Manage singularity remote endpoints, keyservers and OCI/Docker registry credentials<br>  run         Run the user-defined default <span class="hljs-built_in">command</span> within a container<br>  run-help    Show the user-defined <span class="hljs-built_in">help</span> <span class="hljs-keyword">for</span> an image<br>  search      Search a Container Library <span class="hljs-keyword">for</span> images<br>  shell       Run a shell within a container<br>  sif         siftool is a program <span class="hljs-keyword">for</span> Singularity Image Format (SIF) file manipulation<br>  sign        Attach digital signature(s) to an image<br>  <span class="hljs-built_in">test</span>        Run the user-defined tests within a container<br>  verify      Verify cryptographic signatures attached to an image<br>  version     Show the version <span class="hljs-keyword">for</span> Singularity<br><br>Examples:<br>  $ singularity <span class="hljs-built_in">help</span> &lt;<span class="hljs-built_in">command</span>&gt; [&lt;subcommand&gt;]<br>  $ singularity <span class="hljs-built_in">help</span> build<br>  $ singularity <span class="hljs-built_in">help</span> instance start<br><br><br>For additional <span class="hljs-built_in">help</span> or support, please visit https://www.sylabs.io/docs/<br></code></pre></td></tr></table></figure>
+<p>默认的安装路径会在/etc/singularity下生成一系列的配置文件，如果是手动编译安装，采用unpriv模式安装的话可以配置其他的路径（这一点很重要，在没有root权限的账号下安装和使用容器的情况下肯定用得到）。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro sgcontainer]# ll /etc/singularity/<br>总用量 40<br>-rw-r--r-- 1 root root     0  3月 11 13:45 capability.json<br>drwxr-xr-x 2 root root  4096  4月  4 21:48 cgroups<br>-rw-r--r-- 1 root root  1095  3月 11 13:45 ecl.toml<br>-rw-r--r-- 1 root root     0  3月 11 13:45 global-pgp-public<br>drwxr-xr-x 2 root root  4096  4月  4 21:48 network<br>-rw-r--r-- 1 root root  1344  3月 11 13:45 nvliblist.conf<br>-rw-r--r-- 1 root root   107  3月 11 13:45 remote.yaml<br>-rw-r--r-- 1 root root   927  3月 11 13:45 rocmliblist.conf<br>drwxr-xr-x 2 root root  4096  4月  4 21:48 seccomp-profiles<br>-rw-r--r-- 1 root root 10642  3月 11 13:45 singularity.conf<br></code></pre></td></tr></table></figure>
+<h1>从dockerhub拉取ubuntu镜像</h1>
+<p>首先我们可以在拉取的路径前加上<code>docker</code>的标识符，使得我们可以从dockerhub上面下载相关的镜像，对与docker镜像的支持，也是Singularity容器的一大优势：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ singularity build --sandbox ubuntu docker://ubuntu<br>WARNING: <span class="hljs-string">&#x27;nodev&#x27;</span> mount option <span class="hljs-built_in">set</span> on /tmp, it could be a <span class="hljs-built_in">source</span> of failure during build process<br>INFO:    Starting build...<br>Getting image <span class="hljs-built_in">source</span> signatures<br>Copying blob a70d879fa598 <span class="hljs-keyword">done</span>  <br>Copying blob c4394a92d1f8 <span class="hljs-keyword">done</span>  <br>Copying blob 10e6159c56c0 <span class="hljs-keyword">done</span>  <br>Copying config 10bdc2317d <span class="hljs-keyword">done</span>  <br>Writing manifest to image destination<br>Storing signatures<br>2021/04/19 16:30:28  info unpack layer: sha256:a70d879fa5984474288d52009479054b8bb2993de2a1859f43b5480600cecb24<br>2021/04/19 16:30:29  info unpack layer: sha256:c4394a92d1f8760cf7d17fee0bcee732c94c5b858dd8d19c7ff02beecf3b4e83<br>2021/04/19 16:30:29  info unpack layer: sha256:10e6159c56c084c858f5de2416454ac0a49ddda47b764e4379c5d5a147c9bf5f<br>INFO:    Creating sandbox directory...<br>INFO:    Build complete: ubuntu<br></code></pre></td></tr></table></figure>
+<p>如果是使用<code>build</code>模式，会在当前路径下生成一个刚才命名好的文件夹，这个文件夹中包含所有系统虚拟化所需要的文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ ll<br>总用量 4<br>drwxr-xr-x 18 dechin dechin 4096  4月 19 16:30 ubuntu<br></code></pre></td></tr></table></figure>
+<p>我们可以直接在这个路径下拉起刚才生成的目录，将其作为一个系统镜像来使用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ singularity shell -w ubuntu<br>WARNING: Skipping mount /etc/localtime [binds]: /etc/localtime doesn<span class="hljs-string">&#x27;t exist in container</span><br><span class="hljs-string">Singularity&gt; cp -a /etc/apt/sources.list /etc/apt/sources.list.bak</span><br><span class="hljs-string">Singularity&gt; sed -i &quot;s@http://.*archive.ubuntu.com@http://repo.huaweicloud.com@g&quot; /etc/apt/sources.list</span><br><span class="hljs-string">Singularity&gt; sed -i &quot;s@http://.*security.ubuntu.com@http://repo.huaweicloud.com@g&quot; /etc/apt/sources.list</span><br><span class="hljs-string">Singularity&gt; apt-get update</span><br><span class="hljs-string">Get:1 http://repo.huaweicloud.com/ubuntu focal InRelease [265 kB]</span><br><span class="hljs-string">Get:2 http://repo.huaweicloud.com/ubuntu focal-updates InRelease [114 kB]</span><br><span class="hljs-string">Get:3 http://repo.huaweicloud.com/ubuntu focal-backports InRelease [101 kB]</span><br><span class="hljs-string">Get:4 http://repo.huaweicloud.com/ubuntu focal-security InRelease [109 kB]</span><br><span class="hljs-string">Get:5 http://repo.huaweicloud.com/ubuntu focal/restricted amd64 Packages [33.4 kB]</span><br><span class="hljs-string">Get:6 http://repo.huaweicloud.com/ubuntu focal/universe amd64 Packages [11.3 MB]</span><br><span class="hljs-string">Get:7 http://repo.huaweicloud.com/ubuntu focal/multiverse amd64 Packages [177 kB]</span><br><span class="hljs-string">Get:8 http://repo.huaweicloud.com/ubuntu focal/main amd64 Packages [1275 kB]</span><br><span class="hljs-string">Get:9 http://repo.huaweicloud.com/ubuntu focal-updates/restricted amd64 Packages [271 kB]</span><br><span class="hljs-string">Get:10 http://repo.huaweicloud.com/ubuntu focal-updates/multiverse amd64 Packages [29.6 kB]</span><br><span class="hljs-string">Get:11 http://repo.huaweicloud.com/ubuntu focal-updates/universe amd64 Packages [950 kB]</span><br><span class="hljs-string">Get:11 http://repo.huaweicloud.com/ubuntu focal-updates/universe amd64 Packages [950 kB]</span><br><span class="hljs-string">Get:13 http://repo.huaweicloud.com/ubuntu focal-backports/universe amd64 Packages [4305 B]</span><br><span class="hljs-string">Get:14 http://repo.huaweicloud.com/ubuntu focal-security/main amd64 Packages [773 kB]</span><br><span class="hljs-string">Get:15 http://repo.huaweicloud.com/ubuntu focal-security/universe amd64 Packages [683 kB]</span><br><span class="hljs-string">Get:16 http://repo.huaweicloud.com/ubuntu focal-security/restricted amd64 Packages [239 kB]</span><br><span class="hljs-string">Get:17 http://repo.huaweicloud.com/ubuntu focal-security/multiverse amd64 Packages [21.6 kB]</span><br><span class="hljs-string">Fetched 3260 kB in 2s (1626 kB/s)    </span><br><span class="hljs-string">Reading package lists... Done</span><br></code></pre></td></tr></table></figure>
+<p>这里加上<code>-w</code>的目的是为了在这些文件沙箱中保持修改的配置和内容，因为比较正规的使用方法是将这个文件沙箱制作成一个sif的镜像文件后来使用，所以这一步相当于还是在为制作本地定制化的镜像做准备。此时我们进入容器的shell之后，可以查看当前的系统版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">Singularity&gt; <span class="hljs-built_in">cat</span> /etc/issue<br>Ubuntu 20.04.2 LTS \n \l<br></code></pre></td></tr></table></figure>
+<p>我们发现拉取容器时默认从库上拉取了最新的Ubuntu 20.04的版本。</p>
+<h1>从dockerhub拉取centos镜像</h1>
+<p>类似的方法，我们可以从dockerhub上拉取一个centos的镜像：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ singularity build --sandbox centos76 docker://centos:7.6.1810<br>WARNING: <span class="hljs-string">&#x27;nodev&#x27;</span> mount option <span class="hljs-built_in">set</span> on /tmp, it could be a <span class="hljs-built_in">source</span> of failure during build process<br>INFO:    Starting build...<br>Getting image <span class="hljs-built_in">source</span> signatures<br>Copying blob ac9208207ada <span class="hljs-keyword">done</span>  <br>Copying config 5f85193732 <span class="hljs-keyword">done</span>  <br>Writing manifest to image destination<br>Storing signatures<br>2021/04/19 17:24:49  info unpack layer: sha256:ac9208207adaac3a48e54a4dc6b49c69e78c3072d2b3add7efdabf814db2133b<br>2021/04/19 17:24:50  warn rootless&#123;usr/bin/ping&#125; ignoring (usually) harmless EPERM on setxattr <span class="hljs-string">&quot;security.capability&quot;</span><br>2021/04/19 17:24:51  warn rootless&#123;usr/sbin/arping&#125; ignoring (usually) harmless EPERM on setxattr <span class="hljs-string">&quot;security.capability&quot;</span><br>2021/04/19 17:24:51  warn rootless&#123;usr/sbin/clockdiff&#125; ignoring (usually) harmless EPERM on setxattr <span class="hljs-string">&quot;security.capability&quot;</span><br>WARNING: Permission handling has changed <span class="hljs-keyword">in</span> Singularity 3.5 <span class="hljs-keyword">for</span> improved OCI compatibility<br>WARNING: The sandbox will contain files/dirs that cannot be removed <span class="hljs-keyword">until</span> permissions are modified<br>WARNING: Use <span class="hljs-string">&#x27;chmod -R u+rwX&#x27;</span> to <span class="hljs-built_in">set</span> permissions that allow removal<br>WARNING: Use the <span class="hljs-string">&#x27;--fix-perms&#x27;</span> option to <span class="hljs-string">&#x27;singularity build&#x27;</span> to modify permissions at build <span class="hljs-keyword">time</span><br>WARNING: You can provide feedback about this change at https://github.com/sylabs/singularity/issues/4671<br>INFO:    Creating sandbox directory...<br>INFO:    Build complete: centos76<br></code></pre></td></tr></table></figure>
+<p>同样的也会在当前路径下生成一个系统文件夹：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ ll<br>总用量 8<br>drwxr-xr-x 17 dechin dechin 4096  4月 19 17:24 centos76<br>drwxr-xr-x 18 dechin dechin 4096  4月 19 16:30 ubuntu<br></code></pre></td></tr></table></figure>
+<p>我们也可以进入到沙箱中查看系统的版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro singularity]$ singularity shell -w centos76  <br>Singularity&gt; <span class="hljs-built_in">cat</span> /etc/redhat-release <br>CentOS Linux release 7.6.1810 (Core) <br></code></pre></td></tr></table></figure>
+<h1>打包镜像文件</h1>
+<p>这里我们以ubuntu镜像为例，在拉取了ubuntu的镜像作为沙箱，并且修改完相应的配置之后，可以运行如下指令来打包镜像文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> singularity build ubuntu.sif ubuntu/<br>[<span class="hljs-built_in">sudo</span>] dechin 的密码： <br>INFO:    Starting build...<br>INFO:    Creating SIF file...<br>INFO:    Build complete: ubuntu.sif<br></code></pre></td></tr></table></figure>
+<p>打包完成后，拉起容器的方式就不再是通过文件夹的名字来拉起，而是通过镜像名来拉起：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ singularity shell ubuntu.sif <br>Singularity&gt; <span class="hljs-built_in">cat</span> /etc/issue<br>Ubuntu 20.04.2 LTS \n \l<br><br>Singularity&gt; <span class="hljs-built_in">exit</span><br><span class="hljs-built_in">exit</span><br></code></pre></td></tr></table></figure>
+<p>这样，我们就可以很方便的制作了一个可移动式的<code>Ubuntu</code>系统。</p>
+<h1>获取MindSpore的Docker镜像</h1>
+<p>文章开头说道Singularity是兼容Docker容器的镜像的，刚好最近在测试华为MindSpore框架的GPU版本，而我们在DockerHub上又发现了MindSpore的官方镜像的最新<a target="_blank" rel="noopener" href="https://hub.docker.com/r/mindspore/mindspore-gpu/tags?page=1&amp;ordering=last_updated">1.2.0版本</a>，那么我们就可以通过<code>singularity pull</code>的指令直接从远程仓库创建一个本地的sif镜像文件（这种方法跟上面的沙箱制作镜像的方法有所区别，流程更简单但是修改就比较麻烦）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro ~]$ singularity pull docker://mindspore/mindspore-gpu:1.2.0<br>INFO:    Converting OCI blobs to SIF format<br>WARNING: <span class="hljs-string">&#x27;nodev&#x27;</span> mount option <span class="hljs-built_in">set</span> on /tmp, it could be a <span class="hljs-built_in">source</span> of failure during build process<br>INFO:    Starting build...<br>Getting image <span class="hljs-built_in">source</span> signatures<br>Copying blob 48c41c211021 <span class="hljs-keyword">done</span>  <br>Copying config c3868774fb <span class="hljs-keyword">done</span>  <br>Writing manifest to image destination<br>Storing signatures<br>2021/05/29 10:20:52  info unpack layer: sha256:5353957e2ca61685e6024b440372c34e3b9e1d27ab564a9c8330e9ab8350894a<br>2021/05/29 10:21:33  warn xattr&#123;/tmp/build-temp-665547475/rootfs/etc/gshadow&#125; destination filesystem does not support xattrs, further warnings will be suppressed<br>2021/05/29 10:21:42  info unpack layer: sha256:bc3e02707e81c51c3b6cede72d41fdaaa153bc3bf4cb6c2ef053376d47f473aa<br>INFO:    Creating SIF file...<br></code></pre></td></tr></table></figure>
+<p>等待一段时间后，运行完成，可以在当前路径下查看到一个sif文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro ~]$ ll | grep mindspore<br>-rwxr-xr-x  1 dechin dechin 2382344192  5月 29 10:23 mindspore-gpu_1.2.0.sif<br></code></pre></td></tr></table></figure>
+<h1>修改sif镜像文件</h1>
+<p>假如我们是一个非root的身份，并且没有sudo权限，那么我们只能通过<code>--writable-tmpfs</code>这种方法来修改sif镜像文件的内容，比如这里我们尝试在sif文件中安装一个<code>numba</code>的python库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/numba-gpu$ singularity shell --nv --writable-tmpfs /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif <br>Singularity&gt; python -m pip show numba<br>Singularity&gt;<br></code></pre></td></tr></table></figure>
+<p>上面的指令中有一个额外的<code>--nv</code>的字段，这个字段是用于打开CUDA的支持的，在GPU场景下会使用到。而我们在<code>pip show</code>中现在是没有看到numba这个库的，我们直接在容器的shell中运行安装指令（需要加上--user选项，否则无法安装成功）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">Singularity&gt; python -m pip install numba --user<br>Collecting numba<br>Requirement already satisfied: setuptools <span class="hljs-keyword">in</span> /usr/local/python-3.7.5/lib/python3.7/site-packages (from numba) (41.2.0)<br>Collecting llvmlite&lt;0.37,&gt;=0.36.0rc1 (from numba)<br>  Using cached https://files.pythonhosted.org/packages/54/25/2b4015e2b0c3be2efa6870cf2cf2bd969dd0e5f937476fc13c102209df32/llvmlite-0.36.0-cp37-cp37m-manylinux2010_x86_64.whl<br>Requirement already satisfied: numpy&gt;=1.15 <span class="hljs-keyword">in</span> /usr/local/python-3.7.5/lib/python3.7/site-packages (from numba) (1.20.2)<br>Installing collected packages: llvmlite, numba<br>Successfully installed llvmlite-0.36.0 numba-0.53.1<br></code></pre></td></tr></table></figure>
+<p>到这里我们还没退出当前shell，那么numba是已经安装成功了，可以用一个numba的GPU示例测试一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># test-numba-gpu.py</span><br><br><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">cpu_print</span>(<span class="hljs-params">N</span>):<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">0</span>, N):<br>        <span class="hljs-built_in">print</span>(i)<br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gpu_print</span>(<span class="hljs-params">N</span>):<br>    idx = cuda.threadIdx.x + cuda.blockIdx.x * cuda.blockDim.x <br>    <span class="hljs-keyword">if</span> (idx &lt; N):<br>        <span class="hljs-built_in">print</span>(idx)<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;gpu print:&quot;</span>)<br>    gpu_print[<span class="hljs-number">2</span>,<span class="hljs-number">4</span>](<span class="hljs-number">8</span>)<br>    cuda.synchronize()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;cpu print:&quot;</span>)<br>    cpu_print(<span class="hljs-number">8</span>)<br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    main()<br></code></pre></td></tr></table></figure>
+<p>运行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs bash">Singularity&gt; python test-numba-gpu.py <br>gpu <span class="hljs-built_in">print</span>:<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>cpu <span class="hljs-built_in">print</span>:<br>0<br>1<br>2<br>3<br>4<br>5<br>6<br>7<br>Singularity&gt; <span class="hljs-built_in">exit</span> <br><span class="hljs-built_in">exit</span><br></code></pre></td></tr></table></figure>
+<p>那么我们现在退出这个sif的shell，再重新拉起（这次没有添加可修改字段）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/numba-gpu$ singularity shell --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif <br>Singularity&gt; python -m pip show numba<br>Name: numba<br>Version: 0.53.1<br>Summary: compiling Python code using LLVM<br>Home-page: https://numba.pydata.org<br>Author: Anaconda, Inc.<br>Author-email: numba-users@continuum.io<br>License: BSD<br>Location: /home/dechin/.local/lib/python3.7/site-packages<br>Requires: llvmlite, setuptools, numpy<br>Required-by: <br>Singularity&gt; <span class="hljs-built_in">exit</span>  <br><span class="hljs-built_in">exit</span><br></code></pre></td></tr></table></figure>
+<p>而我们现在在sif镜像文件中是可以看到刚才新安装的numba库的，说明刚才的修改被保存了下来。</p>
+<h1>总结概要</h1>
+<p>这篇文章主要介绍Singularity容器在Manjaro平台的安装，以及一些常见的使用场景：拉取沙箱制作容器镜像、远程制作容器镜像以及修改容器镜像的方法。总体而言Singularity是一个对非root用户非常友好的容器解决方案，在速度上没有实际测试过，只是在一些场景下可以看到比Docker性能要好一些。而且这个容器还支持非root的安装以及非root的使用方法，当然在基于RH的系统下有一些默认的配置项还是需要用root权限去修改后，才能够用非root的账户使用Singularity容器，最典型的就比如要将<code>/proc/sys/user/max_user_namespaces</code>这里面的对应参数配置为非零，否则使用会报错。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/sg.html">https://www.cnblogs.com/dechinphy/p/sg.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/304f40ac.html">https://dechin-phy.asia/posts/304f40ac.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-04-04</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-06-07</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/26c416c4.html">python3使用tracemalloc追踪mmap内存变化</a><a class="next" href="/posts/c69b7255.html">python3使用diagrams生成架构图</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

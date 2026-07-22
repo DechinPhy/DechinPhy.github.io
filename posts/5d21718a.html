@@ -1,0 +1,252 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/5d21718a.html"><meta property="og:type" content="article"><meta property="og:title" content="分子动力学模拟算法框架"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/5d21718a.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-03-17T00:33:47.000Z"><meta property="article:modified_time" content="2022-03-17T08:26:00.000Z"><title>分子动力学模拟算法框架 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">分子动力学模拟算法框架</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">分子动力学模拟算法框架</h1><div class="post-meta">2022-03-17<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">1 坐标和速度的初始化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">2 Neighbor List与Cell List</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">3 获取作用力</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">4 积分器&#x2F;体系演化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">5 判断控制&#x2F;约束条件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">6 结果输出与增强采样</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">10.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>分子动力学模拟是一个跨越众多学科领域的强大工具，从物理学的角度来看分子动力学模拟的话，其基于量子力学（量子化学）构建模型，通过牛顿力学进行演化迭代，最后能够在时间平均上等同于统计力学的系综平均，是一个堪比复变函数欧拉公式的优美过程。本文就当前分子动力学模拟的框架进行了整体介绍，其中并不展开讲解各项技术内容，但是也为感兴趣的研究人员提供一个简单的入口。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>分子动力学模拟在新材料和医药行业有非常重要的应用，这得益于分子动力学模拟本身的直观表述，用宏观的牛顿力学，结合部分微观的量子力学效应，就能够得到很好的符合统计力学推断的结果。可以说，分子动力学模拟从理论上跨越了物理化学生物等多个学科，而从实践上又包含了计算机科学、人工智能的大量辅助和优化，综合性非常强。越是综合性强的研究方向，就越有必要梳理清楚其主干脉络和工作流程。</p>
+<h1>1 坐标和速度的初始化</h1>
+<p>当我们需要研究一个特定的体系时，首先需要指定这个体系的初始空间和坐标，再进行演化。初始坐标的获取方式有很多种，比如从数据库中直接获取、根据拓扑结构用特定的工具进行生成（比如之前的博客介绍过的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/obabel.html">OpenBabel</a>），还有就是在材料学领域常用的根据晶体结构去生成有规律的体系初始坐标。初始速度的选取方式，其实可以选择全0的初始状态，让体系在力场作用下进行自由演化；也可以给全随机的初始速度，让一开始的体系能量和温度达到一个比较高的值，有可能可以提高模拟的效率；还有一种在材料学领域比较常用的方法，就是指定一个初始温度，通过能均分定理对体系中的各个原子进行速度分配。如下所示是一个通过OpenBabel生成一个水分子初始坐标的简单示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ obabel -:O --gen3d -omol2 -O H2O.mol2<br>1 molecule converted<br>$ <span class="hljs-built_in">cat</span> H2O.mol2<br>@&lt;TRIPOS&gt;MOLECULE<br>*****<br> 3 2 0 0 0<br>SMALL<br>GASTEIGER<br><br>@&lt;TRIPOS&gt;ATOM<br>      1 O           0.9606    0.0592    0.0649 O.3     1  HOH1       -0.4105<br>      2 H           1.9285    0.0383    0.1064 H       0  HOH0        0.2052<br>      3 H           0.6818   -0.3573    0.8942 H       0  HOH0        0.2052<br>@&lt;TRIPOS&gt;BOND<br>     1     1     2    1<br>     2     1     3    1<br></code></pre></td></tr></table></figure>
+<p>应该说，在坐标的初始化中，由于分子本身的性质很大程度上是由其拓扑连接性所决定的，所以生成分子初始坐标要以拓扑结构为依据。而初始速度的选取，更多的是一种经验方法，只要初始速度值不要过大（否则会使体系剧烈震荡甚至奔溃），怎么选取初始速度就只是影响最终的模拟效率。比较典型的一个案例就是通过Shooting的方法对化学反应过程进行加速，其实也是对初始速度的一个调整。</p>
+<h1>2 Neighbor List与Cell List</h1>
+<p>在计算非键相互作用时，如果对一个<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>原子的体系进行遍历，可达<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>N</mi><mo stretchy="false">(</mo><mi>N</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">\frac{N(N-1)}{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.355em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.01em;"><span style="top:-2.6550000000000002em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.485em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span><span class="mopen mtight">(</span><span class="mord mathnormal mtight" style="margin-right:0.10903em;">N</span><span class="mbin mtight">−</span><span class="mord mtight">1</span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>的计算量。由于模拟的体系一般都较大，<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false">(</mo><msup><mi>N</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">O(N^2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.064108em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>的复杂度属实有点高了。因此为了简化计算量，一方面通过球形截断来选取近邻表（如下图所示，图片来自于参考链接1）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048173.png" alt=""></p>
+<p>仅在截断的球形范围内考虑两两相互作用。再对空间进行切割，构建Cell List，只要设定好Cell List的大小，比如设定正方体Cell List的边长等于截断半径，这样一来，我们在统计一个Cell中的近邻关系时，只需要关注总共周边的27个Cell中的原子即可，大大缩减了计算量。Cell List示意图如下所示（图片来自于参考链接2）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048202.png" alt=""></p>
+<p>关于Cell List的实现，此前笔者专门写过一篇博客用于介绍<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cuda-grid.html">在Python中的GPU加速打格点算法实现</a>，大致效果如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048236.png" alt=""></p>
+<p>由于是用了GPU来计算，因此有较好的性能表现。一般情况下，构建近邻表的这一步是对GPU的显存要求最高的步骤之一。即使是使用了Cell List的方法，一般也不会每一步都去更新近邻表。常用的策略是，设置一个interval，比如5-10，也就是每5-10步更新一次近邻表。而且也不需要再去检索整个邻近的Cell中的所有原子，只需要监测<code>skin region</code>中的原子变动即可。这也是设立一个缓冲区skin region的原因，当然，我们需要保障在指定的interval下原子不会跑的太远。</p>
+<h1>3 获取作用力</h1>
+<p>获取作用在每一个原子或者团簇上的作用力的方法有很多种，比如量子化学的ab-initio的方法、拟合力场的方法以及近几年发展出来的深度学习的方法，都有非常多的应用且各有优势。从头算的量子化学方法，精度非常高，但是耗时较长。拟合力场速度非常快，精度也在可接受的范围内，是传统分子动力学模拟中应用最广泛的方法。但是这两个方法都要面临一个问题：需要手动微分，要么就是复杂的解析推导，要么就是数值差分。而现在计算机领域的各种深度学习框架，都已经提出了最新的解决方案：自动微分。因此，使用深度学习的方案去构建力场，在充分的训练集和合理的损失函数下，可以达到非常快的速度以及可以接受的精度。还有两个非常重要的点：整个过程只要使用深度学习的算子，就是完全连续可微的，而且往往这些深度学习框架都对硬件系统有非常好的可拓展性和可迁移性。</p>
+<p>除了上述的三种方法之外，结合这几年非常火的量子计算，又出现了新的<code>基于量子计算机的分子动力学模拟框架</code>，比如参考链接3和参考链接4。目前来说已经提出来的主要框架还是基于Variational Quantum Eigensolver变分量子求解器（VQE），通过VQE可以计算出来类似于量子化学从头算方法的势能面，进而根据费曼-赫尔曼定理做差分得到原子上的作用力，就可以用于分子动力学的模拟了。由于这里细节较多，在本文不进行展开讲解，需要后面专门开一篇文章介绍VQE的框架。简单点评一下这两个基于VQE的分子动力学模拟的工作的话，就是只适用于当下量子芯片的Demo使用，距离真在在分子动力学模拟场景下的应用还非常的遥远。而VQE框架本身是NISQ近期量子计算时期下所诞生的产物，其最promising的点在于，可以在近期含噪的量子芯片下实现一个比较大规模体系的分子的势能面的计算（计算量已经超越了传统计算机的范畴），但是实际操作中在精度和速度上是否能有优势，暂时还是存疑的状态。另外，基于类似的变分量子计算的框架，还出现了<code>量子机器学习</code>这个两大buff加持的算法框架，同样可以参考传统深度学习的方法实现一个量子计算版本的神经网络来替代力场，目前似乎还没人这么做。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048264.png" alt=""></p>
+<h1>4 积分器/体系演化</h1>
+<p>在具备了初始状态的坐标和速度，以及上一步计算得到的原子作用力之后，就可以使用牛顿力学让体系向前演化一步。其中涉及到的算法内容，可以参考上一篇博客<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/liouville.html">从刘维尔方程到Velocity-Verlet算法</a>，其中主要就是Verlet、LeapFrog和Velocity-Verlet三个算法，在分子动力学模拟中也叫积分器。这个部分的计算量并不是很大，但是会导致体系的运动，如果需要保存中间过程，注意每隔一定的模拟步数，要把轨迹保存下来。</p>
+<h1>5 判断控制/约束条件</h1>
+<p>上一个章节中说的是体系的运动，那么在一定的时间步长（通常是一个飞秒）下，原子运动的幅度大小，是跟多个因素相关的：1. 原子本身收到的作用力大小；2. 原子的质量；3. 在控温控压，有可能受到系统粘滞作用力的影响或者碰撞影响，也有可能被缩放；4. 对于加了约束条件的过程，还会受到施加的约束作用，比如等效的键向作用力（施加约束的过程，本身就是为了控制部分原子之间相对位置大小）。因此，我们在分子动力学模拟的演化过程中，还需要考虑这些控制和约束的方法。</p>
+<p>常用的控温技术有：Andersen Thermostat速度重置方法、Berendson Thermostat速度缩放方法和Extended Ensemble扩展系综方法。但是Andersen Thermostat存在相空间轨迹不连续的问题，Berendson Thermostat可能会导致不合理的相的出现，因此最常用的就是几种扩展系综的方法：Nose-Hoover Thermostat、Nose-Hoover Chain Thermostat和Langevin Dynamics Thermostat，这些方法的基本原理就是在系统哈密顿量上加上温度的相关项，这样就可以驱动系统演化到一个温度恒定的本征态上，以达到控温的目的。常用的控压技术有：Volume Rescaling体积重设方法、Berendsen Barostat体积坐标缩放方法和Extended Ensemble。类似于控温技术的，最常用的还是在哈密顿量上加一个体积项，通过驱动系统演化到一个稳定体积所对应的本征态，从而达到控制体积的目的。而这里提到的约束条件，相对的就更加具体，常见的比如<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/lincs.html">LINCS算法</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/settle.html">SETTLE算法</a>、RATTLE算法和SHAKE等，其基本思想就是固定某两个原子之间的距离保持不变。用一种比较形象的说法就是，在两个原子之间加了一根没有质量的柱子限制两者的相对运动。如下所示是SETTLE算法的实现，先不加约束的位移一步，然后再把约束加进去，同时对坐标和速度进行更新：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048307.png" alt=""></p>
+<h1>6 结果输出与增强采样</h1>
+<p>经过上面的步骤，我们其实已经完成了一步的分子动力学模拟，如果此时达到了结果输出的点，应该将坐标轨迹保存到一个文件中。需要特别说明的是，有一些格式并不支持持续的数据写入，比如npz格式，每写入一次，就会自动把前面写入的内容全都覆盖，因此要挑选好存储格式，常用的是二进制格式的文件或者文本格式的文件。除了存储完整的坐标轨迹之外，还需要存储一些必要的参数，比如单步的速度等，这样即使程序终止，下一次启动程序的时候也可以从断点开始，而不需要重新开始。</p>
+<p>而增强采样（Enhanced Sampling）也是一个基于结果来分析的工作，称之为后处理。虽然是后处理，但是这个处理的结果会反馈到下一步的迭代中去，作为一个独立的等效势能去推动原子的运动。常见的工具是PLUMED，前面写过一篇相关的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/plumed.html">安装与使用的文章</a>。当然其实采样算法也并不是难以实现，更大的难点是在于跟已有框架的结合与交互，相对来说门槛要高一些。常用的增强采样的方法比如MetaDynamics，可以用这样一个比较具象的案例来描述：在一个自定义的序参量所对应的势能面上堆土，直到分子体系可以在给定的本征态之间快速切换（势能差距较低）。大致结果如下图所示（图片来自于参考链接5）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170048342.png" alt=""></p>
+<p>在通过新的坐标更新了力场参数之后，加上增强采样所对应的等效势能产生的等效作用力，就可以开始下一轮的迭代，就重新回到了第3步，不断的迭代，直到达到目标的迭代步数。一般情况下分子动力学没有特别明显的停止迭代的指标，更多的是设定一个时间阈值，达到阈值就停止迭代更新。</p>
+<h1>总结概要</h1>
+<p>分子动力学模拟是一个跨越众多学科领域的强大工具，从物理学的角度来看分子动力学模拟的话，其基于量子力学（量子化学）构建模型，通过牛顿力学进行演化迭代，最后能够在时间平均上等同于统计力学的系综平均，是一个堪比复变函数欧拉公式的优美过程。本文就当前分子动力学模拟的框架进行了整体介绍，其中并不展开讲解各项技术内容，但是也为感兴趣的研究人员提供一个简单的入口。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/md-framework.html">https://www.cnblogs.com/dechinphy/p/md-framework.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_78f0b32101011mlj.html#:~:text=%E8%BF%91%E9%82%BB%E5%88%97%E8%A1%A8%EF%BC%9A%E8%BF%91%E9%82%BB%E5%88%97%E8%A1%A8%20%28neighbor,list%EF%BC%8C%E4%B9%9F%E5%8F%AB%E5%81%9AVerlet%20list%29%E6%98%AF%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6%E6%A8%A1%E6%8B%9F%E4%B8%AD%E4%B8%BA%E4%BA%86%E5%8A%A0%E9%80%9F%E4%BD%93%E7%B3%BB%E7%B2%92%E5%AD%90%E9%97%B4%E7%9B%B8%E4%BA%92%E4%BD%9C%E7%94%A8%E7%9A%84%E5%8A%9B%E7%9A%84%E8%AE%A1%E7%AE%97%E8%80%8C%E8%AE%BE%E7%BD%AE%E7%9A%84%E4%B8%80%E7%A7%8D%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E3%80%82">http://blog.sina.com.cn/s/blog_78f0b32101011mlj.html#:~:text=近邻列表：近邻列表 (neighbor,list，也叫做Verlet list)是分子动力学模拟中为了加速体系粒子间相互作用的力的计算而设置的一种数据结构。</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jsjkx.com/CN/article/openArticlePDF.jsp?id=512">https://www.jsjkx.com/CN/article/openArticlePDF.jsp?id=512</a></li>
+<li><a target="_blank" rel="noopener" href="https://aip.scitation.org/doi/10.1063/5.0046930">https://aip.scitation.org/doi/10.1063/5.0046930</a></li>
+<li><a target="_blank" rel="noopener" href="https://pubs.acs.org/action/showCitFormats?doi=10.1021/acs.accounts.1c00514&amp;ref=pdf">https://pubs.acs.org/action/showCitFormats?doi=10.1021/acs.accounts.1c00514&amp;ref=pdf</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/95824483">https://zhuanlan.zhihu.com/p/95824483</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/5d21718a.html">https://dechin-phy.asia/posts/5d21718a.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-03-17</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-03-17</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/b8400afc.html">从经典动力学理解勒让德变换</a><a class="next" href="/posts/54f050f2.html">从刘维尔方程到Velocity-Verlet算法</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

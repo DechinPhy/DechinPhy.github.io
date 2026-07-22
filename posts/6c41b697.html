@@ -1,0 +1,313 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/6c41b697.html"><meta property="og:type" content="article"><meta property="og:title" content="Julia编程基础"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/6c41b697.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-01-16T08:53:51.000Z"><meta property="article:modified_time" content="2024-01-22T11:11:00.000Z"><title>Julia编程基础 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Julia编程基础</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Julia编程基础</h1><div class="post-meta">2024-01-16<span> | </span><span class="category"><a href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 14</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Julia的安装与配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9C%A8Ubuntu%E4%B8%8A%E5%AE%89%E8%A3%85Julia"><span class="toc-number">2.1.</span> <span class="toc-text">在Ubuntu上安装Julia</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%85%8D%E7%BD%AE%E9%95%9C%E5%83%8F%E6%BA%90"><span class="toc-number">2.2.</span> <span class="toc-text">配置镜像源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85%E7%AC%AC%E4%B8%89%E6%96%B9Package"><span class="toc-number">2.3.</span> <span class="toc-text">安装第三方Package</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Vim%E6%8F%92%E4%BB%B6"><span class="toc-number">2.4.</span> <span class="toc-text">Vim插件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Julia%E7%9A%84Hello-World"><span class="toc-number">2.5.</span> <span class="toc-text">Julia的Hello World</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">基本数据类型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8D%95%E5%8F%98%E9%87%8F%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B"><span class="toc-number">3.1.</span> <span class="toc-text">单变量数据类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B0%E7%BB%84%E5%92%8C%E7%9F%A9%E9%98%B5"><span class="toc-number">3.2.</span> <span class="toc-text">数组和矩阵</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">基础运算</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">判断与循环</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%8D%E5%90%88%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="toc-number">5.1.</span> <span class="toc-text">复合表达式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9D%A1%E4%BB%B6%E5%88%A4%E6%96%AD"><span class="toc-number">5.2.</span> <span class="toc-text">条件判断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BE%AA%E7%8E%AF"><span class="toc-number">5.3.</span> <span class="toc-text">循环</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">函数与变量</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了Julia这一主要面向自然科学的编程语言的基本安装与使用，建议读者最好在熟练使用Python的前提下再阅读本文。如果是对Python的语法非常熟悉的人，应该很容易看懂本文并初步掌握Julia的基本语法和使用逻辑。Julia最吸引人的地方在于他简单如Python的语法，但兼具了C++和Fortran的高性能。但是缺点也非常明显，作为一门新的编程语言，受众又少，没有太多的轮子可以用。反过来想，也很适合用来开发一些新的轮子。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>Julia目前来说算是一个比较冷门的编程语言，主要是因为它所针对的应用场景实在是比较有限，Julia更注重于科学计算领域的应用。而Julia最大的特点，就是官方所宣传的：拥有C的性能，且可以像Python一样便捷的开发。这对于科学计算领域来说确实是一件好事，目前也有一些科学领域的应用，但是毕竟赶了个晚集。在生态上必然是没有Python丰富，而又缺少C语言的受众基础，所以现在甚至知道的人也并不多。但是这并不影响我们用不同的编程语言，去做一些场景更加契合的应用。本文主要介绍Julia编程语言的基本使用与安装。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163525895.png" alt=""></p>
+<h1>Julia的安装与配置</h1>
+<h2 id="在Ubuntu上安装Julia">在Ubuntu上安装Julia</h2>
+<p>我们需要先从官网下载一个installer进行安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ curl -fsSL https://install.julialang.org | sh<br><br>info: downloading installer<br>Welcome to Julia!<br><br>This will download and install the official Julia Language distribution<br>and its version manager Juliaup.<br><br>Juliaup will be installed into the Juliaup home directory, located at:<br><br>  /home/dechin/.juliaup<br><br>The julia, juliaup and other commands will be added to<br>Juliaup<span class="hljs-string">&#x27;s bin directory, located at:</span><br><span class="hljs-string"></span><br><span class="hljs-string">  /home/dechin/.juliaup/bin</span><br><span class="hljs-string"></span><br><span class="hljs-string">This path will then be added to your PATH environment variable by</span><br><span class="hljs-string">modifying the profile files located at:</span><br><span class="hljs-string"></span><br><span class="hljs-string">  /home/dechin/.bashrc</span><br><span class="hljs-string">  /home/dechin/.profile</span><br><span class="hljs-string">  /home/dechin/.zshrc</span><br><span class="hljs-string"></span><br><span class="hljs-string">Julia will look for a new version of Juliaup itself every 1440 minutes when you start julia.</span><br><span class="hljs-string"></span><br><span class="hljs-string">You can uninstall at any time with juliaup self uninstall and these</span><br><span class="hljs-string">changes will be reverted.</span><br><span class="hljs-string"></span><br><span class="hljs-string">✔ Do you want to install with these default configuration choices? · Proceed with installation</span><br><span class="hljs-string"></span><br><span class="hljs-string">Now installing Juliaup</span><br><span class="hljs-string">Installing Julia 1.10.0+0.x64.linux.gnu</span><br><span class="hljs-string">Configured the default Julia version to be &#x27;</span>release<span class="hljs-string">&#x27;.</span><br><span class="hljs-string">Julia was successfully installed on your system.</span><br><span class="hljs-string"></span><br><span class="hljs-string">Depending on which shell you are using, run one of the following</span><br><span class="hljs-string">commands to reload the PATH environment variable:</span><br><span class="hljs-string"></span><br><span class="hljs-string">  . /home/dechin/.bashrc</span><br><span class="hljs-string">  . /home/dechin/.profile</span><br><span class="hljs-string">  . /home/dechin/.zshrc</span><br></code></pre></td></tr></table></figure>
+<p>安装完成后，如果在terminal里面输入julia并回车，可以看到如下界面：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ julia<br>               _<br>   _       _ _(_)_     |  Documentation: https://docs.julialang.org<br>  (_)     | (_) (_)    |<br>   _ _   _| |_  __ _   |  Type <span class="hljs-string">&quot;?&quot;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>, <span class="hljs-string">&quot;]?&quot;</span> <span class="hljs-keyword">for</span> Pkg <span class="hljs-built_in">help</span>.<br>  | | | | | | |/ _` |  |<br>  | | |_| | | | (_| |  |  Version 1.4.1<br> _/ |\__<span class="hljs-string">&#x27;_|_|_|\__&#x27;</span>_|  |  Ubuntu ⛬  julia/1.4.1+dfsg-1<br>|__/                   |<br><br>julia&gt; π<br>π = 3.1415926535897...<br><br>julia&gt; <span class="hljs-built_in">exit</span>()<br></code></pre></td></tr></table></figure>
+<p>Julia的终端界面跟Python的非常类似，但是多了一些比较人性化的操作。比如我们输入<code>\pi</code>然后按一下Tab键，终端上面的这几个字符就会变成<code>π</code>，这个操作支持所有的希腊字母。退出Julia的终端，使用的是<code>exit()</code>命令。</p>
+<h2 id="配置镜像源">配置镜像源</h2>
+<p>由于国内网络环境的问题，一般情况下建议是配置一个国内的镜像源，这样在安装第三方库的时候不会网络受限。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">export</span> JULIA_PKG_SERVER=<span class="hljs-string">&quot;https://pkg.julialang.org&quot;</span><br></code></pre></td></tr></table></figure>
+<h2 id="安装第三方Package">安装第三方Package</h2>
+<p>这里以<code>CUDA.jl</code>的安装为例，先加载<code>Pkg</code>包管理工具，然后在Julia的终端中使用<code>Pkg.add(&quot;CUDA&quot;)</code>即可自动完成安装。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs julia">julia&gt; <span class="hljs-keyword">import</span> Pkg; Pkg.add(<span class="hljs-string">&quot;CUDA&quot;</span>)<br>...<br>Downloaded artifact: CUDA_Runtime<br>Precompiling project...<br>  <span class="hljs-number">64</span> dependencies successfully precompiled <span class="hljs-keyword">in</span> <span class="hljs-number">77</span> seconds. <span class="hljs-number">5</span> already precompiled.<br></code></pre></td></tr></table></figure>
+<p>安装完成后，可以直接<code>using CUDA</code>来进行调用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs bash">julia&gt; using CUDA<br><br>julia&gt; CUDA.versioninfo()<br>CUDA runtime 12.3, artifact installation<br>CUDA driver 12.3<br>NVIDIA driver 525.147.5, originally <span class="hljs-keyword">for</span> CUDA 12.0<br><br>CUDA libraries: <br>- CUBLAS: 12.3.4<br>- CURAND: 10.3.4<br>- CUFFT: 11.0.12<br>- CUSOLVER: 11.5.4<br>- CUSPARSE: 12.2.0<br>- CUPTI: 21.0.0<br>- NVML: 12.0.0+525.147.5<br><br>Julia packages: <br>- CUDA: 5.1.2<br>- CUDA_Driver_jll: 0.7.0+1<br>- CUDA_Runtime_jll: 0.10.1+0<br><br>Toolchain:<br>- Julia: 1.10.0<br>- LLVM: 15.0.7<br><br>2 devices:<br>  0: Quadro RTX 4000 (sm_75, 6.826 GiB / 8.000 GiB available)<br>  1: Quadro RTX 4000 (sm_75, 7.779 GiB / 8.000 GiB available)<br></code></pre></td></tr></table></figure>
+<h2 id="Vim插件">Vim插件</h2>
+<p>一般情况下用VSCode和Atom+Juno这两种IDE进行Julia编程的会多一些，我个人倾向于使用VSCode，这里就不过多的介绍相关的安装方法，一般应用商城里面都会有。但是这里介绍一个有意思的Julia-Vim插件，这个插件可以在使用Vim编辑<code>.jl</code>文件时，起到一个类似于Julia终端的操作，比如Tab自动生成希腊字母。</p>
+<p>如果网络条件好的话，可以直接从julia-vim的github仓库下载。网络条件不好的话，可以在国内的Gitee的这个同步仓库中下载和安装相关插件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://gitee.com/mirrors_JuliaEditorSupport/julia-vim.git<br>$ <span class="hljs-built_in">mkdir</span> -p ~/.vim<br>$ <span class="hljs-built_in">cp</span> -R julia-vim/* ~/.vim<br></code></pre></td></tr></table></figure>
+<p>下载完以后可以用vim打开一个<code>.jl</code>的文件，然后输入如下字符串：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs julia">\beta<br></code></pre></td></tr></table></figure>
+<p>再按一下<code>Tab</code>，就会变成：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs julia">β<br></code></pre></td></tr></table></figure>
+<h2 id="Julia的Hello-World">Julia的Hello World</h2>
+<p>对于每一个新学习编程语言的人来说，第一个程序总是一个Hello World。Julia的Hello World跟Python的非常类似，语法简单，不需要定义main函数：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia"><span class="hljs-comment">## print_func.jl</span><br>w = <span class="hljs-string">&quot;World&quot;</span><br>println(<span class="hljs-string">&quot;Hello <span class="hljs-subst">$(w)</span>!&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>运行方式是在Bash终端下使用<code>Julia xxx.jl</code>来执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ julia print_func.jl <br>Hello World!<br></code></pre></td></tr></table></figure>
+<h1>基本数据类型</h1>
+<h2 id="单变量数据类型">单变量数据类型</h2>
+<p>单变量我们主要就是关注Int整数、Float浮点数和String字符串这些基本类型，在Julia中可以使用<code>typeof</code>函数来查看一个变量的数据类型：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = <span class="hljs-number">10</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br><br>x = <span class="hljs-number">0x10</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br><br>x = <span class="hljs-number">10.</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br><br>x = <span class="hljs-string">&quot;10.&quot;</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br><br>x = typemax(<span class="hljs-built_in">Int64</span>) + <span class="hljs-number">1</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br><br>x = <span class="hljs-built_in">BigInt</span>(typemax(<span class="hljs-built_in">Int64</span>)) + <span class="hljs-number">1</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>在不指定数据类型的情况下，默认一般都是用的64位整数和64位浮点数，上述代码的运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">10: Int64<br>16: UInt8<br>10.0: Float64<br>10.: String<br>-9223372036854775808: Int64<br>9223372036854775808: BigInt<br></code></pre></td></tr></table></figure>
+<p>但是我们也可以通过指定数据类型来定义一个数据：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs julia">x::<span class="hljs-built_in">Int8</span> = <span class="hljs-number">10</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>这样一来，我们就得到一个Int8类型的整形变量：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">10: Int8<br></code></pre></td></tr></table></figure>
+<h2 id="数组和矩阵">数组和矩阵</h2>
+<p>Julia的数组定义起来跟Python的列表非常的相似，但是这里需要注意的是，在定义数组时，元素之间加不加逗号，得到的结果完全是不一样的：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>), <span class="hljs-subst">$(size(x)</span>)&quot;</span>)<br><br>x = [<span class="hljs-number">1</span> <span class="hljs-number">2</span> <span class="hljs-number">3</span>]<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>), <span class="hljs-subst">$(size(x)</span>)&quot;</span>)<br><br>x = [[<span class="hljs-number">1</span>], [<span class="hljs-number">2</span>], [<span class="hljs-number">3</span>]]<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>), <span class="hljs-subst">$(size(x)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[1, 2, 3]: Vector&#123;Int64&#125;, (3,)<br>[1 2 3]: Matrix&#123;Int64&#125;, (1, 3)<br>[[1], [2], [3]]: Vector&#123;Vector&#123;Int64&#125;&#125;, (3,)<br></code></pre></td></tr></table></figure>
+<p>除了逗号的这个区别之外，Julia中的<code>size</code>函数返回的是这个数组的shape，而Python的Numpy中的<code>size</code>函数返回的是这个数组的元素的总个数，而shape就是通过shape参量来返回的。</p>
+<h1>基础运算</h1>
+<p>一门语言的基础运算，无非就是<code>加减乘除、求余数和求商</code>，这里就简单的介绍一下：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs julia">y = <span class="hljs-number">3.</span><br>z = <span class="hljs-number">2</span><br><br>res = y + z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = y - z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = z * z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = z / z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = z ÷ y<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = z % y<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>说来也奇怪，在Python中我们定义整除用的是两条斜杠：<code>//</code>，而Julia里面用<code>/</code>和<code>÷</code>两个不同的符号来进行区分。说起来我还真不知道怎么在键盘上翘楚这个除以号，在Julia的终端窗口里面可以用类似于latex的语法来定义，先输入<code>\div</code>，然后按<code>Tab</code>键，就可以输出这样的一个符号，想来是有一点点特立独行。上述代码的输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">5.0: Float64<br>1.0: Float64<br>4: Int64<br>1.0: Float64<br>0.0: Float64<br>2.0: Float64<br></code></pre></td></tr></table></figure>
+<p>在不同类型的变量进行计算时，Julia会自动将其转化为同类型计算，这一点跟Python也是一致的，但是据说类型转换也会消耗一定的时间。类似于单变量的操作，接下来看看多变量数组的基础运算功能。在对数组进行操作时，我们需要在操作符号前加上一个<code>.</code>，比如<code>.+</code>，就表示对每一个数组元素进行加法的操作，具体示例如下所示：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]<br>y = <span class="hljs-number">3.</span><br>z = <span class="hljs-number">2</span><br><br>res = x .+ z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = x .- y<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = x .* x<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = x ./ y<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br><br>res = float(x) .^ -z<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>输出的结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[3, 4, 5]: Vector&#123;Int64&#125;<br>[-2.0, -1.0, 0.0]: Vector&#123;Float64&#125;<br>[1, 4, 9]: Vector&#123;Int64&#125;<br>[0.3333333333333333, 0.6666666666666666, 1.0]: Vector&#123;Float64&#125;<br>[1.0, 0.25, 0.1111111111111111]: Vector&#123;Float64&#125;<br></code></pre></td></tr></table></figure>
+<p>这里又是跟Python不一样的地方，在Python中我们对数组操作时，并不需要加上额外的符号。并且，在Julia中的指数用的是latex中常用的<code>^</code>符号，而不是Python中的<code>**</code>符号。</p>
+<h1>判断与循环</h1>
+<h2 id="复合表达式">复合表达式</h2>
+<p>首先说一个Julia中特别的复合表达式，这个跟Python中的lambda函数还不一样，这个功能只是把一些冗余的代码整合到一行，然后将所有的结果输出给一个变量，仅此而已。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs julia">res = <span class="hljs-keyword">begin</span> x=<span class="hljs-number">2</span>; y=<span class="hljs-number">3</span>; x+y <span class="hljs-keyword">end</span><br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(x)</span>: <span class="hljs-subst">$(typeof(x)</span>)&quot;</span>)<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(y)</span>: <span class="hljs-subst">$(typeof(y)</span>)&quot;</span>)<br>println(<span class="hljs-string">&quot;<span class="hljs-subst">$(res)</span>: <span class="hljs-subst">$(typeof(res)</span>)&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>比较关键的是，这里复合表达式中所定义的变量，在整个变量空间中都是可见的，这是一个显著的区别，上述代码的输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">2: Int64<br>3: Int64<br>5: Int64<br></code></pre></td></tr></table></figure>
+<h2 id="条件判断">条件判断</h2>
+<p>Julia的If条件判断在形式上跟Python也是很相似的，但是这里没有了冒号，多了一个end收尾，并且多层判断用的是elseif而不是elif。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = <span class="hljs-number">2.</span><br>y = <span class="hljs-number">3</span><br><br><span class="hljs-keyword">if</span> x &lt; y<br>    println(<span class="hljs-string">&quot;x is less than y&quot;</span>)<br><span class="hljs-keyword">elseif</span> x &gt; y<br>    println(<span class="hljs-string">&quot;x is greater than y&quot;</span>)<br><span class="hljs-keyword">else</span><br>    println(<span class="hljs-string">&quot;x is equal to y&quot;</span>)<br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">x is less than y<br></code></pre></td></tr></table></figure>
+<h2 id="循环">循环</h2>
+<p>一般编程都要关注一下while循环和for循环，但是这里我们仅关注一下for循环，因为相对而言for循环的可优化空间会更大一些，比如Jax中专门针对for循环的优化<code>fori_loop</code>这种。下面是第一种写法，类似于Python中的range函数：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia"><span class="hljs-keyword">for</span> i = <span class="hljs-number">1</span>:<span class="hljs-number">3</span><br>    println(i)<br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">1<br>2<br>3<br></code></pre></td></tr></table></figure>
+<p>这里关于变量空间还有一个比较特殊的情况，就是for循环中使用到的变量，在循环外是不可调用的。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs julia"><span class="hljs-keyword">for</span> i = <span class="hljs-number">1</span>:<span class="hljs-number">3</span><br>    println(i)<br><span class="hljs-keyword">end</span><br><br>println(i)<br></code></pre></td></tr></table></figure>
+<p>在上面这个案例中，for循环体内定义了i这个变量，但是在for循环外部打印的时候，就会报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">1<br>2<br>3<br>ERROR: LoadError: UndefVarError: `i` not defined<br>Stacktrace:<br> [1] top-level scope<br>   @ ~/tools/julia/tests/print_func.jl:5<br><span class="hljs-keyword">in</span> expression starting at /home/dechin/tools/julia/tests/print_func.jl:5<br></code></pre></td></tr></table></figure>
+<p>跟Python非常类似的，可以用<code>in</code>的语法来判断一个元素是否在某个数组内：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia"><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">0</span>]<br>    println(i)<br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+<p>输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">1<br>4<br>0<br></code></pre></td></tr></table></figure>
+<p>而因为Julia对希腊字母的支持，所以我们可以用这种更加数学的方式来表达：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia"><span class="hljs-keyword">for</span> i ∈ [<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">0</span>]<br>    println(i ∈ [<span class="hljs-number">2</span>,<span class="hljs-number">4</span>] ? <span class="hljs-number">1</span> : <span class="hljs-number">0</span>)<br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+<p>输入这个符号也跟Latex语法保持一致，输入<code>\in</code>再按一下<code>Tab</code>即可。这个循环体中用到了一个比较简洁的判断语句，直接使用<code>condition ?</code>即可表示<code>if condition</code>，然后跟着的是<code>Task while condition: Task while not condition</code>。上述代码的输出结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">0<br>1<br>0<br></code></pre></td></tr></table></figure>
+<p>这个程序遍历<code>[1,4,0]</code>这个数组，然后判断每一个元素是否属于<code>[2,4]</code>的数组内容，满足条件的话输出<code>1</code>，不满足条件就输出<code>0</code>。</p>
+<h1>函数与变量</h1>
+<p>Julia的函数使用function关键字进行封装，并以end收尾，整体来说跟Python的def关键字的用法很相似。</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = <span class="hljs-number">2.</span><br>y = <span class="hljs-number">3</span><br><br><span class="hljs-keyword">function</span> test(x, y)<br>    <span class="hljs-keyword">if</span> x &lt; y<br>        println(<span class="hljs-string">&quot;x is less than y&quot;</span>)<br>    <span class="hljs-keyword">elseif</span> x &gt; y<br>        println(<span class="hljs-string">&quot;x is greater than y&quot;</span>)<br>    <span class="hljs-keyword">else</span><br>        println(<span class="hljs-string">&quot;x is equal to y&quot;</span>)<br>    <span class="hljs-keyword">end</span><br><span class="hljs-keyword">end</span><br><br>test(x, y)<br></code></pre></td></tr></table></figure>
+<p>输出结果为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">x is less than y<br></code></pre></td></tr></table></figure>
+<p>而Julia为了更加契合数学形式的定义，也支持了这种更方便的直接调用的方法：</p>
+<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs julia">x = <span class="hljs-number">2.</span><br>y = <span class="hljs-number">3</span><br><br>test(x, y) = println(x &lt; y ? <span class="hljs-string">&quot;x is less than y&quot;</span>    :<br>                     x &gt; y ? <span class="hljs-string">&quot;x is greater than y&quot;</span> : <span class="hljs-string">&quot;x is equal to y&quot;</span>)<br><br>test(x, y)<br></code></pre></td></tr></table></figure>
+<p>可以发现这个函数的功能跟前面多个判断语句的函数定义是一致的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">x is less than y<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>本文介绍了Julia这一主要面向自然科学的编程语言的基本安装与使用，建议读者最好在熟练使用Python的前提下再阅读本文。如果是对Python的语法非常熟悉的人，应该很容易看懂本文并初步掌握Julia的基本语法和使用逻辑。Julia最吸引人的地方在于他简单如Python的语法，但兼具了C++和Fortran的高性能。但是缺点也非常明显，作为一门新的编程语言，受众又少，没有太多的轮子可以用。但是反过来想，也很适合用来开发一些新的轮子。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/julia-basic.html">https://www.cnblogs.com/dechinphy/p/julia-basic.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://cn.julialang.org/JuliaZH.jl/latest/">https://cn.julialang.org/JuliaZH.jl/latest/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/6c41b697.html">https://dechin-phy.asia/posts/6c41b697.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-01-16</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-01-22</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/83f69038.html">无法访问Github仓库的极简治标法</a><a class="next" href="/posts/5fc5377d.html">Numpy计算近邻表时间对比</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

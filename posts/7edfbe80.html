@@ -1,0 +1,259 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/7edfbe80.html"><meta property="og:type" content="article"><meta property="og:title" content="配置docker的pdflatex环境"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/7edfbe80.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-28T10:52:44.000Z"><meta property="article:modified_time" content="2021-03-28T12:21:00.000Z"><title>配置docker的pdflatex环境 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">配置docker的pdflatex环境</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">配置docker的pdflatex环境</h1><div class="post-meta">2021-03-28<span> | </span><span class="category"><a href="/categories/%E5%AE%B9%E5%99%A8/">容器</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 17</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Docker的基本操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">拉取容器镜像</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">编译Tex文件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Hello-World"><span class="toc-number">4.1.</span> <span class="toc-text">Hello World</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E5%85%AC%E5%BC%8F"><span class="toc-number">4.2.</span> <span class="toc-text">测试公式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%8F%E5%AD%90%E7%BA%BF%E8%B7%AF%E5%9B%BE"><span class="toc-number">4.3.</span> <span class="toc-text">量子线路图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>为了在本地构建一个可用性强、易于部署的环境，我们选择了放弃直接安装pdflatex的方案，以及线上的overleaf的方案。这些方案各有利弊，但是综合起来看，对于个人使用的环境而言，还是在本地使用docker镜像直接部署一个tex编译环境是最方便、最人性化的。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>Latex在文档撰写方面是不可或缺的工具，尤其是在写文章方面，是必须要用到的文字排版工具。但是latex的环境部署并不是一个特别人性化的操作，尤其是在各种不同的平台上操作是完全不一样的，还经常容易报错。我们可以一个一个的去解决报错问题，但是这需要耗费极大的精力和时间，所以很多人选择了直接在<a target="_blank" rel="noopener" href="https://www.overleaf.com/?nocdn=true">overleaf</a>进行latex的创作。但其实overleaf也有它的缺点，比如免费版本的带宽和速度都比较受限，尤其是在国内的网络，访问速度可谓是”一绝“。因此这里我们介绍一个更加人性化的方案，而且对各大平台的兼容性非常都非常好：使用docker来部署latex环境。</p>
+<h1>Docker的基本操作</h1>
+<p>在各大平台的官方源里面应该都会有提供docker容器，因此这里我们也不过多的赘述。作者过去写过一篇关于<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mindspore.html">使用docker来部署MindSpore开发环境</a>的博客，感兴趣的读者可以当作是拓展文章来阅读一下。</p>
+<p>首先我们在Manjaro Linux平台上启动docker（在其他平台上的操作可能有区别，比如<code>service start docker</code>等）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# systemctl start docker<br></code></pre></td></tr></table></figure>
+<p>注意上述指令要在root帐号下才能够启动，如果要选择在非root帐号下操作，docker容器是不支持的，但是我们可以选择singularity这一类似的容器解决方案，相关内容可以参考这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/singularity-install.html">博客</a>。启动服务之后，正常状态下我们可以看到docker的status是处于active或者running的状态：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# systemctl status docker<br>● docker.service - Docker Application Container Engine<br>     Loaded: loaded (/usr/lib/systemd/system/docker.service; disabled; vendor preset: disab&gt;<br>     Active: active (running) since Sun 2021-03-28 18:50:47 CST; 7s ago<br>TriggeredBy: ● docker.socket<br>       Docs: https://docs.docker.com<br>   Main PID: 25366 (dockerd)<br>      Tasks: 123 (<span class="hljs-built_in">limit</span>: 47875)<br>     Memory: 219.1M<br>     CGroup: /system.slice/docker.service<br>             ├─25366 /usr/bin/dockerd -H fd://<br>             └─25378 containerd --config /var/run/docker/containerd/containerd.toml --log-l&gt;<br></code></pre></td></tr></table></figure>
+<h1>拉取容器镜像</h1>
+<p>首先我们可以访问<a target="_blank" rel="noopener" href="https://hub.docker.com/">dockerhub官网</a>搜索一下是否存在我们所需要的容器镜像，比如我们的搜索结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170949083.png" alt="">
+可以看到这里有很多的选项，一般我们可以直接选择星星最高的容器镜像进行下载使用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# docker pull fbenz/pdflatex<br>Using default tag: latest<br>latest: Pulling from fbenz/pdflatex<br>f22ccc0b8772: Already exists <br>3cf8fb62ba5f: Already exists <br>e80c964ece6a: Already exists <br>9aa2583757a3: Pull complete <br>2c3d7890d583: Pull complete <br>Digest: sha256:6ecca11b1a203faed5c0a2ace2a13aac100dd19d7a4e0db0474283bcded3c041<br>Status: Downloaded newer image <span class="hljs-keyword">for</span> fbenz/pdflatex:latest<br>docker.io/fbenz/pdflatex:latest<br></code></pre></td></tr></table></figure>
+<p>下载需要一段的时间。下载完成后，可以在本地镜像仓库中找到刚才下载的这个镜像文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# docker images<br>REPOSITORY                                                 TAG       IMAGE ID       CREATED         SIZE<br>fbenz/pdflatex                                             latest    8e7742722956   3 months ago    24GB<br></code></pre></td></tr></table></figure>
+<p>我们可以测试一下这个容器镜像中的pdflatex功能是否正常：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# docker run -it fbenz/pdflatex pdflatex --<span class="hljs-built_in">help</span><br>Usage: pdftex [OPTION]... [TEXNAME[.tex]] [COMMANDS]<br>   or: pdftex [OPTION]... \FIRST-LINE<br>   or: pdftex [OPTION]... &amp;FMT ARGS<br>  Run pdfTeX on TEXNAME, usually creating TEXNAME.pdf.<br>  Any remaining COMMANDS are processed as pdfTeX input, after TEXNAME is <span class="hljs-built_in">read</span>.<br>  If the first line of TEXNAME is %&amp;FMT, and FMT is an existing .<span class="hljs-built_in">fmt</span> file,<br>  use it.  Else use `NAME.<span class="hljs-built_in">fmt</span><span class="hljs-string">&#x27;, where NAME is the program invocation name,</span><br><span class="hljs-string">  most commonly `pdftex&#x27;</span>.<br><br>  Alternatively, <span class="hljs-keyword">if</span> the first non-option argument begins with a backslash,<br>  interpret all non-option arguments as a line of pdfTeX input.<br><br>  Alternatively, <span class="hljs-keyword">if</span> the first non-option argument begins with a &amp;, the<br>  next word is taken as the FMT to <span class="hljs-built_in">read</span>, overriding all <span class="hljs-keyword">else</span>.  Any<br>  remaining arguments are processed as above.<br><br>  If no arguments or options are specified, prompt <span class="hljs-keyword">for</span> input.<br><br>-draftmode              switch on draft mode (generates no output PDF)<br>-enc                    <span class="hljs-built_in">enable</span> encTeX extensions such as \mubyte<br>-etex                   <span class="hljs-built_in">enable</span> e-TeX extensions<br>[-no]-file-line-error   <span class="hljs-built_in">disable</span>/enable file:line:error style messages<br>-<span class="hljs-built_in">fmt</span>=FMTNAME            use FMTNAME instead of program name or a %&amp; line<br>-halt-on-error          stop processing at the first error<br>-ini                    be pdfinitex, <span class="hljs-keyword">for</span> dumping formats; this is implicitly<br>                          <span class="hljs-literal">true</span> <span class="hljs-keyword">if</span> the program name is `pdfinitex<span class="hljs-string">&#x27;</span><br><span class="hljs-string">-interaction=STRING     set interaction mode (STRING=batchmode/nonstopmode/</span><br><span class="hljs-string">                          scrollmode/errorstopmode)</span><br><span class="hljs-string">-ipc                    send DVI output to a socket as well as the usual</span><br><span class="hljs-string">                          output file</span><br><span class="hljs-string">-ipc-start              as -ipc, and also start the server at the other end</span><br><span class="hljs-string">-jobname=STRING         set the job name to STRING</span><br><span class="hljs-string">-kpathsea-debug=NUMBER  set path searching debugging flags according to</span><br><span class="hljs-string">                          the bits of NUMBER</span><br><span class="hljs-string">[-no]-mktex=FMT         disable/enable mktexFMT generation (FMT=tex/tfm/pk)</span><br><span class="hljs-string">-mltex                  enable MLTeX extensions such as \charsubdef</span><br><span class="hljs-string">-output-comment=STRING  use STRING for DVI file comment instead of date</span><br><span class="hljs-string">                          (no effect for PDF)</span><br><span class="hljs-string">-output-directory=DIR   use existing DIR as the directory to write files in</span><br><span class="hljs-string">-output-format=FORMAT   use FORMAT for job output; FORMAT is `dvi&#x27;</span> or `pdf<span class="hljs-string">&#x27;</span><br><span class="hljs-string">[-no]-parse-first-line  disable/enable parsing of first line of input file</span><br><span class="hljs-string">-progname=STRING        set program (and fmt) name to STRING</span><br><span class="hljs-string">-recorder               enable filename recorder</span><br><span class="hljs-string">[-no]-shell-escape      disable/enable \write18&#123;SHELL COMMAND&#125;</span><br><span class="hljs-string">-shell-restricted       enable restricted \write18</span><br><span class="hljs-string">-src-specials           insert source specials into the DVI file</span><br><span class="hljs-string">-src-specials=WHERE     insert source specials in certain places of</span><br><span class="hljs-string">                          the DVI file. WHERE is a comma-separated value</span><br><span class="hljs-string">                          list: cr display hbox math par parend vbox</span><br><span class="hljs-string">-synctex=NUMBER         generate SyncTeX data for previewers according to</span><br><span class="hljs-string">                          bits of NUMBER (`man synctex&#x27;</span> <span class="hljs-keyword">for</span> details)<br>-translate-file=TCXNAME use the TCX file TCXNAME<br>-8bit                   make all characters printable by default<br>-<span class="hljs-built_in">help</span>                   display this <span class="hljs-built_in">help</span> and <span class="hljs-built_in">exit</span><br>-version                output version information and <span class="hljs-built_in">exit</span><br><br>pdfTeX home page: &lt;http://pdftex.org&gt;<br><br>Email bug reports to pdftex@tug.org.<br></code></pre></td></tr></table></figure>
+<p>当我们看到<code>help</code>指令运行成功时，就表明容器镜像可以正常使用。使用容器还有一点需要注意的是，如果我们直接用<code>docker run -it fbenz/pdflatex</code>的话，没有绑定本地的目录，这样是无法看到本地所撰写的tex文件的。因此我们一般需要在运行的时候加上<code>-v</code>的选项来绑定本地的目录，基本使用方法是：<code>-v 本地目录:容器目录</code>，注意需要使用绝对路径，不能使用相对路径。</p>
+<h1>编译Tex文件</h1>
+<p>在上述章节中完成基于docker的pdflatex环境部署之后，我们可以开始撰写一些简单的tex文件用来测试一下环境。</p>
+<h2 id="Hello-World">Hello World</h2>
+<p>首先最简单的我们测试一个hello world的案例，仅在pdf文档中输出一个<code>Hello World!</code>的字样，具体tex代码如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tex]$ <span class="hljs-built_in">cat</span> hello_world.tex <br>\documentclass&#123;article&#125;<br>\begin&#123;document&#125;<br>Hello world!<br>\end&#123;document&#125;<br></code></pre></td></tr></table></figure>
+<p>使用方法也不难，首先我们运行docker容器，注意需要绑定一个本地路径，然后进入到容器内对应的目录下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root tex]# docker run -it -v /home/dechin/projects/2021-python/tex/:/home/ fbenz/pdflatex<br>root@d7ed2229a244:/# ll<br>total 72<br>drwxr-xr-x   1 root root 4096 Mar 28 11:07 ./<br>drwxr-xr-x   1 root root 4096 Mar 28 11:07 ../<br>-rwxr-xr-x   1 root root    0 Mar 28 11:07 .dockerenv*<br>drwxr-xr-x   2 root root 4096 Nov 19 13:09 bin/<br>drwxr-xr-x   2 root root 4096 Apr 24  2018 boot/<br>drwxr-xr-x   5 root root  360 Mar 28 11:07 dev/<br>drwxr-xr-x   1 root root 4096 Mar 28 11:07 etc/<br>drwxr-xr-x   2 1000 1000 4096 Mar 28 04:43 home/<br>drwxr-xr-x   1 root root 4096 May 23  2017 lib/<br>drwxr-xr-x   2 root root 4096 Nov 19 13:09 lib64/<br>drwxr-xr-x   2 root root 4096 Nov 19 13:07 media/<br>drwxr-xr-x   2 root root 4096 Nov 19 13:07 mnt/<br>drwxr-xr-x   2 root root 4096 Nov 19 13:07 opt/<br>dr-xr-xr-x 323 root root    0 Mar 28 11:07 proc/<br>drwx------   2 root root 4096 Nov 19 13:09 root/<br>drwxr-xr-x   1 root root 4096 Nov 25 22:25 run/<br>drwxr-xr-x   1 root root 4096 Nov 25 22:25 sbin/<br>drwxr-xr-x   2 root root 4096 Nov 19 13:07 srv/<br>dr-xr-xr-x  13 root root    0 Mar 28 11:07 sys/<br>drwxrwxrwt   1 root root 4096 Nov 28 18:34 tmp/<br>drwxr-xr-x   1 root root 4096 Nov 19 13:07 usr/<br>drwxr-xr-x   1 root root 4096 Nov 19 13:09 var/<br>root@d7ed2229a244:/# <span class="hljs-built_in">cd</span> home/<br>root@d7ed2229a244:/home# ll<br>total 12<br>drwxr-xr-x 2 1000 1000 4096 Mar 28 04:43 ./<br>drwxr-xr-x 1 root root 4096 Mar 28 11:07 ../<br>-rw-r--r-- 1 1000 1000   69 Mar 28 04:43 hello_world.tex<br></code></pre></td></tr></table></figure>
+<p>我们看到在容器内的目录下也能够看到这个tex文件，说明路径的绑定成功的执行了。运行指令很简单，直接在docker容器内运行<code>pdflatex your_file.tex</code>即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs bash">root@d7ed2229a244:/home# pdflatex hello_world.tex <br>This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex)<br> restricted \write18 enabled.<br>entering extended mode<br>(./hello_world.tex<br>LaTeX2e &lt;2017-04-15&gt;<br>Babel &lt;3.18&gt; and hyphenation patterns <span class="hljs-keyword">for</span> 84 language(s) loaded.<br>(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls<br>Document Class: article 2014/09/29 v1.4h Standard LaTeX document class<br>(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo))<br>No file hello_world.aux.<br>[1&#123;/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map&#125;] (./hello_world.aux) )&lt;/u<br>sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb&gt;<br>Output written on hello_world.pdf (1 page, 11916 bytes).<br>Transcript written on hello_world.log.<br>root@d7ed2229a244:/home# ll<br>total 32<br>drwxr-xr-x 2 1000 1000  4096 Mar 28 11:08 ./<br>drwxr-xr-x 1 root root  4096 Mar 28 11:07 ../<br>-rw-r--r-- 1 root root     8 Mar 28 11:08 hello_world.aux<br>-rw-r--r-- 1 root root  2408 Mar 28 11:08 hello_world.log<br>-rw-r--r-- 1 root root 11916 Mar 28 11:08 hello_world.pdf<br>-rw-r--r-- 1 1000 1000    69 Mar 28 04:43 hello_world.tex<br>root@d7ed2229a244:/home# <span class="hljs-built_in">chmod</span> -R 777 .<br>root@d7ed2229a244:/home# ll<br>total 32<br>drwxrwxrwx 2 1000 1000  4096 Mar 28 11:08 ./<br>drwxr-xr-x 1 root root  4096 Mar 28 11:07 ../<br>-rwxrwxrwx 1 root root     8 Mar 28 11:08 hello_world.aux*<br>-rwxrwxrwx 1 root root  2408 Mar 28 11:08 hello_world.log*<br>-rwxrwxrwx 1 root root 11916 Mar 28 11:08 hello_world.pdf*<br>-rwxrwxrwx 1 1000 1000    69 Mar 28 04:43 hello_world.tex*<br></code></pre></td></tr></table></figure>
+<p>运行完成后我们在目录中看到了几个新生成的文件，如果用root改成<code>777</code>的权限，那么在本地的非root帐号就可以对其进行编辑，否则就只能查看。我们可以在本地打开这个pdf文件看看：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170949110.png" alt="">
+可以看到这个pdf文件生成成功。</p>
+<h2 id="测试公式">测试公式</h2>
+<p>上面hello world的案例比较简单，让我们来测试一下最常用的数学公式是否有问题：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro tex]$ <span class="hljs-built_in">cat</span> equation_test.tex <br>\documentclass&#123;article&#125;<br>\begin&#123;document&#125;<br>Hello world!<br>\begin&#123;equation&#125;<br>        e^&#123;iHt&#125;\left|\psi\right&gt;<br>\end&#123;equation&#125;<br>\end&#123;document&#125;<br></code></pre></td></tr></table></figure>
+<p>类似于上一章节的，我们也需要进入到容器的内部执行相关的指令，最后获得如下所示的一个pdf文件：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170949141.png" alt="">
+我们可以看到公式显示也是正常的。</p>
+<h2 id="量子线路图">量子线路图</h2>
+<p>最后我们测试一个比较难的，在前面写过一篇关于用ProjectQ生成Latex格式的量子线路图的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/circuit.html">博客</a>，其中生成了如下所示的一个tex文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro quantum-circuit]$ <span class="hljs-built_in">cat</span> circuit.tex <br>\documentclass&#123;standalone&#125;<br>\usepackage[margin=1in]&#123;geometry&#125;<br>\usepackage[hang,small,bf]&#123;caption&#125;<br>\usepackage&#123;tikz&#125;<br>\usepackage&#123;braket&#125;<br>\usetikzlibrary&#123;backgrounds,shadows.blur,fit,decorations.pathreplacing,shapes&#125;<br><br>\begin&#123;document&#125;<br>\begin&#123;tikzpicture&#125;[scale=0.8, transform shape]<br><br>\tikzstyle&#123;basicshadow&#125;=[blur shadow=&#123;shadow blur steps=8, shadow xshift=0.7pt, shadow yshift=-0.7pt, shadow scale=1.02&#125;]\tikzstyle&#123;basic&#125;=[draw,fill=white,basicshadow]<br>\tikzstyle&#123;operator&#125;=[basic,minimum size=1.5em]<br>\tikzstyle&#123;phase&#125;=[fill=black,shape=circle,minimum size=0.1cm,inner sep=0pt,outer sep=0pt,draw=black]<br>\tikzstyle&#123;none&#125;=[inner sep=0pt,outer sep=-.5pt,minimum height=0.5cm+1pt]<br>\tikzstyle&#123;measure&#125;=[operator,inner sep=0pt,minimum height=0.5cm, minimum width=0.75cm]<br>\tikzstyle&#123;xstyle&#125;=[circle,basic,minimum height=0.35cm,minimum width=0.35cm,inner sep=-1pt,very thin]<br>\tikzset&#123;<br>shadowed/.style=&#123;preaction=&#123;transform canvas=&#123;<span class="hljs-built_in">shift</span>=&#123;(0.5pt,-0.5pt)&#125;&#125;, draw=gray, opacity=0.4&#125;&#125;,<br>&#125;<br>\tikzstyle&#123;swapstyle&#125;=[inner sep=-1pt, outer sep=-1pt, minimum width=0pt]<br>\tikzstyle&#123;edgestyle&#125;=[very thin]<br><br>\node[none] (line0_gate0) at (0.1,-0) &#123;$\Ket&#123;0&#125;$&#125;;<br>\node[none] (line0_gate1) at (0.5,-0) &#123;&#125;;<br>\node[none,minimum height=0.5cm,outer sep=0] (line0_gate2) at (0.75,-0) &#123;&#125;;<br>\node[none] (line0_gate3) at (1.0,-0) &#123;&#125;;<br>\draw[operator,edgestyle,outer sep=0.5cm] ([yshift=0.25cm]line0_gate1) rectangle ([yshift=-0.25cm]line0_gate3) node[pos=.5] &#123;H&#125;;<br>\draw (line0_gate0) edge[edgestyle] (line0_gate1);<br>\node[none] (line1_gate0) at (0.1,-1) &#123;$\Ket&#123;0&#125;$&#125;;<br>\node[none] (line1_gate1) at (0.5,-1) &#123;&#125;;<br>\node[none,minimum height=0.5cm,outer sep=0] (line1_gate2) at (0.75,-1) &#123;&#125;;<br>\node[none] (line1_gate3) at (1.0,-1) &#123;&#125;;<br>\draw[operator,edgestyle,outer sep=0.5cm] ([yshift=0.25cm]line1_gate1) rectangle ([yshift=-0.25cm]line1_gate3) node[pos=.5] &#123;H&#125;;<br>\draw (line1_gate0) edge[edgestyle] (line1_gate1);<br>\node[none] (line2_gate0) at (0.1,-2) &#123;$\Ket&#123;0&#125;$&#125;;<br>\node[none] (line2_gate1) at (0.5,-2) &#123;&#125;;<br>\node[none,minimum height=0.5cm,outer sep=0] (line2_gate2) at (0.75,-2) &#123;&#125;;<br>\node[none] (line2_gate3) at (1.0,-2) &#123;&#125;;<br>\draw[operator,edgestyle,outer sep=0.5cm] ([yshift=0.25cm]line2_gate1) rectangle ([yshift=-0.25cm]line2_gate3) node[pos=.5] &#123;H&#125;;<br>\draw (line2_gate0) edge[edgestyle] (line2_gate1);<br>\node[xstyle] (line1_gate4) at (1.4000000000000001,-1) &#123;&#125;;<br>\draw[edgestyle] (line1_gate4.north)--(line1_gate4.south);<br>\draw[edgestyle] (line1_gate4.west)--(line1_gate4.east);<br>\node[phase] (line2_gate4) at (1.4000000000000001,-2) &#123;&#125;;<br>\draw (line2_gate4) edge[edgestyle] (line1_gate4);<br>\draw (line1_gate3) edge[edgestyle] (line1_gate4);<br>\draw (line2_gate3) edge[edgestyle] (line2_gate4);<br>\node[xstyle] (line0_gate4) at (1.9500000000000002,-0) &#123;&#125;;<br>\draw[edgestyle] (line0_gate4.north)--(line0_gate4.south);<br>\draw[edgestyle] (line0_gate4.west)--(line0_gate4.east);<br>\node[phase] (line1_gate5) at (1.9500000000000002,-1) &#123;&#125;;<br>\draw (line1_gate5) edge[edgestyle] (line0_gate4);<br>\draw (line0_gate3) edge[edgestyle] (line0_gate4);<br>\draw (line1_gate4) edge[edgestyle] (line1_gate5);<br>\node[measure,edgestyle] (line0_gate5) at (2.6000000000000005,-0) &#123;&#125;;<br>\draw[edgestyle] ([yshift=-0.18cm,xshift=0.07500000000000001cm]line0_gate5.west) to [out=60,<span class="hljs-keyword">in</span>=180] ([yshift=0.035cm]line0_gate5.center) to [out=0, <span class="hljs-keyword">in</span>=120] ([yshift=-0.18cm,xshift=-0.07500000000000001cm]line0_gate5.east);<br>\draw[edgestyle] ([yshift=-0.18cm]line0_gate5.center) to ([yshift=-0.07500000000000001cm,xshift=-0.18cm]line0_gate5.north east);<br>\draw (line0_gate4) edge[edgestyle] (line0_gate5);<br>\node[measure,edgestyle] (line1_gate6) at (2.6000000000000005,-1) &#123;&#125;;<br>\draw[edgestyle] ([yshift=-0.18cm,xshift=0.07500000000000001cm]line1_gate6.west) to [out=60,<span class="hljs-keyword">in</span>=180] ([yshift=0.035cm]line1_gate6.center) to [out=0, <span class="hljs-keyword">in</span>=120] ([yshift=-0.18cm,xshift=-0.07500000000000001cm]line1_gate6.east);<br>\draw[edgestyle] ([yshift=-0.18cm]line1_gate6.center) to ([yshift=-0.07500000000000001cm,xshift=-0.18cm]line1_gate6.north east);<br>\draw (line1_gate5) edge[edgestyle] (line1_gate6);<br>\node[measure,edgestyle] (line2_gate5) at (2.0500000000000003,-2) &#123;&#125;;<br>\draw[edgestyle] ([yshift=-0.18cm,xshift=0.07500000000000001cm]line2_gate5.west) to [out=60,<span class="hljs-keyword">in</span>=180] ([yshift=0.035cm]line2_gate5.center) to [out=0, <span class="hljs-keyword">in</span>=120] ([yshift=-0.18cm,xshift=-0.07500000000000001cm]line2_gate5.east);<br>\draw[edgestyle] ([yshift=-0.18cm]line2_gate5.center) to ([yshift=-0.07500000000000001cm,xshift=-0.18cm]line2_gate5.north east);<br>\draw (line2_gate4) edge[edgestyle] (line2_gate5);<br><br>\end&#123;tikzpicture&#125;<br>\end&#123;document&#125;<br></code></pre></td></tr></table></figure>
+<p>这个文件不仅结构复杂，对周边所依赖的tex文件其实也不少，此前在其他平台（Win10）测试这个tex文件的编译的时候，都需要手动的去下载很多的依赖文件，然后放到同一个文件夹下才能正常运行和使用。这里我们直接运行，发现也可以生成这个pdf文件：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170949175.png" alt="">
+说明环境里面确实已经包含了很多必备的工具，跟overleaf的环境应该是比较类似的，使得我们可以在本地非常人性化的、轻便的可以编译tex文件。</p>
+<h1>总结概要</h1>
+<p>为了在本地构建一个可用性强、易于部署的环境，我们选择了放弃直接安装pdflatex的方案，以及线上的overleaf的方案。这些方案各有利弊，但是综合起来看，对于个人使用的环境而言，还是在本地使用docker镜像直接部署一个tex编译环境是最方便、最人性化的。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pdflatex.html">https://www.cnblogs.com/dechinphy/p/pdflatex.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/circuit.html">https://www.cnblogs.com/dechinphy/p/circuit.html</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/7edfbe80.html">https://dechin-phy.asia/posts/7edfbe80.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-28</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-28</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/c0c04370.html">在docker容器中使用cplex-python37</a><a class="next" href="/posts/7bbf9850.html">python3表格数据处理</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

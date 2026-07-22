@@ -1,0 +1,561 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/9d228d11.html"><meta property="og:type" content="article"><meta property="og:title" content="蛋白质基础组成结构"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/9d228d11.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-05-06T09:17:02.000Z"><meta property="article:modified_time" content="2022-05-07T06:31:00.000Z"><title>蛋白质基础组成结构 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">蛋白质基础组成结构</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">蛋白质基础组成结构</h1><div class="post-meta">2022-05-06<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Xponge的安装和使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">氨基酸种类</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">PDB文件基本格式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文通过对Xponge+VMD的工具对蛋白质进行建模，然后总结了20种氨基酸的具体信息，也就是蛋白质的基本组成单元。通过对这些氨基酸的组合，就可以得到一个具有生物活性的蛋白质。同时本文还介绍了常用的存储蛋白质结构的文件格式pdb的具体格式化定义，总体来说是一个总结性的文章。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>了解蛋白质的基本组成单元和结构，有助于了解蛋白质的特性。对于蛋白质结构的研究，在医药领域是非常核心的重要工作。这里我们仅仅介绍一些蛋白质的基本组成单元——20种氨基酸的种类，以及可以用于蛋白质建模的一些工具。</p>
+<h1>Xponge的安装和使用</h1>
+<p>Xponge是一款基于python开发的可以用于蛋白质建模的软件，可以用pip进行安装和管理：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip install xponge --upgrade<br>Requirement already satisfied: xponge <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindspore16/lib/python3.9/site-packages (1.2.5.9)<br>Requirement already satisfied: NetCDF4 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindspore16/lib/python3.9/site-packages (from xponge) (1.5.8)<br>Requirement already satisfied: pubchempy <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindspore16/lib/python3.9/site-packages (from xponge) (1.0.4)<br>Requirement already satisfied: numpy <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindspore16/lib/python3.9/site-packages (from xponge) (1.20.3)<br>Requirement already satisfied: cftime <span class="hljs-keyword">in</span> /home/dechin/anaconda3/envs/mindspore16/lib/python3.9/site-packages (from NetCDF4-&gt;xponge) (1.6.0)<br></code></pre></td></tr></table></figure>
+<p>使用的方法是在python文件或者python终端窗口中导入xponge和相关力场之后直接调用相关接口：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python3">$ python3<br>Python 3.9.12 (main, Apr  5 2022, 06:56:58) <br>[GCC 7.5.0] :: Anaconda, Inc. on linux<br>Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.<br>&gt;&gt;&gt; import Xponge<br>&gt;&gt;&gt; import Xponge.forcefield.AMBER.ff14SB<br>Reference for ff14SB:<br>  James A. Maier, Carmenza Martinez, Koushik Kasavajhala, Lauren Wickstrom, Kevin E. Hauser, and Carlos Simmerling<br>    ff14SB: Improving the accuracy of protein side chain and backbone parameters from ff99SB<br>    Journal of Chemical Theory and Computation 2015 11 (8), 3696-3713<br>    DOI: 10.1021/acs.jctc.5b00255<br><br>&gt;&gt;&gt; Save_PDB(ALA,&#x27;ALA.pdb&#x27;) # 内置了所有的氨基酸种类，注意开头结尾的氨基酸名称有所变化<br>&gt;&gt;&gt; exit()<br></code></pre></td></tr></table></figure>
+<p>执行完Save之后，就会在当前的路径下生成一个<code>ALA.pdb</code>的文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cat</span> ALA.pdb <br>REMARK   Generated By Xponge (Molecule)<br>ATOM      1    N ALA     1      -3.801  -7.214   0.158                   <br>ATOM      2    H ALA     1      -2.791  -7.214   0.158                   <br>ATOM      3   CA ALA     1      -4.487  -5.938   0.158                   <br>ATOM      4   HA ALA     1      -5.112  -5.861  -0.732                   <br>ATOM      5   CB ALA     1      -5.374  -5.792   1.390                   <br>ATOM      6  HB1 ALA     1      -4.761  -5.858   2.289                   <br>ATOM      7  HB2 ALA     1      -5.877  -4.826   1.363                   <br>ATOM      8  HB3 ALA     1      -6.118  -6.588   1.399                   <br>ATOM      9    C ALA     1      -3.497  -4.783   0.158                   <br>ATOM     10    O ALA     1      -2.287  -4.998   0.158<br></code></pre></td></tr></table></figure>
+<p>可以用VMD之类的软件打开pdb文件，看一下其分子结构：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170740983.png" alt=""></p>
+<p>这里面需要注意的是，使用Xponge生成的氨基酸是以及去掉了一个<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>2</mn></msub><mi>O</mi></mrow><annotation encoding="application/x-tex">H_2O</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.08125em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span></span></span></span>的，分别是开头与<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>相连的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span></span></span></span>和结尾与<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi></mrow><annotation encoding="application/x-tex">C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span></span>相连的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mi>H</mi></mrow><annotation encoding="application/x-tex">OH</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span></span></span></span>。这种操作的合理之处在于，我们很少关注单个氨基酸的作用，如果要组装成一个蛋白质的模型，生成肽键的过程会脱水，因此在构建氨基酸的时候直接去掉<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>H</mi><mn>2</mn></msub><mi>O</mi></mrow><annotation encoding="application/x-tex">H_2O</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.08125em;">H</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.08125em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span></span></span></span>可以在一定程度上提升计算的性能。另外就是，除了<code>ACE</code>和<code>NME</code>之外，氨基酸放在开头和结尾处时，分别要加上N和C作为标识。比如，当ALA放在蛋白质chain的开头时，其名称应为NALA，以此类推。还有一个值得提醒的点是，组氨酸本身包含了多种结构，在使用时需要指定特定的结构名称，否则默认就是HIS。</p>
+<p>类似的方法，我们还可以用Xponge建立一个更加大型的模型：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python">In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">import</span> Xponge<br><br>In [<span class="hljs-number">2</span>]: <span class="hljs-keyword">import</span> Xponge.forcefield.AMBER.ff14SB<br>Reference <span class="hljs-keyword">for</span> ff14SB.py:<br>  James A. Maier, Carmenza Martinez, Koushik Kasavajhala, Lauren Wickstrom, Kevin E. Hauser, <span class="hljs-keyword">and</span> Carlos Simmerling<br>    ff14SB: Improving the accuracy of protein side chain <span class="hljs-keyword">and</span> backbone parameters <span class="hljs-keyword">from</span> ff99SB<br>    Journal of Chemical Theory <span class="hljs-keyword">and</span> Computation <span class="hljs-number">2015</span> <span class="hljs-number">11</span> (<span class="hljs-number">8</span>), <span class="hljs-number">3696</span>-<span class="hljs-number">3713</span><br>    DOI: <span class="hljs-number">10.1021</span>/acs.jctc<span class="hljs-number">.5</span>b00255<br><br>In [<span class="hljs-number">3</span>]: Save_PDB(ACE+ALA*<span class="hljs-number">10</span>+NME,<span class="hljs-string">&#x27;multi_ALA.pdb&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>生成的pdb文件，用vmd打开之后显示如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741014.png" alt=""></p>
+<p>使用还是非常的方便。</p>
+<h1>氨基酸种类</h1>
+<p>这里是从参考链接2中整理出来的数据，以及用xponge和vmd画出来的三维结构图，主要是总结记录一下这些基本的组成单元。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">英文名</th>
+<th style="text-align:center">中文名</th>
+<th style="text-align:center">三字母缩写</th>
+<th style="text-align:center">单字母缩写</th>
+<th style="text-align:center">结构式</th>
+<th style="text-align:center">等电点pI</th>
+<th style="text-align:center">三维结构图</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Alanine</td>
+<td style="text-align:center">丙氨酸</td>
+<td style="text-align:center">Ala</td>
+<td style="text-align:center">A</td>
+<td style="text-align:center">CH3-CH(NH2)-COOH</td>
+<td style="text-align:center">6.0</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741044.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Arginine</td>
+<td style="text-align:center">精氨酸</td>
+<td style="text-align:center">Arg</td>
+<td style="text-align:center">R</td>
+<td style="text-align:center">HN=C(NH2)-NH-(CH2)3-CH(NH2)-COOH</td>
+<td style="text-align:center">10.76</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741088.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Asparagine</td>
+<td style="text-align:center">天冬酰胺</td>
+<td style="text-align:center">Asn</td>
+<td style="text-align:center">N</td>
+<td style="text-align:center">H2N-CO-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.41</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741126.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Asparticacid</td>
+<td style="text-align:center">天冬氨酸</td>
+<td style="text-align:center">Asp</td>
+<td style="text-align:center">D</td>
+<td style="text-align:center">HOOC-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">2.77</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741165.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Cysteine</td>
+<td style="text-align:center">半胱氨酸</td>
+<td style="text-align:center">Cys</td>
+<td style="text-align:center">C</td>
+<td style="text-align:center">HS-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.05</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741204.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glutamine</td>
+<td style="text-align:center">谷氨酰胺</td>
+<td style="text-align:center">Gln</td>
+<td style="text-align:center">Q</td>
+<td style="text-align:center">H2N-CO-(CH2)2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.41</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741247.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glutamicacid</td>
+<td style="text-align:center">谷氨酸</td>
+<td style="text-align:center">Glu</td>
+<td style="text-align:center">E</td>
+<td style="text-align:center">HOOC-(CH2)2-CH(NH2)-COOH</td>
+<td style="text-align:center">3.22</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741300.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Glycine</td>
+<td style="text-align:center">甘氨酸</td>
+<td style="text-align:center">Gly</td>
+<td style="text-align:center">G</td>
+<td style="text-align:center">NH2-CH2-COOH</td>
+<td style="text-align:center">5.97</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741354.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Histidine</td>
+<td style="text-align:center">组氨酸</td>
+<td style="text-align:center">His</td>
+<td style="text-align:center">H</td>
+<td style="text-align:center">*NH-CH=N-CH=*C-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">7.59</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741395.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Isoleucine</td>
+<td style="text-align:center">异亮氨酸</td>
+<td style="text-align:center">Ile</td>
+<td style="text-align:center">I</td>
+<td style="text-align:center">CH3-CH2-CH(CH3)-CH(NH2)-COOH</td>
+<td style="text-align:center">6.02</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741435.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Leucine</td>
+<td style="text-align:center">亮氨酸</td>
+<td style="text-align:center">Leu</td>
+<td style="text-align:center">L</td>
+<td style="text-align:center">(CH3)2CH-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.98</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741472.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Lysine</td>
+<td style="text-align:center">赖氨酸</td>
+<td style="text-align:center">Lys</td>
+<td style="text-align:center">K</td>
+<td style="text-align:center">H2N-(CH2)4-CH(NH2)-COOH</td>
+<td style="text-align:center">9.74</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741521.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Methionine</td>
+<td style="text-align:center">甲硫氨酸（蛋氨酸）</td>
+<td style="text-align:center">Met</td>
+<td style="text-align:center">M</td>
+<td style="text-align:center">CH3-S-(CH2)2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.74</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741564.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Phenylalanine</td>
+<td style="text-align:center">苯丙氨酸</td>
+<td style="text-align:center">Phe</td>
+<td style="text-align:center">F</td>
+<td style="text-align:center">Ph-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.48</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741601.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Proline</td>
+<td style="text-align:center">脯氨酸</td>
+<td style="text-align:center">Pro</td>
+<td style="text-align:center">P</td>
+<td style="text-align:center">*NH-(CH2)3-*CH-COOH</td>
+<td style="text-align:center">6.30</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741642.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Serine</td>
+<td style="text-align:center">丝氨酸</td>
+<td style="text-align:center">Ser</td>
+<td style="text-align:center">S</td>
+<td style="text-align:center">HO-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.68</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741684.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Threonine</td>
+<td style="text-align:center">苏氨酸</td>
+<td style="text-align:center">Thr</td>
+<td style="text-align:center">T</td>
+<td style="text-align:center">CH3-CH(OH)-CH(NH2)-COOH</td>
+<td style="text-align:center">6.16</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741725.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Tryptophan</td>
+<td style="text-align:center">色氨酸</td>
+<td style="text-align:center">Trp</td>
+<td style="text-align:center">W</td>
+<td style="text-align:center">*Ph-NH-CH=*C-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.89</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741767.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Tyrosine</td>
+<td style="text-align:center">酪氨酸</td>
+<td style="text-align:center">Tyr</td>
+<td style="text-align:center">Y</td>
+<td style="text-align:center">HO-p-Ph-CH2-CH(NH2)-COOH</td>
+<td style="text-align:center">5.66</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741806.png" alt=""></td>
+</tr>
+<tr>
+<td style="text-align:center">Valine</td>
+<td style="text-align:center">缬氨酸</td>
+<td style="text-align:center">Val</td>
+<td style="text-align:center">V</td>
+<td style="text-align:center">(CH3)2CH-CH(NH2)-COOH</td>
+<td style="text-align:center">5.96</td>
+<td style="text-align:center"><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170741851.png" alt=""></td>
+</tr>
+</tbody>
+</table>
+<h1>PDB文件基本格式</h1>
+<p><code>pdb</code>是最常用的一种存储蛋白质结构的文本文件格式，但是pdb本身又是一个严格的结构化的文本文件，其对应位置的内容为：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">列</th>
+<th style="text-align:center">数据</th>
+<th style="text-align:center">格式, 对齐</th>
+<th style="text-align:center">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1-4</td>
+<td style="text-align:center">ATOM</td>
+<td style="text-align:center">字符, 左</td>
+<td style="text-align:center">Record Type 记录类型</td>
+</tr>
+<tr>
+<td style="text-align:center">7-11</td>
+<td style="text-align:center">serial</td>
+<td style="text-align:center">整数, 右</td>
+<td style="text-align:center">Atom serial number 原子序号.PDB文件对分子结构处理为segment,<br> chain, residue, atom四个层次(一般并不用到chain),<br>因此此数位限定了一个残基中的最大原子数为为99999</td>
+</tr>
+<tr>
+<td style="text-align:center">13-16</td>
+<td style="text-align:center">name</td>
+<td style="text-align:center">字符, 左</td>
+<td style="text-align:center">Atom name 原子名称.原子的元素符号在13-14列中右对齐一般从14列开始写,<br> 占四个字符的原子名称才会从13列开始写.如, <br>铁原子FE写在13-14列, 而碳原子C只写在14列.</td>
+</tr>
+<tr>
+<td style="text-align:center">17</td>
+<td style="text-align:center">altLoc</td>
+<td style="text-align:center">字符</td>
+<td style="text-align:center">Alternate location indicator 可替位置标示符</td>
+</tr>
+<tr>
+<td style="text-align:center">18-20</td>
+<td style="text-align:center">resName</td>
+<td style="text-align:center">字符</td>
+<td style="text-align:center">Residue name 残基名称</td>
+</tr>
+<tr>
+<td style="text-align:center">22</td>
+<td style="text-align:center">chainID</td>
+<td style="text-align:center">字符</td>
+<td style="text-align:center">Chain identifier 链标识符</td>
+</tr>
+<tr>
+<td style="text-align:center">23-26</td>
+<td style="text-align:center">resSeq</td>
+<td style="text-align:center">整数, 右</td>
+<td style="text-align:center">Residue sequence number 残基序列号</td>
+</tr>
+<tr>
+<td style="text-align:center">27</td>
+<td style="text-align:center">iCode</td>
+<td style="text-align:center">字符</td>
+<td style="text-align:center">Code for insertion of residues 残基插入码</td>
+</tr>
+<tr>
+<td style="text-align:center">28-30</td>
+<td style="text-align:center">留空</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">31-38</td>
+<td style="text-align:center">x</td>
+<td style="text-align:center">浮点, 右</td>
+<td style="text-align:center">Orthogonal coordinates for X in Angstroms 直角x坐标(埃)</td>
+</tr>
+<tr>
+<td style="text-align:center">39-46</td>
+<td style="text-align:center">y</td>
+<td style="text-align:center">浮点, 右</td>
+<td style="text-align:center">Orthogonal coordinates for Y in Angstroms 直角y坐标(埃)</td>
+</tr>
+<tr>
+<td style="text-align:center">47-54</td>
+<td style="text-align:center">z</td>
+<td style="text-align:center">浮点, 右</td>
+<td style="text-align:center">Orthogonal coordinates for Z in Angstroms 直角z坐标(埃)</td>
+</tr>
+<tr>
+<td style="text-align:center">55-60</td>
+<td style="text-align:center">occupancy</td>
+<td style="text-align:center">浮点, 右</td>
+<td style="text-align:center">Occupancy 占有率</td>
+</tr>
+<tr>
+<td style="text-align:center">61-66</td>
+<td style="text-align:center">tempFactor</td>
+<td style="text-align:center">浮点, 右</td>
+<td style="text-align:center">Temperature factor 温度因子</td>
+</tr>
+<tr>
+<td style="text-align:center">67-72</td>
+<td style="text-align:center">留空</td>
+<td style="text-align:center"></td>
+<td style="text-align:center"></td>
+</tr>
+<tr>
+<td style="text-align:center">73-76</td>
+<td style="text-align:center">segID</td>
+<td style="text-align:center">字符, 左</td>
+<td style="text-align:center">Segment identifier(optional) 可选的片段标识符，<br>VMD会使用此数据</td>
+</tr>
+<tr>
+<td style="text-align:center">77-78</td>
+<td style="text-align:center">element</td>
+<td style="text-align:center">字符, 右</td>
+<td style="text-align:center">Element symbol 元素符号</td>
+</tr>
+<tr>
+<td style="text-align:center">79-80</td>
+<td style="text-align:center">charge</td>
+<td style="text-align:center">字符</td>
+<td style="text-align:center">Charge on the atom(optional) 可选的原子电荷.<br>实际分子模拟中往往重新定义电荷, <br>故此列往往不用.<br>VMD写出的PDB文件中无此列.</td>
+</tr>
+</tbody>
+</table>
+<p>这个格式里面有一个比较坑的点是，<code>atom_name</code>占位符长度会影响对齐位置。为了方便操作，这里用一个python的脚本来写pdb文件，也可以作为理解上述结构化参数的出发点：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs python3">def write_pdb(crd, atom_names, res_names, res_ids, pdb_name=&#x27;temp.pdb&#x27;):<br>    &quot;&quot;&quot;Write protein crd information into pdb format files.<br>    Args:<br>        crd(numpy.float32): The coordinates of protein atoms.<br>        atom_names(numpy.str_): The atom names differ from aminos.<br>        res_names(numpy.str_): The residue names of amino names.<br>        res_ids(numpy.int32): A unique mask each same residue.<br>        pdb_name(str): The path to save the pdb file, absolute path is suggested.<br>    &quot;&quot;&quot;<br>    success = 1<br>    with open(pdb_name, &#x27;w&#x27;) as pdb:<br>        pdb.write(&#x27;MODEL     1\n&#x27;)<br>        for i,c in enumerate(crd[0]):<br>            pdb.write(&#x27;ATOM&#x27;.ljust(6))<br>            pdb.write(&#x27;&#123;&#125;&#x27;.format(i + 1).rjust(5))<br>            if len(atom_names[i])&lt;4:<br>                pdb.write(&#x27;  &#x27;)<br>                pdb.write(atom_names[i].ljust(3))<br>            else:<br>                pdb.write(&#x27; &#x27;)<br>                pdb.write(atom_names[i].ljust(4))<br>            pdb.write(res_names[i].rjust(4))<br>            pdb.write(&#x27;A&#x27;.rjust(2))<br>            pdb.write(&#x27;&#123;&#125;&#x27;.format(res_ids[i]).rjust(4))<br>            pdb.write(&#x27;    &#x27;)<br>            pdb.write(&#x27;&#123;:.3f&#125;&#x27;.format(c[0]).rjust(8))<br>            pdb.write(&#x27;&#123;:.3f&#125;&#x27;.format(c[1]).rjust(8))<br>            pdb.write(&#x27;&#123;:.3f&#125;&#x27;.format(c[2]).rjust(8))<br>            pdb.write(&#x27;1.0&#x27;.rjust(6))<br>            pdb.write(&#x27;0.0&#x27;.rjust(6))<br>            pdb.write(&#x27;&#123;&#125;&#x27;.format(atom_names[i][0]).rjust(12))<br>            pdb.write(&#x27;\n&#x27;)<br>        pdb.write(&#x27;TER\n&#x27;)<br>        pdb.write(&#x27;ENDMDL\n&#x27;)<br>        pdb.write(&#x27;END\n&#x27;)<br>    return success<br></code></pre></td></tr></table></figure>
+<p>这样只要给定crd（原子坐标），atom_names（原子名称），res_names（残基/氨基酸名称），res_ids（残基位置编号）这几个参数，就可以生成一个符合格式要求的pdb文件。如果不严格按照这个pdb格式写入，有可能存在其他工具无法读取的情况，比如<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ln.html">上一篇博客</a>中所介绍的TMscore软件就要求非常严格。</p>
+<h1>总结概要</h1>
+<p>本文通过对Xponge+VMD的工具对蛋白质进行建模，然后总结了20种氨基酸的具体信息，也就是蛋白质的基本组成单元。通过对这些氨基酸的组合，就可以得到一个具有生物活性的蛋白质。同时本文还介绍了常用的存储蛋白质结构的文件格式pdb的具体格式化定义，总体来说是一个总结性的文章。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pdb.html">https://www.cnblogs.com/dechinphy/p/pdb.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.sciencenet.cn/blog-548663-895916.html">https://blog.sciencenet.cn/blog-548663-895916.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E4%BA%8C%E5%8D%81%E7%A7%8D%E6%B0%A8%E5%9F%BA%E9%85%B8/9080751">https://baike.baidu.com/item/二十种氨基酸/9080751</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/9d228d11.html">https://dechin-phy.asia/posts/9d228d11.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-05-06</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-05-07</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/dfc5ddb.html">Python3获取5000个元素的单字符表</a><a class="next" href="/posts/23730d69.html">Linux系统创建可执行文件软链接</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

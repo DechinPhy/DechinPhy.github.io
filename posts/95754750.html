@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/95754750.html"><meta property="og:type" content="article"><meta property="og:title" content="使用timeout-decorator为python函数任务设置超时时间"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/95754750.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-02-02T15:06:46.000Z"><meta property="article:modified_time" content="2021-02-02T15:07:00.000Z"><title>使用timeout-decorator为python函数任务设置超时时间 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用timeout-decorator为python函数任务设置超时时间</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用timeout-decorator为python函数任务设置超时时间</h1><div class="post-meta">2021-02-02<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 7</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">需求背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">timeout-decorator的安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">配置一个超时任务</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#timeout-decorator%E8%A3%85%E9%A5%B0%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">3.1.</span> <span class="toc-text">timeout-decorator装饰器的使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9A%E8%BF%87sys%E8%8E%B7%E5%8F%96timeout%E5%8F%82%E6%95%B0"><span class="toc-number">3.2.</span> <span class="toc-text">通过sys获取timeout参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%82%E5%B8%B8%E6%8D%95%E8%8E%B7"><span class="toc-number">3.3.</span> <span class="toc-text">异常捕获</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">用例测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B6%85%E6%97%B6%E4%BB%BB%E5%8A%A1%E4%B8%BA2s"><span class="toc-number">4.1.</span> <span class="toc-text">超时任务为2s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B6%85%E6%97%B6%E4%BB%BB%E5%8A%A1%E4%B8%BA3s"><span class="toc-number">4.2.</span> <span class="toc-text">超时任务为3s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B6%85%E6%97%B6%E4%BB%BB%E5%8A%A1%E4%B8%BA4s"><span class="toc-number">4.3.</span> <span class="toc-text">超时任务为4s</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>这里我们介绍了使用timeout-decorator来进行python的任务超时限制的方法，并且搭配介绍了python的输入参数配置与异常捕获的技巧，使得超时任务的配置和执行更加合理更加优雅。</p>
+<span id="more"></span>
+<h1>需求背景</h1>
+<p>在python代码的实现中，假如我们有一个需要执行时间跨度非常大的for循环，如果在中间的某处我们需要定时停止这个函数，而不停止整个程序。那么初步的就可以想到两种方案：第一种方案是我们先预估for循环或者while中的每一步所需要的运行时间，然后设定在到达某一个迭代次数之后就自动退出循环;第二种方案是，在需要设置超时任务的前方引入超时的装饰器，使得超过指定时间之后自动退出函数执行。这里我们将针对第二种方案，进行展开介绍。</p>
+<h1>timeout-decorator的安装</h1>
+<p>在pypi的标准库中也包含有<code>timeout-decorator</code>模块，因此可以通过<code>pip</code>来直接安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro <span class="hljs-built_in">timeout</span>]$ python3 -m pip install timeout_decorator<br>Collecting timeout_decorator<br>  Downloading timeout-decorator-0.5.0.tar.gz (4.8 kB)<br>Building wheels <span class="hljs-keyword">for</span> collected packages: timeout-decorator<br>  Building wheel <span class="hljs-keyword">for</span> timeout-decorator (setup.py) ... <span class="hljs-keyword">done</span><br>  Created wheel <span class="hljs-keyword">for</span> timeout-decorator: filename=timeout_decorator-0.5.0-py3-none-any.whl size=5029 sha256=279f8585a08d5e5c87de887492169d1a81e02060c8ea3b62fdd6f062b7f83601<br>  Stored <span class="hljs-keyword">in</span> directory: /home/dechin/.cache/pip/wheels/38/05/4e/161d1463ca145ec1023bd4e5e1f31cbf9239aa8f39a2a2b643<br>Successfully built timeout-decorator<br>Installing collected packages: timeout-decorator<br>Successfully installed timeout-decorator-0.5.0<br></code></pre></td></tr></table></figure>
+<h1>配置一个超时任务</h1>
+<p>这里我们先展示示例代码，再展开介绍其中各个模块的含义：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># timeout_test1.py</span><br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><span class="hljs-keyword">import</span> sys<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">import</span> timeout_decorator<br><br><span class="hljs-meta">@timeout_decorator.timeout(<span class="hljs-params"><span class="hljs-built_in">int</span>(<span class="hljs-params">sys.argv[<span class="hljs-number">2</span>]</span>)</span>)</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">test</span>():<br>    <span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;--timeout&#x27;</span>:<br>        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> trange(<span class="hljs-number">3</span>):<br>            time.sleep(<span class="hljs-number">1</span>)<br>            <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;&gt;&gt;&gt; &#123;&#125; seconds passed.&#x27;</span>.<span class="hljs-built_in">format</span>(i+<span class="hljs-number">1</span>))<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-keyword">try</span>:<br>        test()<br>    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Timeout Error Catched!&#x27;</span>)<br>        <span class="hljs-built_in">print</span> (e)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&quot;Timeout Task Ended!&quot;</span>)<br></code></pre></td></tr></table></figure>
+<h2 id="timeout-decorator装饰器的使用">timeout-decorator装饰器的使用</h2>
+<p>该超时模块采用装饰器的形式来进行调用，使用时先<code>import</code>该模块，然后在需要设置定时任务的函数前添加<code>@timeout_decorator.timeout(3)</code>即可，这里括号中的3表示超时时间设置为3s，也就是3s后该函数就会停止运行。前面写过一篇博客介绍<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/decoretor.html">如何自定义一个装饰器</a>，感兴趣的读者可以自行阅读。在上述的用例中，为了使得超时时间的定义更加灵活，我们采取了从用户输入获取参数的方案，具体内容参考下一章节的介绍。</p>
+<h2 id="通过sys获取timeout参数">通过sys获取timeout参数</h2>
+<p>在上述用例的装饰器中，我们看到了<code>int(sys.argv[2])</code>这样的一个参数，这个参数的意思是用户输入命令行的<code>第三个</code>用空格隔开的参数。举例子说，如果用户执行了<code>python3 test.py -t 1</code>，那么这里就会产生三个输入参数：<code>argv[0]</code>就是<code>test.py</code>，<code>argv[1]</code>就是<code>-t</code>，<code>argv[2]</code>就是<code>1</code>，是一个数组的格式。需要注意的是，<code>argv</code>数组的每一个元素都是字符串格式，如果需要使用数字需要先进行格式转换。这里针对于超时任务的处理，我们指定的执行策略为类似<code>python3 task.py --timeout 5</code>的格式，<code>--timeout</code>后面的数字表示任务执行超时的秒数。如果输入变量格式不正确，或者不满足3个以上的变量输入要求，或者第二个参数不是<code>--timeout</code>，都有可能运行报错。</p>
+<h2 id="异常捕获">异常捕获</h2>
+<p>在定义好超时任务之后，如果达到了设定好的超时时间，系统会给出<code>timeout_decorator.timeout_decorator.TimeoutError</code>报错并结束程序运行。但是我们这里配置超时任务的目的其实是希望在超时任务的函数到达指定时间之后退出，但是不影响其他模块程序的运行，因此这里我们需要对程序给出的报错进行异常捕获，并且通报与抑制该异常。比较简单的方案就是采用<code>except Exception as e</code>的方式，一般<code>Exception</code>最好可以指向指定的报错类型，而不是通用的<code>Exception</code>处理，这有可能带来其他的一些风险。</p>
+<h1>用例测试</h1>
+<p>以下按照输入参数的不同，我们先划分为几个模块来分析输出结果以及原因。</p>
+<h2 id="超时任务为2s">超时任务为2s</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro <span class="hljs-built_in">timeout</span>]$ python3 timeout_test.py --<span class="hljs-built_in">timeout</span> 2<br>  0%|                                                 | 0/3 [00:00&lt;?, ?it/s]&gt;&gt;&gt; 1 seconds passed.<br> 33%|█████████████▋                           | 1/3 [00:01&lt;00:03,  1.99s/it]<br>Timeout Error Catched!<br><span class="hljs-string">&#x27;Timed Out&#x27;</span><br>Timeout Task Ended!<br></code></pre></td></tr></table></figure>
+<p><em>结果分析</em>：由于我们在程序中给定了一个一共会执行3s的任务，而这里在命令行中我们将超时时间设置为了2s，因此还没执行完程序就抛出并捕获了异常，成功打印了<code>Timeout Task Ended!</code>这一超时任务之外的任务。</p>
+<h2 id="超时任务为3s">超时任务为3s</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro <span class="hljs-built_in">timeout</span>]$ python3 timeout_test.py --<span class="hljs-built_in">timeout</span> 3<br>  0%|                                                 | 0/3 [00:00&lt;?, ?it/s]&gt;&gt;&gt; 1 seconds passed.<br> 33%|█████████████▋                           | 1/3 [00:01&lt;00:02,  1.00s/it]&gt;&gt;&gt; 2 seconds passed.<br> 67%|███████████████████████████▎             | 2/3 [00:02&lt;00:01,  1.50s/it]<br>Timeout Error Catched!<br><span class="hljs-string">&#x27;Timed Out&#x27;</span><br>Timeout Task Ended!<br></code></pre></td></tr></table></figure>
+<p><em>结果分析</em>：由于我们在程序中给定了一个一共会执行3s的任务，虽然在命令行的输入参数中我们给定了3s的执行时间，但是最终程序还是没有执行结束并抛出了异常。这是因为<code>sleep(1)</code>并不是精准的1s，也许是<code>1.0000001</code>但是这超出来的时间也会对最终执行的总时间产生影响，况且还有其他模块程序所导致的<code>overlap</code>，因此最后也没有执行完成。而且从进度条来看，上面一个章节中时间设置为3s的时候，其实也只是完成了33%的任务而不是67%的任务，这也是符合我们的预期的。</p>
+<h2 id="超时任务为4s">超时任务为4s</h2>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro <span class="hljs-built_in">timeout</span>]$ python3 timeout_test.py --<span class="hljs-built_in">timeout</span> 4<br>  0%|                                                 | 0/3 [00:00&lt;?, ?it/s]&gt;&gt;&gt; 1 seconds passed.<br> 33%|█████████████▋                           | 1/3 [00:01&lt;00:02,  1.00s/it]&gt;&gt;&gt; 2 seconds passed.<br> 67%|███████████████████████████▎             | 2/3 [00:02&lt;00:01,  1.00s/it]&gt;&gt;&gt; 3 seconds passed.<br>100%|█████████████████████████████████████████| 3/3 [00:03&lt;00:00,  1.00s/it]<br>Timeout Task Ended!<br></code></pre></td></tr></table></figure>
+<p><em>结果分析</em>：由于我们在程序中给定了一个一共会执行3s的任务，而在参数输入时配置了4s的超时时间，因此最终任务可以顺利执行完成。这里为了验证上面一个小章节中提到的<code>overlap</code>，我们可以尝试使用系统自带的时间测试模块来测试，如果该程序执行完成之后，一共需要多少的时间：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro <span class="hljs-built_in">timeout</span>]$ <span class="hljs-keyword">time</span> python3 timeout_test.py --<span class="hljs-built_in">timeout</span> 4<br>  0%|                                                 | 0/3 [00:00&lt;?, ?it/s]&gt;&gt;&gt; 1 seconds passed.<br> 33%|█████████████▋                           | 1/3 [00:01&lt;00:02,  1.00s/it]&gt;&gt;&gt; 2 seconds passed.<br> 67%|███████████████████████████▎             | 2/3 [00:02&lt;00:01,  1.00s/it]&gt;&gt;&gt; 3 seconds passed.<br>100%|█████████████████████████████████████████| 3/3 [00:03&lt;00:00,  1.00s/it]<br>Timeout Task Ended!<br><br>real    0m3.167s<br>user    0m0.147s<br>sys     0m0.017s<br></code></pre></td></tr></table></figure>
+<p>这里我们就可以看到，其实额定为3s的任务，执行完成需要约3.2s的实际时间，多出来的时间就是所谓的<code>overlap</code>。</p>
+<h1>总结概要</h1>
+<p>函数的超时设置是一个比较小众使用的功能，可以用于任务的暂停(并非截断)等场景，并且配合上面章节提到的异常捕获和参数输入来使用，会使得任务更加优雅且合理。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/timeout.html">https://www.cnblogs.com/dechinphy/p/timeout.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/95754750.html">https://dechin-phy.asia/posts/95754750.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-02-02</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-02-02</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/a884aba2.html">Python实现量子态采样</a><a class="next" href="/posts/bc32cfc4.html">使用python的os.walk()对目标路径进行遍历</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

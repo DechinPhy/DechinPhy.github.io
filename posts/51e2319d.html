@@ -1,0 +1,296 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/51e2319d.html"><meta property="og:type" content="article"><meta property="og:title" content="为科学计算而生的Julia——基于Manjaro Linux的安装与入门"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/51e2319d.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-31T04:52:16.000Z"><meta property="article:modified_time" content="2021-03-31T11:42:00.000Z"><title>为科学计算而生的Julia——基于Manjaro Linux的安装与入门 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">为科学计算而生的Julia——基于Manjaro Linux的安装与入门</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">为科学计算而生的Julia——基于Manjaro Linux的安装与入门</h1><div class="post-meta">2021-03-31<span> | </span><span class="category"><a href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 5.8k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 27</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">官网简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">在Manjaro Linux上安装Julia</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">包管理与案例测试</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">基本用法示例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%BD%E6%95%B0"><span class="toc-number">5.1.</span> <span class="toc-text">函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E9%87%8A"><span class="toc-number">5.2.</span> <span class="toc-text">注释</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#jl%E6%96%87%E4%BB%B6%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">5.3.</span> <span class="toc-text">jl文件的执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%83%E7%94%A8python%E5%87%BD%E6%95%B0"><span class="toc-number">5.4.</span> <span class="toc-text">调用python函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#macro%E8%A3%85%E9%A5%B0%E5%99%A8"><span class="toc-number">5.5.</span> <span class="toc-text">macro装饰器</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>在这篇文章中我们介绍了julia编程语言的一些基本特点，这是一门兼顾了高性能与高效开发的编程语言，而且开源免费。不仅具备有python的便捷性，还有接近于C语言的高性能特性，是一门为科学计算而生的编程语言。我们介绍了其在Manjaro Linux平台下的安装方法，及其基本使用方法，如变量定义、函数定义和调用、包的管理以及与python编程语言的协同工作。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p><a target="_blank" rel="noopener" href="https://docs.juliacn.com/latest/">Julia</a>是一门为科学计算而生的编程语言，其着重强调了开源、生态与性能。从开源角度来说，相比于Matlab就要友好很多，用户可以免费使用，而且MIT协议应该是最宽松的开源协议之一（截图来自于参考链接3）：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165427639.png" alt="">
+而生态则是对标的C/C++语言，我们都知道python是一门生态非常强大的编程语言，各种轮子很大程度上减少了学习成本和工作量，而julia的目标也是如此。最后在性能上是对标的python，我们都知道python作为一门解释性语言，在性能上有较大的牺牲。除非我们使用c++或者fortran去构造动态链接库，然后通过python上层语言来封装，这样才能在性能上有所保障，但是工作量又被放大了。Julia的优势就在于可以达到接近于C语言的性能，同时又能像python一样易于编写，兼顾了性能与开发周期，对科学计算非常的友好。</p>
+<h1>官网简介</h1>
+<p>科学计算对性能一直有着最高的需求，但目前各领域的专家却大量使用较慢的动态语言来开展他们的日常工作。 偏爱动态语言有很多很好的理由，因此我们不会舍弃动态的特性。 幸运的是，现代编程语言设计与编译器技术可以大大消除性能折衷（trade-off），并提供有足够生产力的单一环境进行原型设计，而且能高效地部署性能密集型应用程序。 Julia 语言在这其中扮演了这样一个角色：它是一门灵活的动态语言，适合用于科学计算和数值计算，并且性能可与传统的静态类型语言媲美。</p>
+<p>由于 Julia 的编译器和其它语言比如 Python 或 R 的解释器有所不同，一开始你可能发现 Julia 的性能并不是很突出。 如果你觉得速度有点慢，我们强烈建议在尝试其他功能前，先读一读文档中的提高性能的窍门。 在理解了 Julia 的运作方式后，写出和 C 一样快的代码对你而言就是小菜一碟。</p>
+<p>Julia 拥有可选类型标注和多重派发这两个特性，同时还拥有很棒的性能。 这些都得归功于使用 LLVM 实现的类型推导和即时编译（JIT）技术。Julia 是一门支持过程式、函数式和面向对象的多范式语言。 它像 R、MATLAB 和 Python 一样简单，在高级数值计算方面有丰富的表现力，并且支持通用编程。 为了实现这个目标，Julia 以数学编程语言（mathematical programming languages）为基础，同时也参考了不少流行的动态语言，例如 Lisp、Perl、Python、Lua、和 Ruby。</p>
+<p>Julia 与传统动态语言最重要的区别是：</p>
+<ul>
+<li>核心语言很小：标准库是用 Julia 自身写的，包括整数运算这样的基础运算</li>
+<li>丰富的基础类型：既可用于定义和描述对象，也可用于做可选的类型标注</li>
+<li>通过多重派发，可以根据类型的不同，来调用同名函数的不同实现</li>
+<li>为不同的参数类型，自动生成高效、专用的代码</li>
+<li>接近 C 语言的性能</li>
+</ul>
+<p>尽管人们有时会说动态语言是“无类型的”，但实际上绝对不是这样的：每一个对象都有一个类型，无论它是基础的类型（primitive）还是用户自定义的类型。 大多数的动态语言都缺乏类型声明，这意味着程序员无法告诉编译器值的类型，也就无法显式地讨论类型。 另一方面，在静态语言中，往往必须标注对象的类型。但类型只在编译期才存在，而无法在运行时进行操作和表达。 而在 Julia 中，类型本身是运行时的对象，并可用于向编译器传达信息。</p>
+<p>类型系统和多重派发是 Julia 语言最主要的特征，但一般不需要显式地手动标注或使用：函数通过函数名称和不同类型参数的组合进行定义，在调用时会派发到最接近（most specific）的定义上去。这样的编程模型非常适合数学化的编程，尤其是在传统的面向对象派发中，一些函数的第一个变量理论上并不“拥有”这样一个操作时。 在 Julia 中运算符只是函数的一个特殊标记——例如，为用户定义的新类型添加加法运算，你只要为 + 函数定义一个新的方法就可以了。 已有的代码就可以无缝接入这个新的类型。</p>
+<p>Julia 在设计之初就非常看重性能，再加上它的动态类型推导（可以被可选的类型标注增强），使得 Julia 的计算性能超过了其它的动态语言，甚至能够与静态编译语言竞争。对于大型数值问题，速度一直都是，也一直会是一个重要的关注点：在过去的几十年里，需要处理的数据量很容易与摩尔定律保持同步。</p>
+<p>Julia 的目标是创建一个前所未有的集易用、强大、高效于一体的语言。除此之外，Julia 还拥有以下优势：</p>
+<ul>
+<li>采用 MIT 许可证：免费又开源</li>
+<li>用户自定义类型的速度与兼容性和内建类型一样好</li>
+<li>无需特意编写向量化的代码：非向量化的代码就很快</li>
+<li>为并行计算和分布式计算设计</li>
+<li>轻量级的“绿色”线程：协程</li>
+<li>低调又牛逼的类型系统</li>
+<li>优雅、可扩展的类型转换和类型提升</li>
+<li>对 Unicode 的有效支持，包括但不限于 UTF-8</li>
+<li>直接调用 C 函数，无需封装或调用特别的 API</li>
+<li>像 Shell 一样强大的管理其他进程的能力</li>
+<li>像 Lisp 一样的宏和其他元编程工具</li>
+</ul>
+<h1>在Manjaro Linux上安装Julia</h1>
+<p>如果我们直接搜索Julia在Manjaro Linux下的安装方法，很有可能搜到一个类似于参考链接4中所提供的方案。这个方案是从官网下载一个可执行文件，然后将该文件存放到系统路径下。虽然这也不失为一个比较通用的方法，但是我个人更倾向于从系统的源里面去寻找资源，而Manjaro Linux其实是有julia的资源的，只是会有一些依赖需要我们去独立安装。我们先尝试一下直接安装julia：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root 2021-softwares]# pacman -S julia<br>正在解析依赖关系...<br>正在查找软件包冲突...<br>警告：正在从目标清单中删除 <span class="hljs-string">&#x27;blas&#x27;</span> ，因为它和 <span class="hljs-string">&#x27;openblas&#x27;</span> 冲突<br><br>软件包 (11) cblas-3.9.0-3  lapack-3.9.0-3  libutf8proc-2.6.1-1  llvm10-libs-10.0.1-4<br>            mbedtls-2.25.0-1  metis-5.1.0.p10-1  openblas-0.3.13-2  openlibm-0.7.5-1<br>            suitesparse-5.9.0-1  tbb-2020.3-1  julia-2:1.5.4-1<br><br>下载大小：   51.24 MiB<br>全部安装大小：  272.10 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> cblas-3.9.0-3-x86_64        33.9 KiB  4.73 MiB/s 00:00 [#############################] 100%<br> metis-5.1.0.p10-1-x86_64   166.6 KiB  2.71 MiB/s 00:00 [#############################] 100%<br> lapack-3.9.0-3-x86_64        2.3 MiB  9.36 MiB/s 00:00 [#############################] 100%<br> tbb-2020.3-1-x86_64        393.4 KiB  8.73 MiB/s 00:00 [#############################] 100%<br> suitesparse-5.9.0-1-x...  1101.7 KiB  9.44 MiB/s 00:00 [#############################] 100%<br> llvm10-libs-10.0.1-4-...    21.2 MiB  8.32 MiB/s 00:03 [#############################] 100%<br> openblas-0.3.13-2-x86_64  1448.8 KiB  6.97 MiB/s 00:00 [#############################] 100%<br> libutf8proc-2.6.1-1-x...    76.9 KiB  25.0 MiB/s 00:00 [#############################] 100%<br> mbedtls-2.25.0-1-x86_64    848.9 KiB  4.30 MiB/s 00:00 [#############################] 100%<br> openlibm-0.7.5-1-x86_64    111.5 KiB  4.03 MiB/s 00:00 [#############################] 100%<br> julia-2:1.5.4-1-x86_64      23.6 MiB  2.90 MiB/s 00:08 [#############################] 100%<br>(11/11) 正在检查密钥环里的密钥                          [#############################] 100%<br>(11/11) 正在检查软件包完整性                            [#############################] 100%<br>(11/11) 正在加载软件包文件                              [#############################] 100%<br>(11/11) 正在检查文件冲突                                [#############################] 100%<br>(11/11) 正在检查可用存储空间                            [#############################] 100%<br>:: 正在处理软件包的变化...<br>( 1/11) 正在安装 openblas                               [#############################] 100%<br>( 2/11) 正在安装 cblas                                  [#############################] 100%<br>( 3/11) 正在安装 libutf8proc                            [#############################] 100%<br>( 4/11) 正在安装 metis                                  [#############################] 100%<br>( 5/11) 正在安装 lapack                                 [#############################] 100%<br>( 6/11) 正在安装 tbb                                    [#############################] 100%<br>( 7/11) 正在安装 suitesparse                            [#############################] 100%<br>( 8/11) 正在安装 mbedtls                                [#############################] 100%<br>( 9/11) 正在安装 openlibm                               [#############################] 100%<br>(10/11) 正在安装 llvm10-libs                            [#############################] 100%<br>(11/11) 正在安装 julia                                  [#############################] 100%<br>julia 的可选依赖<br>    gnuplot: If using the Gaston Package from julia<br>:: 正在运行事务后钩子函数...<br>(1/3) Arming ConditionNeedsUpdate...<br>(2/3) Updating icon theme caches...<br>(3/3) Updating the desktop file MIME <span class="hljs-built_in">type</span> cache...<br></code></pre></td></tr></table></figure>
+<p>安装下来倒是没报错，看起来没什么问题，我们执行一下julia的命令行试试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root 2021-softwares]# julia<br>julia: /usr/bin/../lib/libc.so.6: version `GLIBC_2.33<span class="hljs-string">&#x27; not found (required by /usr/bin/../lib/libjulia.so.1)</span><br></code></pre></td></tr></table></figure>
+<p>这一下问题就暴露出来了，有<code>glibc</code>这个依赖需要我们手动安装，在网上搜了一下方案，直接安装和升级以下两个库即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root 2021-softwares]# pacman -S glibc lib32-glibc<br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (2) glibc-2.33-4  lib32-glibc-2.33-4<br><br>下载大小：  13.35 MiB<br>全部安装大小：  64.42 MiB<br>净更新大小：  -0.34 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> glibc-2.33-4-x86_64          9.8 MiB  9.46 MiB/s 00:01 [#############################] 100%<br> lib32-glibc-2.33-4-x86_64    3.5 MiB  9.56 MiB/s 00:00 [#############################] 100%<br>(2/2) 正在检查密钥环里的密钥                            [#############################] 100%<br>(2/2) 正在检查软件包完整性                              [#############################] 100%<br>(2/2) 正在加载软件包文件                                [#############################] 100%<br>(2/2) 正在检查文件冲突                                  [#############################] 100%<br>(2/2) 正在检查可用存储空间                              [#############################] 100%<br>:: 正在处理软件包的变化...<br>(1/2) 正在更新 glibc                                    [#############################] 100%<br>Generating locales...<br>  en_US.UTF-8... <span class="hljs-keyword">done</span><br>  zh_CN.UTF-8... <span class="hljs-keyword">done</span><br>Generation complete.<br>(2/2) 正在更新 lib32-glibc                              [#############################] 100%<br>:: 正在运行事务后钩子函数...<br>(1/5) Reloading system manager configuration...<br>(2/5) Creating temporary files...<br>(3/5) Arming ConditionNeedsUpdate...<br>(4/5) Restarting cronie <span class="hljs-keyword">for</span> libc upgrade...<br>(5/5) Updating the info directory file...<br></code></pre></td></tr></table></figure>
+<p>安装完成后我们再试一下julia的指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">[dechin-root 2021-softwares]# julia<br>               _<br>   _       _ _(_)_     |  Documentation: https://docs.julialang.org<br>  (_)     | (_) (_)    |<br>   _ _   _| |_  __ _   |  Type &quot;?&quot; for help, &quot;]?&quot; for Pkg help.<br>  | | | | | | |/ _` |  |<br>  | | |_| | | | (_| |  |  Version 1.5.4 (2021-03-11)<br> _/ |\__&#x27;_|_|_|\__&#x27;_|  |  <br>|__/                   |<br><br>julia&gt; 1+2<br>3<br><br>julia&gt; ans<br>3<br><br>julia&gt; println(&quot;Hello World!&quot;)<br>Hello World!<br></code></pre></td></tr></table></figure>
+<p>当我们看到这个界面的时候，就表示julia已经安装成功了。</p>
+<h1>包管理与案例测试</h1>
+<p>参考了参考链接1中的案例，我们来测试一下julia执行简单的张量网络缩并的功能。关于张量网络计算的背景知识，可以参考一下我们之前写过的这篇介绍<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/tensor.html">python张量网络计算的博客</a>，这里用julia来计算张量网络的话会依赖于<code>Einsum</code>这个第三方包，需要我们来手动安装。首先我们测试一下直接调用这个包的指令，如果这个包已经被安装了，那么调用就不会报错：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; using Einsum<br>ERROR: ArgumentError: Package Einsum not found in current path:<br>- Run `import Pkg; Pkg.add(&quot;Einsum&quot;)` to install the Einsum package.<br><br>Stacktrace:<br> [1] run_repl(::REPL.AbstractREPL, ::Any) at /build/julia/src/julia-1.5.4/usr/share/julia/stdlib/v1.5/REPL/src/REPL.jl:288<br></code></pre></td></tr></table></figure>
+<p>这里我们发现系统中是没有这个库的，而这里调用的时候也已经提示了我们安装这个包的方法，我们可以尝试直接按照这个指令来安装：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; import Pkg<br><br>julia&gt; Pkg.add(&quot;Einsum&quot;)<br> Installing known registries into `~/.julia`<br>######################################################################## 100.0%<br>      Added registry `General` to `~/.julia/registries/General`<br>  Resolving package versions...<br>  Installed Compat ─ v3.25.0<br>  Installed Einsum ─ v0.4.1<br>Updating `~/.julia/environments/v1.5/Project.toml`<br>  [b7d42ee7] + Einsum v0.4.1<br>Updating `~/.julia/environments/v1.5/Manifest.toml`<br>  [34da2185] + Compat v3.25.0<br>  [b7d42ee7] + Einsum v0.4.1<br>  [2a0f44e3] + Base64<br>  [ade2ca70] + Dates<br>  [8bb1440f] + DelimitedFiles<br>  [8ba89e20] + Distributed<br>  [b77e0a4c] + InteractiveUtils<br>  [76f85450] + LibGit2<br>  [8f399da3] + Libdl<br>  [37e2e46d] + LinearAlgebra<br>  [56ddb016] + Logging<br>  [d6f4376e] + Markdown<br>  [a63ad114] + Mmap<br>  [44cfe95a] + Pkg<br>  [de0858da] + Printf<br>  [3fa0cd96] + REPL<br>  [9a3f8284] + Random<br>  [ea8e919c] + SHA<br>  [9e88b42a] + Serialization<br>  [1a1011a3] + SharedArrays<br>  [6462fe0b] + Sockets<br>  [2f01184e] + SparseArrays<br>  [10745b16] + Statistics<br>  [8dfed614] + Test<br>  [cf7118a7] + UUIDs<br>  [4ec0a83e] + Unicode<br></code></pre></td></tr></table></figure>
+<p>安装过程没有什么问题，那我们再次调用看看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; using Einsum<br>[ Info: Precompiling Einsum [b7d42ee7-0b51-5a75-98ca-779d3107e4c0]<br></code></pre></td></tr></table></figure>
+<p>调用没有问题，说明我们这个包是安装成功了。接下来正式测试一下张量网络缩并的案例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; A = zeros(5,6,7)<br>5×6×7 Array&#123;Float64,3&#125;:<br>[:, :, 1] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 2] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 3] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 4] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 5] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 6] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>[:, :, 7] =<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br> 0.0  0.0  0.0  0.0  0.0  0.0<br><br>julia&gt; X = randn(5,2)<br>5×2 Array&#123;Float64,2&#125;:<br> -0.573591   0.550235<br> -0.893529  -1.25679<br> -0.338177   0.632082<br> -0.304742   2.67068<br> -0.171912  -0.714813<br><br>julia&gt; Y = randn(6,2)<br>6×2 Array&#123;Float64,2&#125;:<br> -0.609149  -0.815229<br>  0.199472   0.554751<br> -0.562527   0.259988<br> -1.65124    1.08916<br> -0.625242  -0.0391435<br> -0.943587  -0.695565<br><br>julia&gt; Z = randn(7,2)<br>7×2 Array&#123;Float64,2&#125;:<br>  0.311165   0.555719<br> -0.486201  -1.26421<br> -1.90713    0.738125<br> -1.26129   -0.274261<br> -0.570305  -0.295527<br> -0.182373  -0.0410972<br> -0.213648  -0.12244<br><br>julia&gt; @einsum A[i,j,k] = X[i,r]*Y[j,r]*Z[k,r]<br>5×6×7 Array&#123;Float64,3&#125;:<br>[:, :, 1] =<br> -0.140556   0.134027   0.179899    0.627755  0.0996249   -0.0442743<br>  0.738739  -0.442911  -0.0251791  -0.30159   0.201178     0.748148<br> -0.222257   0.173872   0.150518    0.556337  0.052044    -0.145031<br> -1.15216    0.804416   0.439202    1.77305   0.00119409  -0.942843<br>  0.356423  -0.231037  -0.0731852  -0.344323  0.0489952    0.326778<br><br>[:, :, 2] =<br>  0.397202  -0.330261  -0.337728  -1.21813   -0.147139    0.220694<br> -1.5599     0.968069   0.168698   1.01314   -0.333819   -1.51507<br>  0.551277  -0.410494  -0.300243  -1.14183   -0.0715246   0.400667<br>  2.66219   -1.84344   -0.96114   -3.92197    0.0395199   2.20862<br> -0.787613   0.517985   0.187925   0.846224  -0.0876327  -0.70743<br><br>[:, :, 3] =<br> -0.997453   0.443513  -0.509762  -1.36396  -0.699856  -1.3147<br> -0.281771  -0.174709  -1.19977   -3.82422  -1.02915   -0.962687<br> -0.773218   0.387471  -0.241501  -0.55681  -0.42151   -0.933083<br> -1.96108    1.20951    0.185581   1.18738  -0.440543  -1.91956<br>  0.230419  -0.2273    -0.321604  -1.11604  -0.184337   0.0576331<br><br>[:, :, 4] =<br> -0.317672   0.0605948  -0.446202   -1.35898   -0.446433  -0.577685<br> -0.967509   0.416021   -0.544352   -1.48553   -0.718138  -1.30317<br> -0.118501  -0.0110862  -0.28501    -0.89313   -0.259904  -0.281897<br>  0.362986  -0.329663   -0.406649   -1.43245   -0.211652   0.146789<br> -0.291903   0.152008   -0.0710035  -0.144515  -0.143245  -0.34096<br><br>[:, :, 5] =<br> -0.0667018  -0.0249559  -0.226291     -0.717264   -0.198165   -0.195562<br> -0.6132      0.307691   -0.190091     -0.436916   -0.333152   -0.73918<br>  0.0347997  -0.0651548  -0.157056     -0.521917   -0.113275   -0.0520544<br>  0.537557   -0.403173   -0.302962     -1.1466     -0.0777703   0.384987<br> -0.231936    0.136746   -0.000229789   0.0681898  -0.0695689  -0.239447<br><br>[:, :, 6] =<br> -0.0452868   0.00832171  -0.0647238   -0.197362   -0.06452    -0.0829776<br> -0.141371    0.0611584   -0.0782386   -0.212824   -0.103909   -0.189689<br> -0.0163919  -0.00210828  -0.0414473   -0.130132   -0.0375447  -0.0401267<br>  0.0556227  -0.0498019   -0.0597991   -0.211314   -0.0304527   0.0239016<br> -0.0430469   0.0225507   -0.00999881  -0.0197739  -0.0207526  -0.0500169<br><br>[:, :, 7] =<br> -0.0197261  -0.0129295  -0.0864512   -0.275731   -0.0739839  -0.0687722<br> -0.241735    0.123445   -0.0673792   -0.147621   -0.125382   -0.287166<br>  0.019081   -0.0285214  -0.0607641   -0.203596   -0.0421448  -0.0143435<br>  0.226918   -0.168415   -0.12164     -0.463661   -0.0279081   0.166014<br> -0.0937235   0.0558792   0.00209385   0.0346776  -0.0263901  -0.0955337<br></code></pre></td></tr></table></figure>
+<p>在上面这个案例中，我们事先定义好了一个张量<code>A</code>用于存放计算结果，如果我们不事先定义的话，就需要按照以下示例来使用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; @einsum B[i,j,k] := X[i,r]*Y[j,r]*Z[k,r]<br>5×6×7 Array&#123;Float64,3&#125;:<br>[:, :, 1] =<br> -0.140556   0.134027   0.179899    0.627755  0.0996249   -0.0442743<br>  0.738739  -0.442911  -0.0251791  -0.30159   0.201178     0.748148<br> -0.222257   0.173872   0.150518    0.556337  0.052044    -0.145031<br> -1.15216    0.804416   0.439202    1.77305   0.00119409  -0.942843<br>  0.356423  -0.231037  -0.0731852  -0.344323  0.0489952    0.326778<br><br>[:, :, 2] =<br>  0.397202  -0.330261  -0.337728  -1.21813   -0.147139    0.220694<br> -1.5599     0.968069   0.168698   1.01314   -0.333819   -1.51507<br>  0.551277  -0.410494  -0.300243  -1.14183   -0.0715246   0.400667<br>  2.66219   -1.84344   -0.96114   -3.92197    0.0395199   2.20862<br> -0.787613   0.517985   0.187925   0.846224  -0.0876327  -0.70743<br><br>[:, :, 3] =<br> -0.997453   0.443513  -0.509762  -1.36396  -0.699856  -1.3147<br> -0.281771  -0.174709  -1.19977   -3.82422  -1.02915   -0.962687<br> -0.773218   0.387471  -0.241501  -0.55681  -0.42151   -0.933083<br> -1.96108    1.20951    0.185581   1.18738  -0.440543  -1.91956<br>  0.230419  -0.2273    -0.321604  -1.11604  -0.184337   0.0576331<br><br>[:, :, 4] =<br> -0.317672   0.0605948  -0.446202   -1.35898   -0.446433  -0.577685<br> -0.967509   0.416021   -0.544352   -1.48553   -0.718138  -1.30317<br> -0.118501  -0.0110862  -0.28501    -0.89313   -0.259904  -0.281897<br>  0.362986  -0.329663   -0.406649   -1.43245   -0.211652   0.146789<br> -0.291903   0.152008   -0.0710035  -0.144515  -0.143245  -0.34096<br><br>[:, :, 5] =<br> -0.0667018  -0.0249559  -0.226291     -0.717264   -0.198165   -0.195562<br> -0.6132      0.307691   -0.190091     -0.436916   -0.333152   -0.73918<br>  0.0347997  -0.0651548  -0.157056     -0.521917   -0.113275   -0.0520544<br>  0.537557   -0.403173   -0.302962     -1.1466     -0.0777703   0.384987<br> -0.231936    0.136746   -0.000229789   0.0681898  -0.0695689  -0.239447<br><br>[:, :, 6] =<br> -0.0452868   0.00832171  -0.0647238   -0.197362   -0.06452    -0.0829776<br> -0.141371    0.0611584   -0.0782386   -0.212824   -0.103909   -0.189689<br> -0.0163919  -0.00210828  -0.0414473   -0.130132   -0.0375447  -0.0401267<br>  0.0556227  -0.0498019   -0.0597991   -0.211314   -0.0304527   0.0239016<br> -0.0430469   0.0225507   -0.00999881  -0.0197739  -0.0207526  -0.0500169<br><br>[:, :, 7] =<br> -0.0197261  -0.0129295  -0.0864512   -0.275731   -0.0739839  -0.0687722<br> -0.241735    0.123445   -0.0673792   -0.147621   -0.125382   -0.287166<br>  0.019081   -0.0285214  -0.0607641   -0.203596   -0.0421448  -0.0143435<br>  0.226918   -0.168415   -0.12164     -0.463661   -0.0279081   0.166014<br> -0.0937235   0.0558792   0.00209385   0.0346776  -0.0263901  -0.0955337<br></code></pre></td></tr></table></figure>
+<p>这里我们可以发现，julia的变量定义形式跟python是类似的，并不需要事先声明变量的具体类型。</p>
+<h1>基本用法示例</h1>
+<p>在上面一个案例中我们执行了一个简单的功能测试，并介绍了julia的包的安装，这里我们再介绍一下julia语言的一些基本用法。</p>
+<h2 id="函数">函数</h2>
+<p>最常用的julia的函数功能也是一个挺有意思的定义方法，我们可以直接对函数进行赋值来使用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; ∑(x,y)=x+y<br>∑ (generic function with 1 method)<br><br>julia&gt; ∑(3,5)<br>8<br></code></pre></td></tr></table></figure>
+<p>这里我们就定义了<code>∑</code>这样的一个函数。顺带一说，这些常见的希腊字母在julia中可以先按照latex的语法来写，然后Tab一下就可以弹出来具体字符。比如<code>∑</code>实际上是<code>\sum&lt;Tab&gt;</code>。</p>
+<h2 id="注释">注释</h2>
+<p>关于julia的注释没有太多好说的，单行注释跟python的一致，多行注释是<code>#= comments =#</code>这样的结构（空格是非必须的）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; # This is a comment!<br><br>julia&gt; #= Test comment line1;<br>          Test comment line2 =#<br><br>julia&gt; #=Test comment line1<br>         Test comment line2=#<br></code></pre></td></tr></table></figure>
+<h2 id="jl文件的执行">jl文件的执行</h2>
+<p>跟python的py文件类似的，julia可以将代码写入一个jl文件，再通过<code>julia module.jl</code>这样的形式来调用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-root julia]# <span class="hljs-built_in">echo</span> <span class="hljs-string">&#x27;println(&quot;Hello World!&quot;)&#x27;</span> &gt; helloworld.jl<br>[dechin-root julia]# julia helloworld.jl <br>Hello World!<br></code></pre></td></tr></table></figure>
+<h2 id="调用python函数">调用python函数</h2>
+<p>通过<code>PyCall</code>这个包，我们可以在julia内部调用python代码。而类似于上述章节中的<code>Einsum</code>，这里我们也需要用<code>Pkg</code>来安装一下这个包：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; import Pkg<br><br>julia&gt; Pkg.add(&quot;PyCall&quot;)<br>   Updating registry at `~/.julia/registries/General`<br>  Resolving package versions...<br>  Installed VersionParsing ─ v1.2.0<br>  Installed Parsers ──────── v1.0.16<br>  Installed Conda ────────── v1.5.1<br>  Installed MacroTools ───── v0.5.6<br>  Installed PyCall ───────── v1.92.2<br>  Installed JSON ─────────── v0.21.1<br>Updating `~/.julia/environments/v1.5/Project.toml`<br>  [438e738f] + PyCall v1.92.2<br>Updating `~/.julia/environments/v1.5/Manifest.toml`<br>  [8f4d0f93] + Conda v1.5.1<br>  [682c06a0] + JSON v0.21.1<br>  [1914dd2f] + MacroTools v0.5.6<br>  [69de0a69] + Parsers v1.0.16<br>  [438e738f] + PyCall v1.92.2<br>  [81def892] + VersionParsing v1.2.0<br>   Building Conda ─→ `~/.julia/packages/Conda/tJJuN/deps/build.log`<br>   Building PyCall → `~/.julia/packages/PyCall/tqyST/deps/build.log`<br></code></pre></td></tr></table></figure>
+<p>安装成功后，可以按照如下方法引入一个python的函数来执行计算任务：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; using PyCall<br>[ Info: Precompiling PyCall [438e738f-606a-5dbb-bf0a-cddfbfd45ab0]<br><br>julia&gt; math = pyimport(&quot;math&quot;)<br>PyObject &lt;module &#x27;math&#x27; from &#x27;/home/dechin/anaconda3/lib/python3.8/lib-dynload/math.cpython-38-x86_64-linux-gnu.so&#x27;&gt;<br><br>julia&gt; math.sin(math.pi / 4)<br>0.7071067811865475<br></code></pre></td></tr></table></figure>
+<p>这里可以看到我们调用python中的math函数计算了一个正弦函数值。</p>
+<h2 id="macro装饰器">macro装饰器</h2>
+<p><code>macro</code>是julia语言中的一个关键字，这里还不知道怎么去翻译它，在我们上一个章节张量网络的示例中其实已经用到了这个功能。说起来功能是类似于python中的<code>装饰器（decorator）</code>的概念，相关介绍可以参考前面写的这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/decoretor.html">博客</a>，以及<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/timeout.html">一个python实现的装饰器实例</a>。其实基本概念是跟模块化编程相关的，通过向上封装的方法丰富了接口调用的方法。macro的官方示例如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">julia&gt; macro sayhello(name)<br>           return :( println(&quot;Hello, &quot;, $name, &quot;!&quot;) )<br>       end<br>@sayhello (macro with 1 method)<br><br>julia&gt; @sayhello &quot;Charlie&quot;<br>Hello, Charlie!<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>在这篇文章中我们介绍了julia编程语言的一些基本特点，这是一门兼顾了高性能与高效开发的编程语言，而且开源免费。不仅具备有python的便捷性，还有接近于C语言的高性能特性，是一门为科学计算而生的编程语言。我们介绍了其在Manjaro Linux平台下的安装方法，及其基本使用方法，如变量定义、函数定义和调用、包的管理以及与python编程语言的协同工作。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/julia.html">https://www.cnblogs.com/dechinphy/p/julia.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/52487166">https://zhuanlan.zhihu.com/p/52487166</a></li>
+<li><a target="_blank" rel="noopener" href="https://cn.julialang.org/JuliaZH.jl/latest/manual/getting-started/">https://cn.julialang.org/JuliaZH.jl/latest/manual/getting-started/</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/open-source-license.html">https://www.runoob.com/w3cnote/open-source-license.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/hetengjiao523/article/details/106397332">https://blog.csdn.net/hetengjiao523/article/details/106397332</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/51e2319d.html">https://dechin-phy.asia/posts/51e2319d.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-31</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-31</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/fdd828cb.html">使用python的虚拟环境virtualenv</a><a class="next" href="/posts/a51a388b.html">Python基础之告警定义与告警抑制</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

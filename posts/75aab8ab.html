@@ -1,0 +1,243 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/75aab8ab.html"><meta property="og:type" content="article"><meta property="og:title" content="mdcompress的安装与使用"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/75aab8ab.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2026-07-17T07:53:00.000Z"><meta property="article:modified_time" content="2026-07-20T06:31:00.000Z"><title>mdcompress的安装与使用 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">mdcompress的安装与使用</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">mdcompress的安装与使用</h1><div class="post-meta">2026-07-17<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">MDCompress的安装构建</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Git%E4%B8%8B%E8%BD%BD%E7%BD%91%E7%BB%9C%E9%97%AE%E9%A2%98"><span class="toc-number">1.1.</span> <span class="toc-text">Git下载网络问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gcc-12%E4%BE%9D%E8%B5%96"><span class="toc-number">1.2.</span> <span class="toc-text">gcc-12依赖</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">MDCompress压缩</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>对于长效分子动力学模拟来说，如何去高效的存储分子轨迹，是一个重要的问题。前者有Gromacs的xtc格式文件，利用量化和比特级的压缩，将分子轨迹压缩到23%左右。而本文介绍的mdc工具，可以在xtc的基础上，再压缩到60%左右。</p>
+<span id="more"></span>
+<h1>MDCompress的安装构建</h1>
+<p>如果本地有gcc-12和g++-12，以及<code>make cmake build-essential python3 python3-dev rustc cargo git</code>这些基本的环境依赖，那么就可以直接运行如下指令，先把仓库clone到本地，然后编译构建：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> --recurse-submodules https://github.com/refresh-bio/mdcompress<br>$ <span class="hljs-built_in">cd</span> mdcompress<br>$ make -j<br>$ ./bin/mdcompress compress -i examples/data/example.xtc --topology examples/data/example.tpr -o example.mdc<br></code></pre></td></tr></table></figure>
+<p>这是顺利的情况，以下是几个有可能出现的问题，及其解决方案。</p>
+<h2 id="Git下载网络问题">Git下载网络问题</h2>
+<p>在国内的网络环境下，git下载仓库这一步就有可能报错，很多时候是卡在chemfiles这个子模块。那么我推荐的一个路径是：将仓库映射到Gitee镜像库，然后把相应的链接修改为Gitee的路径。具体操作是先在Gitee上点击，从Github导入仓库：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260717175723236.png" alt=""></p>
+<p>然后填入这个链接地址：<a target="_blank" rel="noopener" href="https://github.com/refresh-bio-dependencies/chemfiles.git">https://github.com/refresh-bio-dependencies/chemfiles.git</a>。这就在Gitee上创建了一个镜像仓库：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260717175846256.png" alt=""></p>
+<p>这个仓库的地址从github链接变成了：<a target="_blank" rel="noopener" href="https://gitee.com/dechin/chemfiles.git">https://gitee.com/dechin/chemfiles.git</a>。然后用命令行或者手动的把这个链接配置到mdcompress的仓库中：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ sed -i <span class="hljs-string">&#x27;s|https://github.com/refresh-bio-dependencies/chemfiles.git|https://gitee.com/dechin/chemfiles.git|g&#x27;</span> .gitmodules<br>$ grep -A2 <span class="hljs-string">&#x27;libs/chemfiles&#x27;</span> .gitmodules<br>[submodule <span class="hljs-string">&quot;libs/chemfiles&quot;</span>]<br>        path = libs/chemfiles<br>        url = https://gitee.com/dechin/chemfiles.git<br>[submodule <span class="hljs-string">&quot;libs/nanobind&quot;</span>]<br>$ git submodule <span class="hljs-built_in">sync</span> libs/chemfiles<br>为 <span class="hljs-string">&#x27;libs/chemfiles&#x27;</span> 同步子模组 url<br>$ <span class="hljs-built_in">rm</span> -rf libs/chemfiles<br>$ git submodule update --init libs/chemfiles<br>正克隆到 <span class="hljs-string">&#x27;/home/xxx/workspace/mdcompress/libs/chemfiles&#x27;</span>...<br>子模组路径 <span class="hljs-string">&#x27;libs/chemfiles&#x27;</span>：检出 <span class="hljs-string">&#x27;487cbdba3286aec25c&#x27;</span><br>$ ll ./libs/chemfiles/<br>总计 112<br>drwxrwxr-x 11 dechin dechin  4096  7月 17 18:09 ./<br>drwxrwxr-x  6 dechin dechin  4096  7月 17 18:09 ../<br>-rw-rw-r--  1 dechin dechin   394  7月 17 18:09 AUTHORS<br>-rw-rw-r--  1 dechin dechin 19675  7月 17 18:09 CHANGELOG.md<br>drwxrwxr-x  3 dechin dechin  4096  7月 17 18:09 cmake/<br>-rw-rw-r--  1 dechin dechin  9551  7月 17 18:09 CMakeLists.txt<br>-rw-rw-r--  1 dechin dechin   164  7月 17 18:09 .codecov.yml<br>-rw-rw-r--  1 dechin dechin  3200  7月 17 18:09 Contributing.md<br>drwxrwxr-x  6 dechin dechin  4096  7月 17 18:09 doc/<br>drwxrwxr-x  4 dechin dechin  4096  7月 17 18:09 examples/<br>drwxrwxr-x  2 dechin dechin  4096  7月 17 18:09 external/<br>-rw-rw-r--  1 dechin dechin    42  7月 17 18:09 .git<br>drwxrwxr-x  3 dechin dechin  4096  7月 17 18:09 .github/<br>-rw-rw-r--  1 dechin dechin    51  7月 17 18:09 .gitignore<br>drwxrwxr-x  3 dechin dechin  4096  7月 17 18:09 include/<br>-rw-rw-r--  1 dechin dechin  1541  7月 17 18:09 LICENSE<br>-rw-rw-r--  1 dechin dechin  7524  7月 17 18:09 README.md<br>drwxrwxr-x  4 dechin dechin  4096  7月 17 18:09 scripts/<br>drwxrwxr-x  6 dechin dechin  4096  7月 17 18:09 src/<br>drwxrwxr-x  9 dechin dechin  4096  7月 17 18:09 tests/<br>-rw-rw-r--  1 dechin dechin    11  7月 17 18:09 VERSION<br></code></pre></td></tr></table></figure>
+<p>到这里仓库就下载并配置完成，可以开始编译了。</p>
+<h2 id="gcc-12依赖">gcc-12依赖</h2>
+<p>这个仓库依赖于gcc-12和g++-12及以上的版本，但是很多人本地可能已经有了一些gcc的版本，但是这里不用担心，gcc支持多版本共存的管理模式，可以按照如下方式在Ubuntu Linux平台安装gcc-12和g++-12（需要sudo权限）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">sudo</span> add-apt-repository ppa:ubuntu-toolchain-r/test<br>$ <span class="hljs-built_in">sudo</span> apt update<br>$ <span class="hljs-built_in">sudo</span> apt install gcc-12 g++-12<br>$ <span class="hljs-built_in">sudo</span> apt install rustc cargo <span class="hljs-comment"># 这个依赖很重要，必须执行</span><br></code></pre></td></tr></table></figure>
+<p>安装好基础环境之后，可以通过如下方式编译构建mdcompress，并指定使用gcc-12和g++-12：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ make -j CC=gcc-12 CXX=g++-12<br></code></pre></td></tr></table></figure>
+<p>编译完成后，可以通过<code>mdcompress --version</code>测试编译是否成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ./bin/mdcompress --version<br>mdcompress version: 2.0.4<br>Date: 2026-06-22<br>Authors: Marek Kokot, Sebastian Deorowicz<br>Usage:<br>mdcompress &lt;mode&gt; [options]<br>Modes:<br>  compress    - compress a trajectory (XTC/TRR/DCD/...) into MDC format<br>  decompress  - decompress MDC file into a trajectory (XTC/TRR/DCD/...)<br>  <span class="hljs-keyword">select</span>      - decompress some frames from MDC file into a trajectory (XTC/TRR/DCD/...)<br>  info        - info about contents of MDC file<br>  make_desc   - create description file (<span class="hljs-keyword">for</span> -d) from a topology (TPR/PSF/...)<br>Options - compress mode<br>  -i &lt;file_name&gt;               - input trajectory (XTC, TRR, DCD, ...)<br>  -o &lt;file_name&gt;               - output file name (.mdc)<br>  -d &lt;file_name&gt;               - description of the segments of a frame.<br>                                 May be omitted <span class="hljs-keyword">if</span> --topology is given: mdcompress <span class="hljs-keyword">then</span><br>                                 builds the description from the topology automatically.<br>  --topology &lt;file_name&gt;       - topology file (TPR, PSF, PDB, ...). It is stored inside the .mdc.<br>                                 If -d is not given, mdcompress infers the description from it.<br>                                 NOTE: coordinate-only trajectories (e.g. DCD) carry no topology,<br>                                 so either -d or --topology must be provided <span class="hljs-keyword">for</span> them.<br>                                 NOTE 2: It may happen that mdcompress cannot build a description<br>                                 from the file specified with the --topology switch;<br>                                 <span class="hljs-keyword">in</span> that <span class="hljs-keyword">case</span>, -d must be provided.<br>  --only-mol                   - compress only the molecule segments, skipping water/ions/other<br>                                 from the description/topology. Usually not needed: <span class="hljs-keyword">if</span> the<br>                                 trajectory contains only molecules, mdcompress detects this and<br>                                 enables --only-mol automatically (with a warning).<br>  (description check)          - whether -d or --topology is used, the description is validated<br>                                 against the trajectory<span class="hljs-string">&#x27;s atom count before compressing:</span><br><span class="hljs-string">                                   * exact match            -&gt; used as-is;</span><br><span class="hljs-string">                                   * only molecules match   -&gt; --only-mol enabled automatically;</span><br><span class="hljs-string">                                   * no match               -&gt; compression is aborted with an</span><br><span class="hljs-string">                                     explanation, and (when the description was inferred from a</span><br><span class="hljs-string">                                     topology) a candidate is written to &lt;output&gt;.candidate.desc</span><br><span class="hljs-string">                                     for you to edit and reuse with -d.</span><br><span class="hljs-string">  -l &lt;int&gt;                     - compression level (default: 2)</span><br><span class="hljs-string">  --preset &lt;preset&gt;            - use one of preset parameters for -b, --subsegment-size,</span><br><span class="hljs-string">                                 available presets:</span><br><span class="hljs-string">                                   * default,</span><br><span class="hljs-string">                                   * archive - use if the main decompression use scheme is decompress all,</span><br><span class="hljs-string">                                   * trajectory - use if the main decompression use scheme is tracking trajectory</span><br><span class="hljs-string">                                                  of some atoms,</span><br><span class="hljs-string">                                   * frames - use if the main decompression use scheme is selecting subset of frames.</span><br><span class="hljs-string">                                Current usage message prints defaults in regards to configured preset.</span><br><span class="hljs-string">  -t &lt;int&gt;                     - no. threads</span><br><span class="hljs-string">  -b|--batch-size &lt;int&gt;        - no. of frames in a batch (default: 20)</span><br><span class="hljs-string">  -h|--max-history-size &lt;int&gt;  - no. of previous framed used to predict the current one (default: 1; max: 3)</span><br><span class="hljs-string">  --res &lt;int&gt;                  - min. resolution in fm (default: 1000; 1000 fm = 0.01 Angstrom)</span><br><span class="hljs-string">  --subsegment &lt;id1,id2,...&gt;   - list of segments to split into subsegments (if no specified subsegment all)</span><br><span class="hljs-string">  --subsegment-size &lt;int&gt;      - number of atoms in a single subsegment (default: 102, 0 means don&#x27;</span>t use subsegments)<br>  --n-frames-for-model         - no. of frames to build model (default: 50)<br>  --max-dist-in-model          - max. distance <span class="hljs-keyword">in</span> segment of reference atoms (default: 100)<br>Options - decompress mode<br>  -i &lt;file_name&gt;               - input file name (.mdc)<br>  -o &lt;file_name&gt;               - output trajectory file name (format chosen by extension: .xtc/.trr/.dcd/...)<br>  --topology &lt;file_name&gt;       - <span class="hljs-keyword">if</span> a topology was stored at compression <span class="hljs-keyword">time</span>, write it out to<br>                                 this path (the extension must match the original topology file)<br>Options - <span class="hljs-keyword">select</span> mode<br>  -i &lt;file_name&gt;               - input file name (.mdc)<br>  -o &lt;file_name&gt;               - output trajectory file name (format chosen by extension: .xtc/.trr/.dcd/...)<br>  --topology &lt;file_name&gt;       - <span class="hljs-keyword">if</span> a topology was stored at compression <span class="hljs-keyword">time</span>, write it out to<br>                                 this path (the extension must match the original topology file)<br>  --fid &lt;int&gt;                  - frame <span class="hljs-built_in">id</span> (0-based)<br>  --fr &lt;int&gt; &lt;int|MAX&gt;         - range of frame ids (0-based) (`MAX` or 2147483647 means last frame)<br>  --stride &lt;int&gt;               - stride size (<span class="hljs-keyword">for</span> range of frames) (default: 1)<br>  --segments &lt;id1,id2,...&gt;     - list of segment ids<br>  --atoms &lt;id1,id2,...&gt;        - list of atoms to tracks, `<span class="hljs-built_in">id</span>&lt;n&gt;` may be single <span class="hljs-built_in">id</span> or closed interval <span class="hljs-keyword">in</span> format start-end<br>Options - info mode<br>  -i &lt;file_name&gt;               - input file name (.mdc)<br>  --full                       - <span class="hljs-built_in">print</span> full info (include subsegments)<br>Options - make_desc mode<br>  -i &lt;file_name&gt;               - input topology file (TPR, PSF, ...)<br>  -o &lt;file_name&gt;               - output desc file name<br>  --only-mol                   - include only molecule (skip water and <span class="hljs-string">&#x27;other&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>如果有上述输出内容，就表示编译成功了。</p>
+<h1>MDCompress压缩</h1>
+<p>按照上述章节的内容完成编译构建之后，就可以开始使用MDCompress进行压缩了。比较常规的策略是先用xtc格式压缩一遍，然后再导入mdc进行进一步的压缩。mdc的压缩，需要xtc格式的轨迹文件，以及一个pdb格式的拓扑文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ../bin/mdcompress compress -i Pro_lig17.xtc --topology Pro_lig.pdb -o Pro_lig17.mdc<br>Completed frame 1530, with number of atoms 3410<br>Compressing <span class="hljs-keyword">time</span>: 0.571706s<br>Segment sizes:<br>    Segment 0: 46999 bytes<br>    Segment 1: 9031 bytes<br>    Segment 2: 3644163 bytes<br>    Segment 3: 65469 bytes<br>    Segment 4: 4173376 bytes<br>    Segment 5: 65985 bytes<br>    Segment 6: 1767515 bytes<br>    Segment 7: 65262 bytes<br>    Segment 8: 1322871 bytes<br>    Segment 9: 70045 bytes<br>    Segment 10: 903313 bytes<br>    Segment 11: 214015 bytes<br>    Frame desc: 12716 bytes<br>Segment ratios:<br>    Segment 0: 18.9036 bits/atom<br>    Segment 1: 23.6105 bits/atom<br>    Segment 2: 18.8845 bits/atom<br>    Segment 3: 20.1366 bits/atom<br>    Segment 4: 18.9095 bits/atom<br>    Segment 5: 20.2953 bits/atom<br>    Segment 6: 18.7844 bits/atom<br>    Segment 7: 20.0729 bits/atom<br>    Segment 8: 18.8473 bits/atom<br>    Segment 9: 20.3471 bits/atom<br>    Segment 10: 18.8928 bits/atom<br>    Segment 11: 20.7228 bits/atom<br></code></pre></td></tr></table></figure>
+<p>压缩效果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">总计 32824<br>drwxrwxr-x  3 dechin dechin     4096  7月 20 11:08 ./<br>drwxrwxr-x 13 dechin dechin     4096  7月 20 10:59 ../<br>-rw-rw-r--  1 dechin dechin 12447261  7月 20 11:08 Pro_lig17.mdc<br>-rw-rw-r--  1 dechin dechin 20710652  7月 20 11:05 Pro_lig17.xtc<br>-rw-rw-r--  1 dechin dechin   276336  7月 20 11:08 Pro_lig.pdb<br></code></pre></td></tr></table></figure>
+<p>从结果中可以看到，这个压缩率，在xtc的基础上，还能够进一步有60%左右的压缩率，这是一个非常优秀的成绩了。</p>
+<h1>总结概要</h1>
+<p>对于长效分子动力学模拟来说，如何去高效的存储分子轨迹，是一个重要的问题。前者有Gromacs的xtc格式文件，利用量化和比特级的压缩，将分子轨迹压缩到23%左右。而本文介绍的mdc工具，可以在xtc的基础上，再压缩到60%左右。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://dechinphy.github.io/posts/75aab8ab.html">https://dechinphy.github.io/posts/75aab8ab.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://dechinphy.github.io/">https://dechinphy.github.io/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://github.com/refresh-bio/mdcompress">https://github.com/refresh-bio/mdcompress</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/75aab8ab.html">https://dechin-phy.asia/posts/75aab8ab.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2026-07-17</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2026-07-20</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="next" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

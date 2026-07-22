@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/43bca7ba.html"><meta property="og:type" content="article"><meta property="og:title" content="从零开始制作PyTorch的Singularity容器镜像"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/43bca7ba.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-06-15T02:53:24.000Z"><meta property="article:modified_time" content="2021-06-15T02:56:00.000Z"><title>从零开始制作PyTorch的Singularity容器镜像 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">从零开始制作PyTorch的Singularity容器镜像</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">从零开始制作PyTorch的Singularity容器镜像</h1><div class="post-meta">2021-06-15<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.5k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">环境准备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">制作def文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">构建sif文件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">PyTorch镜像测试</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">Tricky的配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">9.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>这篇文章主要介绍Facebook所主导的机器学习框架PyTorch的容器化安装方法，基于HPC环境常用的Singularity高性能容器，并且兼容与结合了Docker容器镜像的生态，非常的友好。在容器化的编程环境中，我们不仅可以避免不同框架对于python库或者系统软件版本的依赖冲突，还可以很大程度上解决因为没有root权限以及网络外访权限的环境下所带来的极大的麻烦，故推荐使用这种方案进行安装和运行。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的博客中，我们大篇幅的使用到了Docker和Singularity这两种常见的容器化编程环境解决方案，使得我们的各个编程环境能够更好的隔离。如果要展开讲解容器化编程环境的重要性的话，我们有可能会发现容器并不是那么的必须：比如解决python库的依赖冲突问题，我们可以选择使用python的virtualenv或者conda的虚拟环境；比如解决gcc的版本依赖冲突，我们可以手动配置和选择对应的版本；比如对于我们没有root权限和对外网络的环境，想要安装一些工具可以采用源码编译安装。那么，这些种种的问题，如果我们采用Singularity的方案，就可以一次性的解决。而且容器化是一个趋势，比如各种的机器学习框架都会提供容器版本的安装方案，像MindSpore和Tensorflow等等。这里我们尝试使用Singularity的容器def文件（类似于Docker的Dockerfile，而且兼容Docker的镜像），去构造一个Pytorch专属的编程环境。</p>
+<h1>环境准备</h1>
+<p>这里我们假设本地的容器环境是已经安装完毕的，可以通过如下指令进行检验：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ singularity --version<br>singularity version 3.8.0-rc.1<br></code></pre></td></tr></table></figure>
+<p>建议至少使用3.5以上版本的Singularity，否则会有编译不兼容的问题。关于Singularity的安装与基本使用，可以参考这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/sg.html">在Manjaro Linux上安装Singularity的方法</a>、以及<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/singularity-install.html">在CentOS上安装Singularity的方法</a>，还有这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ms-sql.html">用Singularity来配置MindSpore环境的博客</a>。</p>
+<h1>制作def文件</h1>
+<p>Singularity的def文件类似于Docker的Dockerfile，用于定义一个容器镜像，而在这个文件中我们除了指定基础镜像之外，还可以指定下载基础镜像之后要执行的配置项目。我们先看一个简单例子：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ <span class="hljs-built_in">cat</span> pytorch.def <br>Bootstrap: docker<br>From: ubuntu<br>%post<br>    <span class="hljs-built_in">cp</span> -a /etc/apt/sources.list /etc/apt/sources.list.bak<br>    sed -i <span class="hljs-string">&quot;s@http://.*archive.ubuntu.com@http://repo.huaweicloud.com@g&quot;</span> /etc/apt/sources.list<br>    sed -i <span class="hljs-string">&quot;s@http://.*security.ubuntu.com@http://repo.huaweicloud.com@g&quot;</span> /etc/apt/sources.list<br>    apt-get -y update<br>    apt -y install python<br>    apt -y install python3-pip<br>    pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html<br></code></pre></td></tr></table></figure>
+<p>这个例子就实现了pytorch整个的容器化安装流程，但是这里不建议大家直接使用我写的这个def文件来制作镜像，这里面最后一步安装pytorch的指令，需要适配自己本地的环境进行调整。下面解释一下这些指令的含义：</p>
+<ul>
+<li><code>Bootstrap</code>用于指定下载的仓库类型，建议是选取docker，因为这里面的镜像是最多的。</li>
+<li><code>From</code>用于指定一个基础镜像的版本，因为ubuntu是一个使用比较广泛的发行版，因此我们指定ubuntu的时候，脚本会自动从dockerhub上面寻找最新版本的ubuntu镜像进行下载。当然我们也可以指定一个特殊的版本，比如可以指定为<code>ubuntu:16.04</code>。</li>
+<li><code>%post</code>是在容器镜像中执行的系统指令，这些指令执行完成后生成的文件等会被打包保存到我们的镜像sif文件中。类似的指令还有<code>%environment</code>，可用于配置export环境变量，还有<code>%runscript</code>可用于执行一些脚本命令。</li>
+<li>从<code>cp</code>到<code>apt-get update</code>这4个步骤，是在容器内更新系统镜像源，我们采用的是华为云的镜像源<a target="_blank" rel="noopener" href="https://mirrors.huaweicloud.com/%EF%BC%8C%E4%B8%80%E8%88%AC%E5%9B%BD%E5%86%85%E7%9A%84%E9%95%9C%E5%83%8F%E6%BA%90%E5%9C%A8%E4%BD%BF%E7%94%A8apt%E4%B8%8B%E8%BD%BD%E4%B8%9C%E8%A5%BF%E7%9A%84%E6%97%B6%E5%80%99%E4%BC%9A%E6%9C%89%E6%AF%94%E8%BE%83%E6%98%8E%E6%98%BE%E7%9A%84%E5%8A%A0%E9%80%9F%E6%95%88%E6%9E%9C%EF%BC%8C%E5%BD%93%E7%84%B6%E8%BF%99%E4%B8%AA%E9%95%9C%E5%83%8F%E6%BA%90%E4%BB%93%E5%BA%93%E8%BF%98%E6%9C%89%E5%BE%88%E5%A4%9A%E5%85%B6%E4%BB%96%E7%9A%84%E6%BA%90%EF%BC%8C%E6%AF%94%E5%A6%82pip%E6%BA%90%E7%AD%89%E7%AD%89%E3%80%82">https://mirrors.huaweicloud.com/，一般国内的镜像源在使用apt下载东西的时候会有比较明显的加速效果，当然这个镜像源仓库还有很多其他的源，比如pip源等等。</a></li>
+<li>在这个镜像文件中我们可以直接使用<code>apt</code>来安装python和pip，但是注意安装的时候要加上<code>-y</code>的选项，这个选项可以帮助我们默认跳过需要手动确认的项目，我们知道在apt安装的过程经常会暂停下来，要求输入一个<code>y</code>之后才能继续往下安装，但是这个在使用镜像的时候是没办法支持手动的输入的。</li>
+<li>最后我们按照参考链接1中给出的安装指令进行安装，注意要匹配好自己的环境，本文采用的配置项目如下截图所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165642659.png" alt=""></li>
+</ul>
+<h1>构建sif文件</h1>
+<p>在完成上述步骤的镜像配置文件后，可以用如下的指令进行镜像的构建：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">sudo</span> singularity build pytorch.sif pytorch.def<br></code></pre></td></tr></table></figure>
+<p>在执行的过程中会有大量的信息弹出，我们只关注下开头和结尾即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs bash">INFO:    Starting build...<br>Getting image <span class="hljs-built_in">source</span> signatures<br>Copying blob 345e3491a907 skipped: already exists  <br>Copying blob 57671312ef6f skipped: already exists  <br>Copying blob 5e9250ddb7d0 [--------------------------------------] 0.0b / 0.0b<br>Copying config 7c6bc52068 <span class="hljs-keyword">done</span>  <br>Writing manifest to image destination<br>Storing signatures<br>2021/06/15 09:44:57  info unpack layer: sha256:345e3491a907bb7c6f1bdddcf4a94284b8b6ddd77eb7d93f09432b17b20f2bbe<br>2021/06/15 09:44:58  info unpack layer: sha256:57671312ef6fdbecf340e5fed0fb0863350cd806c92b1fdd7978adbd02afc5c3<br>2021/06/15 09:44:58  info unpack layer: sha256:5e9250ddb7d0fa6d13302c7c3e6a0aa40390e42424caed1e5289077ee4054709<br>INFO:    Running post scriptlet<br>+ <span class="hljs-built_in">cp</span> -a /etc/apt/sources.list /etc/apt/sources.list.bak<br>...<br>Successfully installed numpy-1.20.3 pillow-8.2.0 torch-1.8.1+cu111 torchaudio-0.8.1 torchvision-0.9.1+cu111 typing-extensions-3.10.0.0<br>INFO:    Creating SIF file...<br>INFO:    Build complete: pytorch.sif<br></code></pre></td></tr></table></figure>
+<p>一般如果有报错的话中途就会停下来，如果看到上面的这个指令，基本就构建成功了，并且可以在当前目录下看到一个新生成的sif文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ ll<br>总用量 4086900<br>drwxrwxr-x 2 dechin dechin       4096 6月  15 09:53 ./<br>drwxrwxr-x 8 dechin dechin       4096 6月  15 09:34 ../<br>-rw-rw-r-- 1 dechin dechin        498 6月  15 09:44 pytorch.def<br>-rwxr-xr-x 1 dechin dechin 4184969216 6月  15 09:53 pytorch.sif*<br></code></pre></td></tr></table></figure>
+<p>这个就是我们构建好的pytorch的镜像了。</p>
+<h1>PyTorch镜像测试</h1>
+<p>首先我们看一下镜像中python的版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ singularity <span class="hljs-built_in">exec</span> pytorch.sif python3 --version<br>Python 3.8.5<br></code></pre></td></tr></table></figure>
+<p>因为pytorch对python的版本没有比较特殊的要求，所以这里3.7或3.8或3.9都是可以的。接下来执行一个pytorch官方给出的测试示例，生成一个随机数矩阵：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ singularity <span class="hljs-built_in">exec</span> pytorch.sif python3 -c <span class="hljs-string">&quot;import torch;x = torch.rand(5, 3);print(x)&quot;</span><br>tensor([[0.2045, 0.2268, 0.2132],<br>        [0.4473, 0.3536, 0.8075],<br>        [0.0951, 0.0261, 0.5950],<br>        [0.7112, 0.0449, 0.4564],<br>        [0.8697, 0.7536, 0.7823]])<br></code></pre></td></tr></table></figure>
+<p>上述运行的方式是采用了<code>python3 -c</code>的方式，省去了再写一个py文件的繁琐，只是需要注意的地方，在于我们要将正常py文件中的换行符替换成这里的分号，这里执行成功了，那么就代表我们的容器化安装是成功了。但是我们需要进一步的确认下，torch能否正常的使用cuda环境，因为这是GPU加速的重点配置。测试可以使用官方给出的这个运行指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ singularity <span class="hljs-built_in">exec</span> pytorch.sif python3 -c <span class="hljs-string">&quot;import torch;print(torch.cuda.is_available())&quot;</span><br>False<br></code></pre></td></tr></table></figure>
+<p>第一次看到这个结果的时候，我优先考虑的是，是否cudatoolkits没有安装的原因？因为在MindSpore中对于这个cudatoolkits是有依赖的，并且使用的是conda来安装，但是这里我们直接装的python没有采取conda的方法。但是转念一想，这里的Singularity运行指令上没有指定GPU环境，更有可能是这个问题。因此加上了<code>--nv</code>的选项，运行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ singularity <span class="hljs-built_in">exec</span> --nv pytorch.sif python3 -c <span class="hljs-string">&quot;import torch;print(torch.cuda.is_available())&quot;</span><br>True<br></code></pre></td></tr></table></figure>
+<p>可以看到pytorch的GPU版本是运行成功了的，或者应该说成功调用到了GPU。</p>
+<h1>Tricky的配置</h1>
+<p>使用容器化的方案来运行的话，在运行环境的隔离上面是做的非常好的，但是有一个缺点就是运行的指令太长了，虽然容器镜像的位置是固定不变的，但是每次执行这么一大串指令总觉得麻烦，因此就想到了在环境变量配置文件<code>.bashrc</code>中加上一个声明，用更加简短的语句来替代长指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">alias mindspore=&#x27;singularity exec --nv /home/dechin/tools/singularity/mindspore-gpu_1.2.0.sif python&#x27;<br>alias pytorch=&#x27;singularity exec --nv /home/dechin/projects/pytorch/pytorch.sif python3&#x27;<br></code></pre></td></tr></table></figure>
+<p>写入到<code>.bashrc</code>文件后，需要<code>source ~/.bashrc</code>指令来使得配置生效，然后我们就可以使用pytorch这样的指令来运行一些pytorch的代码或者命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/pytorch$ pytorch -c <span class="hljs-string">&quot;import torch;print(&#x27;import success&#x27;)&quot;</span><br>import success<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>这篇文章主要介绍Facebook所主导的机器学习框架PyTorch的容器化安装方法，基于HPC环境常用的Singularity高性能容器，并且兼容与结合了Docker容器镜像的生态，非常的友好。在容器化的编程环境中，我们不仅可以避免不同框架对于python库或者系统软件版本的依赖冲突，还可以很大程度上解决因为没有root权限以及网络外访权限的环境下所带来的极大的麻烦，故推荐使用这种方案进行安装和运行。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pytorch.html">https://www.cnblogs.com/dechinphy/p/pytorch.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://pytorch.org/get-started/locally/">https://pytorch.org/get-started/locally/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/43bca7ba.html">https://dechin-phy.asia/posts/43bca7ba.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-06-15</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-06-15</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/b49ba215.html">MindSpore自定义模型损失函数</a><a class="next" href="/posts/f9f9daae.html">Python实现GPU加速的基本操作</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

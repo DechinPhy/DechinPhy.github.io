@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/67e621ba.html"><meta property="og:type" content="article"><meta property="og:title" content="Plumed分子模拟后分析"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/67e621ba.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-05-06T02:02:53.000Z"><meta property="article:modified_time" content="2024-05-06T07:54:00.000Z"><title>Plumed分子模拟后分析 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Plumed分子模拟后分析</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Plumed分子模拟后分析</h1><div class="post-meta">2024-05-06<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">轨迹准备</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">运行Plumed</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>Plumed是一个强大的分子模拟数据处理工具，可以在模拟的过程中逐步分析，也可以保存模拟的轨迹做后分析。本文紧接前面的“增强采样软件PLUMED的安装与使用”文章，还有“直方图与核密度估计”文章。介绍了如何使用Plumed后分析工具，对输出的反应坐标的轨迹进行核密度估计。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的几篇博客中，我们分别介绍过<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18140812/kde">Histogram算法的使用</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/plumed.html">Plumed安装与简单使用</a>。Plumed一般就是两种用法：要么在运行分子动力学模拟的过程中实时的对接，要么就是把分子模拟的相关轨迹保存下来，然后再使用Plumed进行后分析，本文介绍的是后面这种使用方法。</p>
+<h1>轨迹准备</h1>
+<p>做后分析，我们要先准备一手轨迹。比如我们做Histogram，那么就需要保留一条CV的轨迹，或者说反应坐标的轨迹。一般为了归一化的需求，我们可能还需要保留反应坐标所对应的单点能，或者称之为Bias偏置势。如下是一条轨迹的示例<code>record_cv_bias.txt</code>，含有100个点：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><code class="hljs txt">#! FIELDS time rbias dcomb<br>0 1.0 0.722307<br>1 1.0 0.929853<br>2 1.0 1.046353<br>3 1.0 0.849326<br>4 1.0 0.635665<br>5 1.0 1.133585<br>6 1.0 1.602735<br>7 1.0 1.11138<br>8 1.0 0.815045<br>9 1.0 0.744088<br>10 1.0 0.631533<br>11 1.0 1.006049<br>12 1.0 0.507855<br>13 1.0 0.620414<br>14 1.0 1.43557<br>15 1.0 0.798832<br>16 1.0 1.007135<br>17 1.0 0.684447<br>18 1.0 1.073844<br>19 1.0 0.952023<br>20 1.0 0.754293<br>21 1.0 0.530406<br>22 1.0 1.078594<br>23 1.0 1.325044<br>24 1.0 1.418314<br>25 1.0 1.110357<br>26 1.0 0.964378<br>27 1.0 0.893131<br>28 1.0 1.473515<br>29 1.0 1.103729<br>30 1.0 1.019812<br>31 1.0 1.037889<br>32 1.0 1.092906<br>33 1.0 0.602312<br>34 1.0 1.016394<br>35 1.0 0.845226<br>36 1.0 1.210281<br>37 1.0 0.744589<br>38 1.0 0.666467<br>39 1.0 1.276913<br>40 1.0 0.976801<br>41 1.0 0.92263<br>42 1.0 1.386575<br>43 1.0 1.243241<br>44 1.0 1.442755<br>45 1.0 1.284636<br>46 1.0 0.756184<br>47 1.0 1.162758<br>48 1.0 1.177665<br>49 1.0 0.717487<br>50 1.0 1.193379<br>51 1.0 0.798996<br>52 1.0 1.045093<br>53 1.0 1.489541<br>54 1.0 1.067574<br>55 1.0 1.10109<br>56 1.0 1.135074<br>57 1.0 1.049557<br>58 1.0 0.362635<br>59 1.0 1.030856<br>60 1.0 1.323538<br>61 1.0 1.405822<br>62 1.0 0.935292<br>63 1.0 0.868032<br>64 1.0 0.946401<br>65 1.0 1.468123<br>66 1.0 1.062565<br>67 1.0 1.05637<br>68 1.0 0.962974<br>69 1.0 1.50403<br>70 1.0 0.95933<br>71 1.0 1.218142<br>72 1.0 1.303102<br>73 1.0 0.876645<br>74 1.0 1.188313<br>75 1.0 1.31572<br>76 1.0 0.693456<br>77 1.0 0.54377<br>78 1.0 1.026873<br>79 1.0 1.3925<br>80 1.0 1.317733<br>81 1.0 0.972162<br>82 1.0 1.373311<br>83 1.0 1.244547<br>84 1.0 1.00565<br>85 1.0 1.180062<br>86 1.0 1.221193<br>87 1.0 1.046702<br>88 1.0 1.409161<br>89 1.0 1.132955<br>90 1.0 0.428334<br>91 1.0 0.890674<br>92 1.0 0.63586<br>93 1.0 0.997099<br>94 1.0 0.969676<br>95 1.0 1.280118<br>96 1.0 1.19793<br>97 1.0 1.112535<br>98 1.0 1.388056<br>99 1.0 0.946911<br></code></pre></td></tr></table></figure>
+<p>有了轨迹之后，写一个简单的Plumed配置文件<code>plumed.dat</code>：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs txt">cv: READ FILE=record_cv_bias.txt VALUES=dcomb IGNORE_TIME<br>w: READ FILE=record_cv_bias.txt VALUES=rbias IGNORE_TIME<br>rw: REWEIGHT_BIAS ARG=w TEMP=300<br>hh: HISTOGRAM ...<br>   ARG=cv<br>   KERNEL=gaussian<br>   GRID_MIN=0.3<br>   GRID_MAX=1.65<br>   GRID_BIN=50<br>   BANDWIDTH=0.05<br>   NORMALIZATION=true<br>   LOGWEIGHTS=rw<br>...<br>DUMPGRID GRID=hh FILE=histo <br></code></pre></td></tr></table></figure>
+<p>这个文件的逐行释义为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs txt">1. 读取record_cv_bias.txt文件中标签为dcomb的一列，作为cv<br>2. 读取record_cv_bias.txt文件中标签为rbias的一列，作为w<br>3. 使用w定义一个归一化的系数rw，对应的温度为300K<br>4~13. 定义Histogram参数，使用高斯核，区间最小值为0.3，区间最大值为1.65，区间内分50个格子，波包带宽为0.05，使用rw进行归一化<br>14. 将输出数据保存到名为histo的文件内<br></code></pre></td></tr></table></figure>
+<h1>运行Plumed</h1>
+<p>安装好plumed以后，之间在对应文件的目录下运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ plumed driver --plumed plumed.dat --noatoms<br>PLUMED: PLUMED is starting<br>PLUMED: Version: 2.7.1 (git: Unknown) compiled on Jul 12 2021 at 09:24:30<br>PLUMED: Please cite these papers when using PLUMED [1][2]<br>PLUMED: For further information see the PLUMED web page at http://www.plumed.org<br>PLUMED: Root: /usr/local/lib/plumed<br>PLUMED: For installed feature, see /usr/local/lib/plumed/src/config/config.txt<br>PLUMED: Molecular dynamics engine: driver<br>PLUMED: Precision of reals: 8<br>PLUMED: Running over 1 node<br>PLUMED: Number of threads: 1<br>PLUMED: Cache line size: 512<br>PLUMED: Number of atoms: 0<br>PLUMED: File suffix: <br>PLUMED: FILE: plumed.dat<br>PLUMED: Action READ<br>PLUMED:   with label cv<br>PLUMED:   with stride 1<br>PLUMED:   reading data from file record_cv_bias.txt<br>PLUMED:   reading value dcomb and storing as cv<br>PLUMED: Action READ<br>PLUMED:   with label w<br>PLUMED:   with stride 1<br>PLUMED:   reading data from file record_cv_bias.txt<br>PLUMED:   reading value rbias and storing as w<br>PLUMED: Action REWEIGHT_BIAS<br>PLUMED:   with label rw<br>PLUMED:   with arguments w<br>PLUMED: Action HISTOGRAM<br>PLUMED:   with label hh<br>PLUMED:   with stride 1<br>PLUMED:   with arguments cv<br>PLUMED:   reweighting using weights from rw <br>PLUMED:   grid of 51 equally spaced points between (0.3) and (1.65)<br>PLUMED: Action DUMPGRID<br>PLUMED:   with label @4<br>PLUMED:   with stride 0<br>PLUMED:   outputting grid calculated by action hh to file named histo with format %f <br>PLUMED:   outputting data <span class="hljs-keyword">for</span> replicas 0 END FILE: plumed.dat<br>PLUMED: Timestep: 1.000000<br>PLUMED: KbT has not been <span class="hljs-built_in">set</span> by the MD engine<br>PLUMED: It should be <span class="hljs-built_in">set</span> by hand <span class="hljs-built_in">where</span> needed<br>PLUMED: Relevant bibliography:<br>PLUMED:   [1] The PLUMED consortium, Nat. Methods 16, 670 (2019)<br>PLUMED:   [2] Tribello, Bonomi, Branduardi, Camilloni, and Bussi, Comput. Phys. Commun. 185, 604 (2014)<br>PLUMED: Please <span class="hljs-built_in">read</span> and cite <span class="hljs-built_in">where</span> appropriate!<br>PLUMED: Finished setup<br>PLUMED:                                               Cycles        Total      Average      Minimum      Maximum<br>PLUMED:                                                    1     0.007538     0.007538     0.007538     0.007538<br>PLUMED: 1 Prepare dependencies                            99     0.000267     0.000003     0.000002     0.000008<br>PLUMED: 2 Sharing data                                    99     0.000007     0.000000     0.000000     0.000000<br>PLUMED: 3 Waiting <span class="hljs-keyword">for</span> data                                99     0.000010     0.000000     0.000000     0.000000<br>PLUMED: 4 Calculating (forward loop)                      99     0.001478     0.000015     0.000014     0.000057<br>PLUMED: 5 Applying (backward loop)                        99     0.000130     0.000001     0.000001     0.000003<br>PLUMED: 6 Update                                          99     0.003019     0.000030     0.000014     0.000093<br></code></pre></td></tr></table></figure>
+<p>运行完成后，如果没有报错，会在当前目录下生成一个<code>histo</code>文件，内容为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs txt">#! FIELDS cv hh dhh_cv<br>#! SET normalisation  146.331611<br>#! SET min_cv 0.3<br>#! SET max_cv 1.65<br>#! SET nbins_cv  50<br>#! SET periodic_cv false<br> 0.300000 0.040185 1.087032<br> 0.327000 0.073737 1.333674<br> 0.354000 0.108112 1.138788<br> 0.381000 0.132720 0.673529<br> 0.408000 0.146143 0.387485<br> 0.435000 0.158725 0.647624<br> 0.462000 0.185775 1.399849<br> 0.489000 0.233253 2.034814<br> 0.516000 0.290241 2.109999<br> 0.543000 0.347304 2.200385<br> 0.570000 0.415370 2.931229<br> 0.597000 0.504292 3.503145<br> 0.624000 0.592054 2.763309<br> 0.651000 0.645747 1.208607<br> 0.678000 0.663637 0.297321<br> 0.705000 0.670123 0.268624<br> 0.732000 0.677724 0.233552<br> 0.759000 0.679871 -0.077180<br> 0.786000 0.677381 0.020735<br> 0.813000 0.688778 0.956408<br> 0.840000 0.733653 2.431984<br> 0.867000 0.822586 4.209499<br> 0.894000 0.963284 6.230239<br> 0.921000 1.155414 7.841243<br> 0.948000 1.373556 8.056159<br> 0.975000 1.575612 6.691082<br> 1.002000 1.725112 4.227284<br> 1.029000 1.795526 0.856452<br> 1.056000 1.767797 -2.871105<br> 1.083000 1.648824 -5.650900<br> 1.110000 1.480563 -6.442901<br> 1.137000 1.318483 -5.309715<br> 1.164000 1.198476 -3.600376<br> 1.191000 1.115220 -2.744803<br> 1.218000 1.043134 -2.600741<br> 1.245000 0.977289 -2.155749<br> 1.272000 0.928752 -1.443136<br> 1.299000 0.894999 -1.109955<br> 1.326000 0.868484 -0.743408<br> 1.353000 0.859332 0.120417<br> 1.380000 0.869809 0.444883<br> 1.407000 0.867177 -0.906627<br> 1.434000 0.811246 -3.257711<br> 1.461000 0.694147 -5.274589<br> 1.488000 0.536089 -6.215685<br> 1.515000 0.370839 -5.747150<br> 1.542000 0.236681 -4.040289<br> 1.569000 0.154469 -2.128090<br> 1.596000 0.112702 -1.142470<br> 1.623000 0.083908 -1.071380<br> 1.650000 0.053970 -1.101246<br></code></pre></td></tr></table></figure>
+<p>这个结果的三列数据分别为：cv值、密度值和标准差，对于我们而言，主要关注下前两列的结果即可，可以写一个Python脚本做一下简单的可视化：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;histo&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> hfile:<br>    hlines = hfile.readlines()<br>hcv = []<br>hbar = []<br><span class="hljs-keyword">for</span> hline <span class="hljs-keyword">in</span> hlines[<span class="hljs-number">6</span>:]:<br>    hcv.append(<span class="hljs-built_in">float</span>(hline.strip().split()[<span class="hljs-number">0</span>]))<br>    hbar.append(<span class="hljs-built_in">float</span>(hline.strip().split()[<span class="hljs-number">1</span>]))<br>hcv = np.array(hcv)<br>hbar = np.array(hbar)<br><span class="hljs-keyword">from</span> matplotlib <span class="hljs-keyword">import</span> pyplot <span class="hljs-keyword">as</span> plt<br>plt.figure()<br>plt.plot(hcv, hbar, color=<span class="hljs-string">&#x27;black&#x27;</span>)<br>plt.show()<br></code></pre></td></tr></table></figure>
+<p>输出结果为：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164305079.png" alt=""></p>
+<p>得到的这个概率密度曲线，就是我们使用KDE方法模拟出来的真实概率密度。</p>
+<h1>总结概要</h1>
+<p>Plumed是一个强大的分子模拟数据处理工具，可以在模拟的过程中逐步分析，也可以保存模拟的轨迹做后分析。本文紧接前面的“增强采样软件PLUMED的安装与使用”文章，还有“直方图与核密度估计”文章。介绍了如何使用Plumed后分析工具，对输出的反应坐标的轨迹进行核密度估计。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/plumed-post.html">https://www.cnblogs.com/dechinphy/p/plumed-post.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.plumed.org/doc-v2.8/user-doc/html/_h_i_s_t_o_g_r_a_m.html">https://www.plumed.org/doc-v2.8/user-doc/html/_h_i_s_t_o_g_r_a_m.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18140812/kde">https://www.cnblogs.com/dechinphy/p/18140812/kde</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/67e621ba.html">https://dechin-phy.asia/posts/67e621ba.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-05-06</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-05-06</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/e01dea56.html">Markdown和Latex中文字上下标的方法</a><a class="next" href="/posts/ebbbf280.html">手搓自动微分</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

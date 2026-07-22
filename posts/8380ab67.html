@@ -1,0 +1,230 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/8380ab67.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSponge分子动力学模拟——多路径分子模拟（2024.05）"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/8380ab67.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2024-05-27T09:11:52.000Z"><meta property="article:modified_time" content="2024-05-27T12:49:00.000Z"><title>MindSponge分子动力学模拟——多路径分子模拟（2024.05） | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSponge分子动力学模拟——多路径分子模拟（2024.05）</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSponge分子动力学模拟——多路径分子模拟（2024.05）</h1><div class="post-meta">2024-05-27<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.1k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">使用逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">真实案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>随着硬件算力的发展，以及AI技术的日益增进，我们不仅可以借助深度学习框架来加速分子动力学模拟，以及降低分子模拟开发的门槛。还可以实现高通量模拟，使得用最小的开销并行的运行多个分子模拟成为可能。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/collections/5620">MindSponge教程系列博客</a>中，我们已经介绍过MindSponge分子动力学模拟框架的基础功能使用方法，例如<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ms-system.html">MindSponge的安装与使用</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/mol-system.html">定义分子系统</a>、<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/single-point-energy.html">计算单点能</a>和<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/updater-md.html">迭代器</a>等等。这些模块和功能，更多的是凭借MindSpore深度学习框架的自动微分、GPU加速和Python语言的灵活性，而本文要介绍的是深度学习框架可以带来的另一个重大优势：多路径的高通量分子模拟。</p>
+<h1>使用逻辑</h1>
+<p>在MindSponge分子动力学模拟框架中，原生的支持了多batch的计算模式，这个场景跟深度学习中处理Dataset时用到的batchwise是非常类似的。在分子模拟中，我们可以给定同一个体系的多个初始位置，可以相同也可以不同，然后使用同一个力场和迭代器进行优化、更新，最终得到不同的轨迹和不同的构象。在MindSponge框架下，单路径和多路径这两种模式的切换，只需要在定义模拟系统system时，先定义单路径的system，再按照不同的初始构象重构一次system即可：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">mol_file = <span class="hljs-string">&#x27;alad_water_opt.pdb&#x27;</span><br>mol = Protein(mol_file, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>, <span class="hljs-string">&#x27;water.spce.yaml&#x27;</span>])<br>mol.num_walker = <span class="hljs-number">2</span><br>mol.build_system()<br><span class="hljs-comment"># 对coordinate的batch维度进行扩维，并以wrap形式填充</span><br>mol.build_space(msnp.pad(mol.coordinate, ((<span class="hljs-number">0</span>, <span class="hljs-number">1</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>)), mode=<span class="hljs-string">&#x27;wrap&#x27;</span>))<br></code></pre></td></tr></table></figure>
+<p>其他的配置可以直接复用单路径分子模拟的代码。</p>
+<h1>真实案例</h1>
+<p>这里我们使用到了一个丙氨酸二肽+一个水分子的简单测试体系，其pdb文件内容为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs txt">MODEL     1<br>ATOM      1  H1  ACE A   1       2.012   1.007   0.000   1.0   0.0           H<br>ATOM      2  CH3 ACE A   1       1.996   2.097   0.002   1.0   0.0           C<br>ATOM      3  H2  ACE A   1       1.484   2.455   0.891   1.0   0.0           H<br>ATOM      4  H3  ACE A   1       1.487   2.455  -0.890   1.0   0.0           H<br>ATOM      5  C   ACE A   1       3.409   2.623   0.011   1.0   0.0           C<br>ATOM      6  O   ACE A   1       4.349   1.840   0.032   1.0   0.0           O<br>ATOM      7  N   ALA A   2       3.559   3.946  -0.023   1.0   0.0           N<br>ATOM      8  H   ALA A   2       2.741   4.544  -0.004   1.0   0.0           H<br>ATOM      9  CA  ALA A   2       4.862   4.614  -0.000   1.0   0.0           C<br>ATOM     10  HA  ALA A   2       5.411   4.315   0.894   1.0   0.0           H<br>ATOM     11  CB  ALA A   2       5.665   4.220  -1.246   1.0   0.0           C<br>ATOM     12  HB1 ALA A   2       5.123   4.520  -2.141   1.0   0.0           H<br>ATOM     13  HB2 ALA A   2       6.638   4.707  -1.220   1.0   0.0           H<br>ATOM     14  HB3 ALA A   2       5.834   3.147  -1.264   1.0   0.0           H<br>ATOM     15  C   ALA A   2       4.706   6.138   0.016   1.0   0.0           C<br>ATOM     16  O   ALA A   2       3.588   6.651   0.002   1.0   0.0           O<br>ATOM     17  N   NME A   3       5.838   6.851   0.016   1.0   0.0           N<br>ATOM     18  H   NME A   3       6.722   6.359   0.001   1.0   0.0           H<br>ATOM     19  CH3 NME A   3       5.854   8.301   0.002   1.0   0.0           C<br>ATOM     20 HH31 NME A   3       4.827   8.674  -0.000   1.0   0.0           H<br>ATOM     21 HH32 NME A   3       6.363   8.660   0.894   1.0   0.0           H<br>ATOM     22 HH33 NME A   3       6.363   8.656  -0.894   1.0   0.0           H<br>ATOM     23  O   WAT A   4      -0.314   8.560   2.297   1.0   0.0           O<br>ATOM     24  H1  WAT A   4       0.499   9.142   2.295   1.0   0.0           H<br>ATOM     25  H2  WAT A   4      -1.119   9.148   2.298   1.0   0.0           H<br>TER<br>ENDMDL<br>END<br></code></pre></td></tr></table></figure>
+<p>其构象大概长这个样子：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163930509.png" alt=""></p>
+<p>在安装好MindSponge之后，我们可以直接使用如下代码来构建一个多路径分子模拟的示例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> mindspore <span class="hljs-keyword">as</span> ms<br><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> msnp<br><span class="hljs-comment"># 设置MindSpore后台计算使用GPU静态图模式，速度会更快</span><br>ms.set_context(mode=ms.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">0</span>)<br><span class="hljs-comment"># 引入必要的MindSponge模块</span><br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> Protein, ForceField, WithEnergyCell, UpdaterMD, RunOneStepCell, Sponge<br><span class="hljs-keyword">from</span> sponge.control <span class="hljs-keyword">import</span> Langevin, LeapFrog<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo<br><span class="hljs-comment"># 导入分子构象文件，构建模拟系统</span><br>mol_file = <span class="hljs-string">&#x27;./alad_water_opt.pdb&#x27;</span><br>mol = Protein(mol_file, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>, <span class="hljs-string">&#x27;water.spce.yaml&#x27;</span>])<br><span class="hljs-comment"># 设置多路径的数量为2</span><br>mol.num_walker = <span class="hljs-number">2</span><br><span class="hljs-comment"># 先重构分子系统的拓扑信息</span><br>mol.build_system()<br><span class="hljs-comment"># 再构建分子系统的空间信息，此时输入的坐标batch维度要跟多路径的数量对齐</span><br>mol.build_space(msnp.pad(mol.coordinate, ((<span class="hljs-number">0</span>, <span class="hljs-number">1</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>)), mode=<span class="hljs-string">&#x27;wrap&#x27;</span>))<br><span class="hljs-comment"># 查看多路径数量是否更新成功</span><br><span class="hljs-built_in">print</span> (mol.num_walker)<br><span class="hljs-comment"># 打印每条轨迹下前三个原子的空间坐标</span><br><span class="hljs-built_in">print</span> (mol.coordinate.asnumpy()[:, :<span class="hljs-number">3</span>])<br><span class="hljs-comment"># 打印分子系统的原子类型信息</span><br><span class="hljs-built_in">print</span> (mol.atom_type)<br><span class="hljs-comment"># 力场构建，与单路径构建方法一致</span><br>potential = ForceField(mol, parameters=[<span class="hljs-string">&#x27;amber.ff14sb&#x27;</span>, <span class="hljs-string">&#x27;spce&#x27;</span>], use_pme=<span class="hljs-literal">False</span>)<br>with_energy = WithEnergyCell(mol, potential)<br><span class="hljs-comment"># 计算单点能</span><br><span class="hljs-built_in">print</span> (with_energy.calc_energies().<span class="hljs-built_in">sum</span>(-<span class="hljs-number">1</span>))<br><span class="hljs-comment"># 构建朗之万热浴积分器，与单路径下的使用方法一致</span><br>temp = <span class="hljs-number">300</span><br>thermostat = Langevin(mol, temp)<br>updater = UpdaterMD(mol, time_step=<span class="hljs-number">2e-3</span>, integrator=LeapFrog(mol), thermostat=thermostat)<br>one_step = RunOneStepCell(energy=with_energy, optimizer=updater)<br>md = Sponge(network=one_step)<br><span class="hljs-comment"># 定义回调函数，用于打印模拟过程中的势能等信息</span><br>run_info = RunInfo(<span class="hljs-number">1</span>)<br>md.run(<span class="hljs-number">10</span>, callbacks=[run_info])<br><span class="hljs-comment"># 打印迭代之后的体系空间信息和能量信息</span><br><span class="hljs-built_in">print</span> (mol.coordinate.asnumpy()[:, :<span class="hljs-number">3</span>])<br><span class="hljs-built_in">print</span> (with_energy.calc_energies().<span class="hljs-built_in">sum</span>(-<span class="hljs-number">1</span>))<br></code></pre></td></tr></table></figure>
+<p>模拟的输出结果为：</p>
+<figure class="highlight txt"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs txt">2 # 两条模拟路径<br>[[[2.0120001e-01 1.0070000e-01 0.0000000e+00]<br>  [1.9960001e-01 2.0969999e-01 2.0000001e-04]<br>  [1.4839999e-01 2.4550000e-01 8.9099996e-02]]<br><br> [[2.0120001e-01 1.0070000e-01 0.0000000e+00]<br>  [1.9960001e-01 2.0969999e-01 2.0000001e-04]<br>  [1.4839999e-01 2.4550000e-01 8.9099996e-02]]] # 初始构象一致<br>[[&#x27;H1&#x27; &#x27;CH3&#x27; &#x27;H2&#x27; &#x27;H3&#x27; &#x27;C&#x27; &#x27;O&#x27; &#x27;N&#x27; &#x27;H&#x27; &#x27;CA&#x27; &#x27;HA&#x27; &#x27;CB&#x27; &#x27;HB1&#x27; &#x27;HB2&#x27; &#x27;HB3&#x27;<br>  &#x27;C&#x27; &#x27;O&#x27; &#x27;N&#x27; &#x27;H&#x27; &#x27;CH3&#x27; &#x27;HH31&#x27; &#x27;HH32&#x27; &#x27;HH33&#x27; &#x27;OW&#x27; &#x27;HW&#x27; &#x27;HW&#x27;]] # 多路径模拟共享同一个模拟体系<br>[-67.05737 -67.05737] # 初始能量一致<br>[MindSPONGE] Started simulation at 2024-05-27 16:43:31<br>[MindSPONGE] Step: 1, E_pot: [-67.05737 -67.05737], E_kin: [0.93526113 1.1376405 ], E_tot: [-66.12211 -65.91973], Temperature: [3.1246128 3.8007417]<br>[MindSPONGE] Step: 2, E_pot: [-67.76422 -67.67892], E_kin: [2.87101   2.2547605], E_tot: [-64.89321 -65.42416], Temperature: [9.591754  7.5329266]<br>[MindSPONGE] Step: 3, E_pot: [-68.390305 -68.228424], E_kin: [4.2298875 3.9742615], E_tot: [-64.160416 -64.254166], Temperature: [14.131627 13.277606]<br>[MindSPONGE] Step: 4, E_pot: [-68.723   -68.80056], E_kin: [5.0383153 5.081285 ], E_tot: [-63.684685 -63.719276], Temperature: [16.8325   16.976059]<br>[MindSPONGE] Step: 5, E_pot: [-69.14583  -69.199196], E_kin: [6.2894073 5.8883085], E_tot: [-62.856422 -63.310886], Temperature: [21.012274 19.672243]<br>[MindSPONGE] Step: 6, E_pot: [-69.68199  -69.531006], E_kin: [7.1465344 7.5664873], E_tot: [-62.535458 -61.96452 ], Temperature: [23.875849 25.27887 ]<br>[MindSPONGE] Step: 7, E_pot: [-70.71329 -70.14986], E_kin: [9.099633 8.052189], E_tot: [-61.613655 -62.097668], Temperature: [30.400955 26.901548]<br>[MindSPONGE] Step: 8, E_pot: [-71.7045  -70.37026], E_kin: [9.534681 9.304852], E_tot: [-62.169815 -61.06541 ], Temperature: [31.854406 31.086567]<br>[MindSPONGE] Step: 9, E_pot: [-71.351135 -70.86687 ], E_kin: [ 9.35821  10.023544], E_tot: [-61.992928 -60.843323], Temperature: [31.264833 33.487644]<br>[MindSPONGE] Step: 10, E_pot: [-71.8908  -71.19918], E_kin: [10.796071 11.098853], E_tot: [-61.09473  -60.100327], Temperature: [36.068584 37.080147]<br>[MindSPONGE] Finished simulation at 2024-05-27 16:43:36<br>[MindSPONGE] Simulation time: 5.89 seconds.<br>--------------------------------------------------------------------------------<br>[[[ 0.20221242  0.10218664 -0.001829  ]<br>  [ 0.1975184   0.210064   -0.00026266]<br>  [ 0.14476728  0.24293597  0.08909092]]<br><br> [[ 0.20099933  0.10118634 -0.00139746]<br>  [ 0.1981248   0.20958814  0.00327332]<br>  [ 0.14694569  0.2449529   0.09299506]]] # 最终构象出现差异<br>[-71.71762 -71.29018] # 最终能量出现差异<br></code></pre></td></tr></table></figure>
+<p>由于这里使用的朗之万积分器带有随机项，因此即时是具备相同的初始构象，在多步的模拟之后，构象和能量都与初始构象发生偏离，而且两条路径下的构象也是有所差异的。当然，类似的，我们可以模拟不同的初始构象在没有随机性的迭代器下的迭代过程，感兴趣的童鞋可以自行尝试一下。</p>
+<h1>总结概要</h1>
+<p>随着硬件算力的发展，以及AI技术的日益增进，我们不仅可以借助深度学习框架来加速分子动力学模拟，以及降低分子模拟开发的门槛。还可以实现高通量模拟，使得用最小的开销并行的运行多个分子模拟成为可能。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/multi-md.html">https://www.cnblogs.com/dechinphy/p/multi-md.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/8380ab67.html">https://dechin-phy.asia/posts/8380ab67.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2024-05-27</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-05-27</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/62ed94e0.html">Win11系统下的MindSpore环境搭建</a><a class="next" href="/posts/37ae0cc.html">MindSponge分子动力学模拟——体系控制（2024.05）</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

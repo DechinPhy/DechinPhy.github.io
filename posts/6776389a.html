@@ -1,0 +1,246 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/6776389a.html"><meta property="og:type" content="article"><meta property="og:title" content="python3使用concurrent执行多进程任务"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/6776389a.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-21T03:28:17.000Z"><meta property="article:modified_time" content="2021-03-26T03:48:00.000Z"><title>python3使用concurrent执行多进程任务 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">python3使用concurrent执行多进程任务</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">python3使用concurrent执行多进程任务</h1><div class="post-meta">2021-03-21<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 8</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">concurrent使用示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">多进程的最佳配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">获取返回值</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>多进程技术是独立于算法任务本身的一种优化技术，通过python中的concurrent库，我们可以非常容易的实现多进程的任务，用来优化已有的算法。这里我们也给出了一些多进程配置信息的参考方案，在GPU和超算相关的领域上，都能够发挥较大的用途。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>随着计算机技术的发展，诸如GPU和超算平台等越来越发达，这些技术的本质其实并没有带来算法上的革新，之所以能够提升计算的速度和规模，很大程度上是因为分布式和并行计算的优势。这里我们介绍一个简单的python自带的多进程的代码实现，使用的是concurrent这个工具，同时我们也会介绍如何更好的配置多进程的资源。</p>
+<h1>concurrent使用示例</h1>
+<p><code>concurrent</code>是python自带的一个多进程实现仓库，不需要额外的安装。这里我们先介绍一个没有多进程的示例代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># sleep.py</span><br><br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sleep</span>(<span class="hljs-params">seconds</span>):<br>    time.sleep(seconds)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    times = [<span class="hljs-number">1</span>] * <span class="hljs-number">10</span><br>    time0 = time.time()<br>    <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> times:<br>        sleep(t)<br>    time1 = time.time()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time1 - time0))<br></code></pre></td></tr></table></figure>
+<p>这个代码的功能其实就是休眠10s的时间，也比较容易，我们可以看一下这个代码的执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 sleep.py <br>The <span class="hljs-keyword">time</span> cost is: 10.014754295349121s<br></code></pre></td></tr></table></figure>
+<p>在我们统计时间的时候，发现会比10s的时间多出来一些，这部分时间不仅仅包含这个python程序执行的时间，跟时间的统计方式也有一定的关系，一般我们可以忽略这部分的gap时间。</p>
+<p>我们假定上面这个程序中的<code>sleep函数</code>功能不是休眠1s的时间，而是执行一个耗时为1s的计算任务，而我们有很多的cpu，希望能够加速这个计算的过程，这个时候我们就需要用到多进程的技术，下面是修改为多进程之后的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># concurrent_sleep.py</span><br><br><span class="hljs-keyword">import</span> concurrent.futures<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sleep</span>(<span class="hljs-params">seconds</span>):<br>    time.sleep(seconds)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    times = [<span class="hljs-number">1</span>] * <span class="hljs-number">10</span><br>    time0 = time.time()<br>    <span class="hljs-keyword">with</span> concurrent.futures.ProcessPoolExecutor() <span class="hljs-keyword">as</span> executor:<br>        executor.<span class="hljs-built_in">map</span>(sleep, times)<br>    time1 = time.time()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time1 - time0))<br></code></pre></td></tr></table></figure>
+<p>整个修改的方式也非常容易，就是把原代码中的for循环修改为concurrent的执行语句，让我们一起来看看执行的结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py <br>The <span class="hljs-keyword">time</span> cost is: 2.0304219722747803s<br></code></pre></td></tr></table></figure>
+<p>从结果上我们可以看到，运行的时间从10s降低到了2s。这说明我们的多进程任务带来了非常显著的优化效果，至于为什么优化之后是2s而不是3s或者1s，这个问题将在下一个章节中进行介绍。</p>
+<h1>多进程的最佳配置</h1>
+<p>使用多进程的方案，能有多大的加速效果，很大程度上是依赖于硬件的。理论上来说，如果有n个cpu核，我们就可以实现n倍的加速。但是大部分情况下会受限于算法或者任务本身，跟n倍的加速之间有一定的gap。首先让我们用ipython来看看本地电脑上有多少个cpu：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python">[dechin@dechin-manjaro concurrent]$ ipython<br>Python <span class="hljs-number">3.8</span><span class="hljs-number">.5</span> (default, Sep  <span class="hljs-number">4</span> <span class="hljs-number">2020</span>, 07:<span class="hljs-number">30</span>:<span class="hljs-number">14</span>) <br><span class="hljs-type">Type</span> <span class="hljs-string">&#x27;copyright&#x27;</span>, <span class="hljs-string">&#x27;credits&#x27;</span> <span class="hljs-keyword">or</span> <span class="hljs-string">&#x27;license&#x27;</span> <span class="hljs-keyword">for</span> more information<br>IPython <span class="hljs-number">7.19</span><span class="hljs-number">.0</span> -- An enhanced Interactive Python. <span class="hljs-type">Type</span> <span class="hljs-string">&#x27;?&#x27;</span> <span class="hljs-keyword">for</span> <span class="hljs-built_in">help</span>.<br><br>In [<span class="hljs-number">1</span>]: <span class="hljs-keyword">import</span> psutil<br><br>In [<span class="hljs-number">2</span>]: psutil.cpu_count(logical=<span class="hljs-literal">False</span>)<br>Out[<span class="hljs-number">2</span>]: <span class="hljs-number">4</span><br><br>In [<span class="hljs-number">3</span>]: psutil.cpu_count(logical=<span class="hljs-literal">True</span>)<br>Out[<span class="hljs-number">3</span>]: <span class="hljs-number">8</span><br></code></pre></td></tr></table></figure>
+<p>这里我们使用的是<code>psutil</code>这个库，而不是常用的os或者multiprocessing，这是因为可以更好的区分逻辑核与物理核。我们本地的电脑上有4个物理核，每个物理核实际上对应于2个逻辑核，因此一共是有8个逻辑核。也就是说，理论上我们最大可以加速8倍的算法执行时间。让我们通过配置和修改一些参数来测试验证一下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># concurrent_sleep.py</span><br><br><span class="hljs-keyword">import</span> concurrent.futures<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">import</span> sys<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sleep</span>(<span class="hljs-params">seconds</span>):<br>    time.sleep(seconds)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;-t&#x27;</span>:<br>        times = [<span class="hljs-number">1</span>] * <span class="hljs-built_in">int</span>(sys.argv[<span class="hljs-number">2</span>]) <span class="hljs-comment"># 获取命令行的时间输入参数</span><br>    time0 = time.time()<br>    <span class="hljs-keyword">with</span> concurrent.futures.ProcessPoolExecutor() <span class="hljs-keyword">as</span> executor:<br>        executor.<span class="hljs-built_in">map</span>(sleep, times)<br>    time1 = time.time()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time1 - time0))<br></code></pre></td></tr></table></figure>
+<p>在这个示例中，为了方便调整，我们把总的休眠时间定为命令行的输入参数，使用的是<code>sys.argv</code>这个函数来获取，注意获取到的参数是字符串格式的。这串代码的执行方法和执行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py -t 16<br>The <span class="hljs-keyword">time</span> cost is: 2.0304934978485107s<br></code></pre></td></tr></table></figure>
+<p>在上面的执行结果中，我们发现原本需要16s的休眠任务，在多进程场景下被加速到了2s，刚好符合我们对逻辑核的加速倍数的预期。但是前面提到，能否加速逻辑核的倍数，跟任务本身的算法也有关系。比如在本用例中，如果算法分配的结果就是需要17个子算法来进行实现，那么在每个逻辑核上面执行了2次的休眠任务之后，又有一个逻辑核需要再执行1次休眠任务，而此时其他的逻辑核都需要等待这个执行任务的逻辑核的任务结束。具体的执行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py -t 17<br>The <span class="hljs-keyword">time</span> cost is: 3.0313029289245605s<br></code></pre></td></tr></table></figure>
+<p>这个结果也验证了我们此前的预想，因为16s的任务执行需要2s的时间，而执行完16s的任务之后，又需要等待剩下的一个1s时长的任务执行完毕，总耗时3s。这里我们没有配置<code>max_worker</code>的情况下，会按照系统中最高的逻辑核数来进行多进程的任务分配，但是在实际场景中我们需要考虑多种因素的限制，如内存和进程数的均衡配置（在大内存任务中，如果进程全开，有可能导致内存不足的问题）。只有在满足所有系统约束条件的情况下，才能发挥硬件最好的性能。在下面的代码中我们将给出如何配置执行任务的核数的方案：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># concurrent_sleep.py</span><br><br><span class="hljs-keyword">import</span> concurrent.futures<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">import</span> sys<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sleep</span>(<span class="hljs-params">seconds</span>):<br>    time.sleep(seconds)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;-t&#x27;</span>:<br>        times = [<span class="hljs-number">1</span>] * <span class="hljs-built_in">int</span>(sys.argv[<span class="hljs-number">2</span>])<br>    time0 = time.time()<br>    <span class="hljs-keyword">with</span> concurrent.futures.ProcessPoolExecutor(max_workers=<span class="hljs-number">4</span>) <span class="hljs-keyword">as</span> executor:<br>        executor.<span class="hljs-built_in">map</span>(sleep, times)<br>    time1 = time.time()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time1 - time0))<br></code></pre></td></tr></table></figure>
+<p>配置方法也很容易，就是在<code>ProcessPoolExecutor</code>函数的入参中引入<code>max_worker</code>，这里我们先将最大使用的核数设置为4，再来重新看一下上述用例的执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py -t 16<br>The <span class="hljs-keyword">time</span> cost is: 4.032958030700684s<br>[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py -t 17<br>The <span class="hljs-keyword">time</span> cost is: 5.032677173614502s<br></code></pre></td></tr></table></figure>
+<p>对于16s的任务，因为开了4个核的并行，因此在4s的时间内完成了任务。而17s的任务，同样是需要多等待1s的时间，总耗时为5s。</p>
+<h1>获取返回值</h1>
+<p>如果任务可以互相独立的去执行，互相之间并不需要通信，那自然是最理想的情况。但是更多的情况下，我们是要收集各个进程的返回值的，通过这个返回值，在各个进程之间进行通信。而在concurrent的情况下，<code>map</code>函数的返回值直接就是所有进程的返回值所组成的列表，这更加方便了我们的任务执行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># concurrent_sleep.py</span><br><br><span class="hljs-keyword">import</span> concurrent.futures<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">import</span> sys<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sleep</span>(<span class="hljs-params">seconds</span>):<br>    time.sleep(seconds)<br>    <span class="hljs-keyword">return</span> seconds<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-keyword">if</span> sys.argv[<span class="hljs-number">1</span>] == <span class="hljs-string">&#x27;-t&#x27;</span>:<br>        times = [<span class="hljs-number">1</span>] * <span class="hljs-built_in">int</span>(sys.argv[<span class="hljs-number">2</span>])<br>    time0 = time.time()<br>    <span class="hljs-keyword">with</span> concurrent.futures.ProcessPoolExecutor(max_workers=<span class="hljs-number">4</span>) <span class="hljs-keyword">as</span> executor:<br>        results = executor.<span class="hljs-built_in">map</span>(sleep, times)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The total sleep cpu time is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">sum</span>(results)))<br>    time1 = time.time()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The time cost is: &#123;&#125;s&#x27;</span>.<span class="hljs-built_in">format</span>(time1 - time0))<br></code></pre></td></tr></table></figure>
+<p>在这个用例中，我们将<code>map</code>函数的结果存储到<code>results</code>这一参数中，最后对results进行求和的操作，这个简单的示例中，返回的结果实际上就是总的输入的休眠时间。执行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro concurrent]$ python3 concurrent_sleep.py -t 16<br>The total <span class="hljs-built_in">sleep</span> cpu <span class="hljs-keyword">time</span> is: 16s<br>The <span class="hljs-keyword">time</span> cost is: 4.034112930297852s<br></code></pre></td></tr></table></figure>
+<p>可以看到，所有的返回值被成功的获取到。</p>
+<h1>总结概要</h1>
+<p>多进程技术是独立于算法任务本身的一种优化技术，通过python中的concurrent库，我们可以非常容易的实现多进程的任务，用来优化已有的算法。这里我们也给出了一些多进程配置信息的参考方案，在GPU和超算相关的领域上，都能够发挥较大的用途。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/concurrent.html">https://www.cnblogs.com/dechinphy/p/concurrent.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/6776389a.html">https://dechin-phy.asia/posts/6776389a.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-21</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-26</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/6562bc05.html">python3使用pycuda执行简单GPU计算任务</a><a class="next" href="/posts/65bc7967.html">python3使用json、pickle和sqlite3持久化存储字典对象</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

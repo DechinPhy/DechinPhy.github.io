@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/b00c0c78.html"><meta property="og:type" content="article"><meta property="og:title" content="在C++中调用Python"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/b00c0c78.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-05-20T09:20:09.000Z"><meta property="article:modified_time" content="2021-05-21T08:07:00.000Z"><title>在C++中调用Python | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">在C++中调用Python</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">在C++中调用Python</h1><div class="post-meta">2021-05-20<span> | </span><span class="category"><a href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 3.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 16</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Python的安装</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">VS Code配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Hello World测试</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">调用Python函数string.split()</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%B0%9D%E8%AF%95"><span class="toc-number">5.1.</span> <span class="toc-text">第一次尝试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E6%AC%A1%E5%B0%9D%E8%AF%95"><span class="toc-number">5.2.</span> <span class="toc-text">第二次尝试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AC%AC%E4%B8%89%E6%AC%A1%E5%B0%9D%E8%AF%95"><span class="toc-number">5.3.</span> <span class="toc-text">第三次尝试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了一个在C++内部调用Python中封装的函数或者接口的方法，从环境配置到具体示例都有讲解，并且在其中包含有不少的坑点，需要一步一步去踩。不同的编程语言具有不同的优势，Python轮子众多而语法简单，上手容易，但是性能比较首先，C++的最明显优势就是在于其性能的天然优越性。但是我们不需要对哪一种编程语言有所偏倚，都有所掌握，并且能够有所互通，利用好各自的优势，才能够发挥最大的价值。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>虽然现在Python编程语言十分的火爆，但是实际上非要用一门语言去完成所有的任务，并不是说不可以，而是不合适。在一些特定的、对于性能要求比较高的场景，还是需要用到传统的C++来进行编程的。但是C++的一个缺点是比较难找到很好的轮子，这也是很多人专用Python的一个重要原因。这篇文章我们要介绍的是一个比较特殊的场景——用C++的代码去调用Python函数中实现的一些功能。这样的话，如果代码的主体还是用C++完成的，而部分功能为了简便，引入一些Python中已经封装好的函数，这样就可以很好的结合两种语言各自的特点。而另一种工作方式：通过Python来调用一些C++或者Fortran中实现的高性能函数，可以参考这一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/line-profiler.html">博客</a>。这两种不同的使用方法各有优劣，但是如果以Python为主导，就很难避开GIL的问题，这里我们就不过多的展开。</p>
+<h1>Python的安装</h1>
+<p>为了使用<code>Python.h</code>这个扩展项，我们需要安装一个<code>python*-dev</code>而不是<code>python*</code>，这两者略有区别，下面的案例展示的是在Ubuntu20.04下安装<code>python3.9-dev</code>的方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ <span class="hljs-built_in">sudo</span> apt install python3.9-dev<br>正在读取软件包列表... 完成<br>正在分析软件包的依赖关系树       <br>正在读取状态信息... 完成       <br>下列软件包是自动安装的并且现在不需要了：<br>  chromium-codecs-ffmpeg-extra gstreamer1.0-vaapi<br>  libgstreamer-plugins-bad1.0-0 linux-headers-5.8.0-43-generic<br>  linux-hwe-5.8-headers-5.8.0-43 linux-image-5.8.0-43-generic<br>  linux-modules-5.8.0-43-generic linux-modules-extra-5.8.0-43-generic<br>使用<span class="hljs-string">&#x27;sudo apt autoremove&#x27;</span>来卸载它(它们)。<br>将会同时安装下列软件：<br>  libexpat1-dev libpython3.9 libpython3.9-dev zlib1g-dev<br>下列【新】软件包将被安装：<br>  libexpat1-dev libpython3.9 libpython3.9-dev python3.9-dev zlib1g-dev<br>升级了 0 个软件包，新安装了 5 个软件包，要卸载 0 个软件包，有 30 个软件包未被升级。<br>需要下载 6,613 kB 的归档。<br>解压缩后会消耗 28.7 MB 的额外空间。<br>您希望继续执行吗？ [Y/n] Y<br>获取:1 http://repo.huaweicloud.com/ubuntu focal/main amd64 libexpat1-dev amd64 2.2.9-1build1 [116 kB]<br>获取:2 http://repo.huaweicloud.com/ubuntu focal-updates/universe amd64 libpython3.9 amd64 3.9.0-5~20.04 [1,710 kB]<br>获取:3 http://repo.huaweicloud.com/ubuntu focal-updates/universe amd64 libpython3.9-dev amd64 3.9.0-5~20.04 [4,119 kB]<br>获取:4 http://repo.huaweicloud.com/ubuntu focal-updates/main amd64 zlib1g-dev amd64 1:1.2.11.dfsg-2ubuntu1.2 [155 kB]<br>获取:5 http://repo.huaweicloud.com/ubuntu focal-updates/universe amd64 python3.9-dev amd64 3.9.0-5~20.04 [512 kB]<br>已下载 6,613 kB，耗时 4秒 (1,594 kB/s)<br>正在选中未选择的软件包 libexpat1-dev:amd64。<br>(正在读取数据库 ... 系统当前共安装有 269544 个文件和目录。)<br>准备解压 .../libexpat1-dev_2.2.9-1build1_amd64.deb  ...<br>正在解压 libexpat1-dev:amd64 (2.2.9-1build1) ...<br>正在选中未选择的软件包 libpython3.9:amd64。<br>准备解压 .../libpython3.9_3.9.0-5~20.04_amd64.deb  ...<br>正在解压 libpython3.9:amd64 (3.9.0-5~20.04) ...<br>正在选中未选择的软件包 libpython3.9-dev:amd64。<br>准备解压 .../libpython3.9-dev_3.9.0-5~20.04_amd64.deb  ...<br>正在解压 libpython3.9-dev:amd64 (3.9.0-5~20.04) ...<br>正在选中未选择的软件包 zlib1g-dev:amd64。<br>准备解压 .../zlib1g-dev_1%3a1.2.11.dfsg-2ubuntu1.2_amd64.deb  ...<br>正在解压 zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu1.2) ...<br>正在选中未选择的软件包 python3.9-dev。<br>准备解压 .../python3.9-dev_3.9.0-5~20.04_amd64.deb  ...<br>正在解压 python3.9-dev (3.9.0-5~20.04) ...<br>正在设置 libpython3.9:amd64 (3.9.0-5~20.04) ...<br>正在设置 libexpat1-dev:amd64 (2.2.9-1build1) ...<br>正在设置 zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu1.2) ...<br>正在设置 libpython3.9-dev:amd64 (3.9.0-5~20.04) ...<br>正在设置 python3.9-dev (3.9.0-5~20.04) ...<br>正在处理用于 man-db (2.9.1-1) 的触发器 ...<br>正在处理用于 libc-bin (2.31-0ubuntu9.2) 的触发器 ...<br></code></pre></td></tr></table></figure>
+<p>安装完成后，如果在当前命令行下运行<code>python3.9</code>，是可以看到一个python专属的命令行界面的，可以通过<code>exit()</code>退出。但是我们这里侧重的是跟C++的配合工作，因此我们更加关注lib和include目录下是否有生成相关的目录，可以执行如下指令进行查看：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ ll /usr/lib/ | grep python<br>drwxr-xr-x  26 root root   20480 5月   7 16:27 python2.7/<br>drwxr-xr-x   3 root root    4096 2月  10 02:47 python3/<br>drwxr-xr-x  30 root root   20480 5月   7 16:30 python3.8/<br>drwxr-xr-x  31 root root   12288 5月  20 16:31 python3.9/<br></code></pre></td></tr></table></figure>
+<p>这里我们看到有一个3.9的版本，也就是我们刚才安装的版本，再看看include下的目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ ll /usr/include/ | grep python<br>drwxr-xr-x  2 root root   4096 5月   7 16:31 python3.8/<br>drwxr-xr-x  4 root root   4096 5月  20 16:31 python3.9/<br></code></pre></td></tr></table></figure>
+<p>这里我们就可以看到一些区别了，有一些版本的python不一定会有这两个目录，但是只有具备了这两个目录，才能够被C++调用。</p>
+<h1>VS Code配置</h1>
+<p>这里我们使用的IDE是VS Code，但是上述提到的几个路径，在VS Code中默认是不被包含的，因此在代码编辑的过程中在<code>include &lt;Python.h&gt;</code>这一步就会报错了。这一章节的目的主要是解决IDE中的报错问题，还不是最终运行中出现的问题，因为运行时我是通过命令行执行g++来运行的，而不是直接用IDE来跑。首先在VS Code界面上按顺序同时按住：<code>ctrl+shift+P</code>，在弹出的窗口中输入<code>C/C++ Edit Configurations(JSON)</code>查找相关JSON配置文件，在列表中点击后会自动在VS Code中打开这个配置文件：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;configurations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Linux&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;includePath&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>                <span class="hljs-string">&quot;$&#123;workspaceFolder&#125;/**&quot;</span><br>            <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;defines&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;compilerPath&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/usr/bin/gcc&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;cStandard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;gnu17&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;cppStandard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;c++11&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;intelliSenseMode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;linux-gcc-x64&quot;</span><br>        <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">4</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<p>我们所需要做的工作就是，在这个includePath中把相关的路径都加上，比如我这边添加的路径是以下3个：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;configurations&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Linux&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;includePath&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>                <span class="hljs-string">&quot;$&#123;workspaceFolder&#125;/**&quot;</span><span class="hljs-punctuation">,</span><br>                <span class="hljs-string">&quot;/usr/include/python3.9/&quot;</span><span class="hljs-punctuation">,</span><br>                <span class="hljs-string">&quot;/usr/lib/python3.9/&quot;</span><span class="hljs-punctuation">,</span><br>                <span class="hljs-string">&quot;/usr/include/python3.9/cpython/&quot;</span><br>            <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;defines&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;compilerPath&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/usr/bin/gcc&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;cStandard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;gnu17&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;cppStandard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;c++11&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;intelliSenseMode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;linux-gcc-x64&quot;</span><br>        <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;version&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">4</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<p>添加后，<code>include &lt;Python.h&gt;</code>就不会显示报错了。</p>
+<h1>Hello World测试</h1>
+<p>行业潜规则，我们先用C++来调用一个Python的打印函数，输出Hello World试试：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// cp.cpp</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Python.h&gt;</span></span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> *argv[])</span> </span>&#123;<br>  <span class="hljs-built_in">Py_Initialize</span>();<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;print(&#x27;hello world&#x27;)\n&quot;</span>);<br>  <span class="hljs-built_in">Py_Finalize</span>();<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>这里需要注意的是一个运行方式，我们是用g++来进行编译的，但是g++默认是找不到我们刚才在IDE中所设定的几个<code>includePath</code>的，因此需要我们手动在编译的时候加上几个参数。这些参数其实也可以运行<code>python3.9-config</code>去一个一个查看，这里我们直接推荐一种可以运行成功的参数，其中最重要的是<code>-I</code>和<code>-l</code>这两个路径一定要包含：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ g++ -o cpy cp.cpp -lm -std=c++11 -I/usr/include/python3.9/ -lpython3.9<br>dechin@ubuntu2004:~/projects/gitlab/dechin/$ ll<br>总用量 4697388<br>drwxrwxr-x 2 dechin dechin       4096 5月  20 17:10 ./<br>drwxrwxr-x 8 dechin dechin       4096 5月  19 15:32 ../<br>-rw-rw-r-- 1 dechin dechin        152 5月  20 17:04 cp.cpp<br>-rwxrwxr-x 1 dechin dechin      16776 5月  20 17:10 cpy*<br></code></pre></td></tr></table></figure>
+<p>运行完成后，就会在当前目录下生成一个刚才指定的名字<code>cpy</code>的一个可执行文件，如果是windows系统，则会生成一个<code>cpy.exe</code>的文件。让我们执行这个文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ ./cpy <br>hello world<br></code></pre></td></tr></table></figure>
+<p>成功打印Hello World，又离成功更近了一步。</p>
+<h1>调用Python函数string.split()</h1>
+<p>在C++中如果我们想分割一个字符串，虽然说也是可以实现的，但是应该没有比Python中执行一个<code>string.split()</code>更加方便快捷的方案了，因此我们测试一个用C++调用Python的split函数的功能。</p>
+<h2 id="第一次尝试">第一次尝试</h2>
+<p>一开始我们是写了这样一个简单的案例，用<code>PyImport_ImportModule</code>方法去调用pysplit这个python模块：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// cp.cpp</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Python.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> *argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-built_in">Py_Initialize</span>();<br>  <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">Py_IsInitialized</span>())<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Initialize failed!&quot;</span> &lt;&lt; endl;<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>	&#125;<br>  PyObject* pModule = <span class="hljs-literal">NULL</span>;<br>  PyObject* pFunc;<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;import os&quot;</span>);<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;os.system(&#x27;pwd&#x27;)&quot;</span>);<br>  pModule = <span class="hljs-built_in">PyImport_ImportModule</span>(<span class="hljs-string">&quot;pysplit&quot;</span>);<br>  <span class="hljs-keyword">if</span> (pModule == <span class="hljs-literal">NULL</span>)<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Module Not Found!&quot;</span> &lt;&lt; endl;<br>	&#125;<br>  <span class="hljs-comment">// pFunc = PyObject_GetAttrString(pModule, &quot;sp&quot;);</span><br>  <span class="hljs-comment">// PyObject* args = Py_BuildValue(&quot;s&quot;, &quot;Test String Hello Every One !&quot;);</span><br>  <span class="hljs-comment">// PyObject* pRet = PyObject_CallObject(pFunc, args);</span><br>  string cList[<span class="hljs-number">10</span>];<br>  <span class="hljs-comment">// PyArg_Parse(pRet, &quot;[items]&quot;, &amp;cList);</span><br>  cout &lt;&lt; <span class="hljs-string">&quot;res:&quot;</span> &lt;&lt; cList &lt;&lt; endl;<br>  <span class="hljs-built_in">Py_Finalize</span>();<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>对应的Python模块的内容为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># pysplit.py</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sp</span>(<span class="hljs-params">string</span>):<br>    <span class="hljs-keyword">return</span> string.split()<br></code></pre></td></tr></table></figure>
+<p>这是一个非常简单的函数，但是我们在调用的时候就直接返回了一个错误：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ g++ -o cpy cp.cpp -lm -std=c++11 -I/usr/include/python3.9/ -lpython3.9 &amp;&amp; ./cpy<br>[<span class="hljs-string">&#x27;pysplit.py&#x27;</span>, <span class="hljs-string">&#x27;cpy&#x27;</span>, <span class="hljs-string">&#x27;cp.cpp&#x27;</span>]<br>Module Not Found!<br>res:0x7ffc622ae900<br></code></pre></td></tr></table></figure>
+<p>这个错误是说，找不到<code>pysplit</code>这个模块。但是我们同时借助于<code>PyRun_SimpleString</code>调用了Python中的os库，执行了一个查看路径和当前路径下文件的功能，我们发现这个C++文件和需要引入的pysplit.py其实是在同一个路径下的，这就很奇怪了没有导入成功。</p>
+<h2 id="第二次尝试">第二次尝试</h2>
+<p>经过一番的资料查询，最后发现，即使是在相同的路径下，也需要通过Python的<code>sys</code>将当前目录添加到系统路径中，才能够识别到这个模块，同样也是使用<code>PyRun_SimpleString</code>的函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// cp.cpp</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Python.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> *argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-built_in">Py_Initialize</span>();<br>  <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">Py_IsInitialized</span>())<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Initialize failed!&quot;</span> &lt;&lt; endl;<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>	&#125;<br>  PyObject* pModule = <span class="hljs-literal">NULL</span>;<br>  PyObject* pFunc;<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;import sys&quot;</span>);<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;sys.path.append(&#x27;./&#x27;)&quot;</span>);<br>  pModule = <span class="hljs-built_in">PyImport_ImportModule</span>(<span class="hljs-string">&quot;pysplit&quot;</span>);<br>  <span class="hljs-keyword">if</span> (pModule == <span class="hljs-literal">NULL</span>)<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Module Not Found!&quot;</span> &lt;&lt; endl;<br>	&#125;<br>  pFunc = <span class="hljs-built_in">PyObject_GetAttrString</span>(pModule, <span class="hljs-string">&quot;sp&quot;</span>);<br>  PyObject* args = <span class="hljs-built_in">Py_BuildValue</span>(<span class="hljs-string">&quot;s&quot;</span>, <span class="hljs-string">&quot;Test String Hello Every One !&quot;</span>);<br>  PyObject* pRet = <span class="hljs-built_in">PyObject_CallObject</span>(pFunc, args);<br>  string cList[<span class="hljs-number">10</span>];<br>  <span class="hljs-comment">// PyArg_Parse(pRet, &quot;[items]&quot;, &amp;cList);</span><br>  cout &lt;&lt; <span class="hljs-string">&quot;res:&quot;</span> &lt;&lt; cList &lt;&lt; endl;<br>  <span class="hljs-built_in">Py_Finalize</span>();<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>但是执行后，又出现了一个新的问题，说输入格式必须要是一个tuple格式的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ g++ -o cpy cp.cpp -lm -std=c++11 -I/usr/include/python3.9/ -lpython3.9 &amp;&amp; ./cpy<br>res:0x7ffe94beb320<br>TypeError: argument list must be a tuple<br></code></pre></td></tr></table></figure>
+<p>这个也可以理解，Python中的函数调用，输入参数都被打包成了一个tuple格式，比如<code>**args</code>，而类似<code>**kwargs</code>则是打包成一个字典格式，类似的功能在这篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/args.html">博客</a>中有所介绍。</p>
+<h2 id="第三次尝试">第三次尝试</h2>
+<p>上面的问题，在StackOverFlow上有一个类似的情况，有<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/60487083/passing-array-tuple-from-python-back-to-c">一个回答</a>解决了这个问题，解决方案是，用<code>PyObject_CallFunctionObjArgs</code>来替代<code>PyObject_CallObject</code>去实现函数调用命令，相关代码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// cp.cpp</span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;Python.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">int</span> argc, <span class="hljs-type">char</span> *argv[])</span></span><br><span class="hljs-function"></span>&#123;<br>  <span class="hljs-built_in">Py_Initialize</span>();<br>  <span class="hljs-keyword">if</span> (!<span class="hljs-built_in">Py_IsInitialized</span>())<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Initialize failed!&quot;</span> &lt;&lt; endl;<br>		<span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>	&#125;<br>  PyObject* pModule = <span class="hljs-literal">NULL</span>;<br>  PyObject* pFunc;<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;import sys&quot;</span>);<br>  <span class="hljs-built_in">PyRun_SimpleString</span>(<span class="hljs-string">&quot;sys.path.append(&#x27;./&#x27;)&quot;</span>);<br>  pModule = <span class="hljs-built_in">PyImport_ImportModule</span>(<span class="hljs-string">&quot;pysplit&quot;</span>);<br>  <span class="hljs-keyword">if</span> (pModule == <span class="hljs-literal">NULL</span>)<br>	&#123;<br>		cout &lt;&lt; <span class="hljs-string">&quot;Module Not Found!&quot;</span> &lt;&lt; endl;<br>	&#125;<br>  pFunc = <span class="hljs-built_in">PyObject_GetAttrString</span>(pModule, <span class="hljs-string">&quot;sp&quot;</span>);<br>  PyObject* args = <span class="hljs-built_in">Py_BuildValue</span>(<span class="hljs-string">&quot;s&quot;</span>, <span class="hljs-string">&quot;Test String Hello Every One !&quot;</span>);<br>  PyObject* pRet = <span class="hljs-built_in">PyObject_CallFunctionObjArgs</span>(pFunc, args, <span class="hljs-literal">NULL</span>);<br>  <span class="hljs-type">int</span> size = <span class="hljs-built_in">PyList_Size</span>(pRet);<br>  cout &lt;&lt; <span class="hljs-string">&quot;List size is: &quot;</span> &lt;&lt; size &lt;&lt; endl;<br>  <span class="hljs-keyword">for</span>(<span class="hljs-type">int</span> i=<span class="hljs-number">0</span>;i&lt;size;i++)<br>  &#123;<br>    PyObject* cRet = <span class="hljs-built_in">PyList_GET_ITEM</span>(pRet, i);<br>    <span class="hljs-type">char</span>* s;<br>    <span class="hljs-built_in">PyArg_Parse</span>(cRet, <span class="hljs-string">&quot;s&quot;</span>, &amp;s);<br>    cout &lt;&lt; <span class="hljs-string">&quot;The &quot;</span> &lt;&lt; i &lt;&lt; <span class="hljs-string">&quot;th term is: &quot;</span> &lt;&lt; s &lt;&lt; endl;<br>  &#125;<br>  <span class="hljs-built_in">Py_Finalize</span>();<br>  <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>最后，因为从Python中获取的是一个List格式的数据，因此我们首先需要用<code>PyList_GET_ITEM</code>去逐项提取，然后用<code>PyArg_Parse</code>将提取出来的元素保存到一个C++的<code>char</code>字符串中，执行结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">dechin@ubuntu2004:~/projects/gitlab/dechin/$ g++ -o cpy cp.cpp -lm -std=c++11 -I/usr/include/python3.9/ -lpython3.9 &amp;&amp; ./cpy<br>List size is: 6<br>The 0th term is: Test<br>The 1th term is: String<br>The 2th term is: Hello<br>The 3th term is: Every<br>The 4th term is: One<br>The 5th term is: !<br></code></pre></td></tr></table></figure>
+<p>Yes！终于成功了！</p>
+<h1>总结概要</h1>
+<p>本文介绍了一个在C++内部调用Python中封装的函数或者接口的方法，从环境配置到具体示例都有讲解，并且在其中包含有不少的坑点，需要一步一步去踩。不同的编程语言具有不同的优势，Python轮子众多而语法简单，上手容易，但是性能比较首先，C++的最明显优势就是在于其性能的天然优越性。但是我们不需要对哪一种编程语言有所偏倚，都有所掌握，并且能够有所互通，利用好各自的优势，才能够发挥最大的价值。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cppio.html">https://www.cnblogs.com/dechinphy/p/cppio.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a>
+打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a>
+腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/271219435">https://zhuanlan.zhihu.com/p/271219435</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/79896193">https://zhuanlan.zhihu.com/p/79896193</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/ppCuda/article/details/91049765">https://blog.csdn.net/ppCuda/article/details/91049765</a></li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/60487083/passing-array-tuple-from-python-back-to-c">https://stackoverflow.com/questions/60487083/passing-array-tuple-from-python-back-to-c</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/b00c0c78.html">https://dechin-phy.asia/posts/b00c0c78.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-05-20</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-05-21</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/20704f8e.html">python3读取文件指定行的三种方案</a><a class="next" href="/posts/d1bb50be.html">C++基础——文件逐行读取与字符匹配</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

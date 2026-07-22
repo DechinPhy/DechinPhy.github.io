@@ -1,0 +1,304 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/b379c8fc.html"><meta property="og:type" content="article"><meta property="og:title" content="用量子计算模拟器ProjectQ生成随机数，并用pytest进行单元测试与覆盖率测试，以及基于flake8的编码规范测试"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/b379c8fc.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-02-28T14:22:14.000Z"><meta property="article:modified_time" content="2021-02-28T16:15:00.000Z"><title>用量子计算模拟器ProjectQ生成随机数，并用pytest进行单元测试与覆盖率测试，以及基于flake8的编码规范测试 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">用量子计算模拟器ProjectQ生成随机数，并用pytest进行单元测试与覆盖率测试，以及基于flake8的编码规范测试</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">用量子计算模拟器ProjectQ生成随机数，并用pytest进行单元测试与覆盖率测试，以及基于flake8的编码规范测试</h1><div class="post-meta">2021-02-28<span> | </span><span class="category"><a href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 5.4k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 25</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%9A%8F%E6%9C%BA%E6%95%B0%E7%9A%84%E5%BA%94%E7%94%A8"><span class="toc-number">1.1.</span> <span class="toc-text">随机数的应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97%E4%B8%8E%E9%9A%8F%E6%9C%BA%E6%95%B0"><span class="toc-number">1.2.</span> <span class="toc-text">量子计算与随机数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E4%BA%8Epytest%E7%9A%84python%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6"><span class="toc-number">1.3.</span> <span class="toc-text">基于pytest的python单元测试框架</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">量子计算产生随机数</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%EF%BC%81%EF%BC%81%EF%BC%81"><span class="toc-number">2.1.</span> <span class="toc-text">注意！！！</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">pytest测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%85pytest%E5%BA%93"><span class="toc-number">3.1.</span> <span class="toc-text">安装pytest库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pytest%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B%E6%92%B0%E5%86%99"><span class="toc-number">3.2.</span> <span class="toc-text">pytest单元测试用例撰写</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pytest%E5%88%9D%E5%A7%8B%E5%8C%96%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.</span> <span class="toc-text">pytest初始化配置文件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pytest%E7%94%9F%E6%88%90html%E6%A0%BC%E5%BC%8F%E6%8A%A5%E5%91%8A"><span class="toc-number">3.4.</span> <span class="toc-text">pytest生成html格式报告</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pytest%E8%A6%86%E7%9B%96%E7%8E%87%E6%B5%8B%E8%AF%95"><span class="toc-number">3.5.</span> <span class="toc-text">pytest覆盖率测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">使用flake8进行python编码规范检查</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>通过量子线路模型，我们可以得到一个量子的真随机数产生器，本文给出了一个基于ProjectQ的模拟实现。同时本文还介绍了python的单元测试库pytest和编码规范测试库flake8的一些常规使用方法。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>本文中主要包含有三个领域的知识点：随机数的应用、量子计算模拟产生随机数与基于pytest框架的单元测试与覆盖率测试，这里先简单分别介绍一下背景知识。</p>
+<h2 id="随机数的应用">随机数的应用</h2>
+<p>在上一篇介绍<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/state.html">量子态模拟采样</a>的算法中，我们就使用到了随机数，随机数在各种蒙特卡洛方法与数值计算中，扮演着非常重要的角色。在金融领域，随机数则是在加密算法中扮演重要角色，其风险在于，如果随机数可被预测，那么恶意用户就可以利用这一特点，破解对称加密甚至是非对称加密的算法(非对称加密如RSA算法的私钥的挑选其实也有可能使用到随机数)。在python代码中，可以通过调用random库或者numpy.random库进行随机数的生成，仅需要通过如下的代码即可实现：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> random<br>random_number = random.random() <span class="hljs-comment"># 产生[0,1)之间的均匀随机数</span><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br>random_array = random.randn(<span class="hljs-number">10</span>) <span class="hljs-comment"># 产生10个随机数并存储到np格式的一维数组中</span><br></code></pre></td></tr></table></figure>
+<p>这些库所产生的随机数，往往被认为是不安全的随机数，其主要特点是通过随机数生成算法，结合硬件的一些独有编号来产生一系列数串。但是随机数生成算法一般都是已知的，因此还是有一定的潜在风险。有一个python库函数叫<code>secrets</code>可以产生&quot;安全随机数&quot;，其特点在于不仅利用了一些硬件系统独有信息，如ip和MAC等，主要还利用了系统熵源来生成随机数，增强了所产生随机数的不可预测性。关于<code>secrets</code>的使用方法， 可以参考其<a target="_blank" rel="noopener" href="https://docs.python.org/3/library/secrets.html#random-numbers">官方文档</a>。但是，即使是这里所谓的<code>安全随机数</code>，也并不是<code>真随机数</code>，真随机数的产生不依赖于算法。</p>
+<h2 id="量子计算与随机数">量子计算与随机数</h2>
+<p>前面写过一篇博客介绍<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/magic.html">两比特量子系统的模拟</a>，读者可以从中了解到量子计算的一些基本原理与模拟实现。而另一篇关于<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/circuit.html">量子线路模拟</a>的博客，则介绍了关于开源量子计算框架ProjectQ的一些基本使用方法，在这篇文章中我们也会使用到。通过量子硬件，我们可以直接读取一系列的随机串，由于这些随机串是由硬件直接给出来的结果，不是通过算法来生成的，因此是完成不可预测的，被称为&quot;真随机数&quot;。</p>
+<h2 id="基于pytest的python单元测试框架">基于pytest的python单元测试框架</h2>
+<p>在使用python编程实现算法时，需要对算法函数或者类进行功能验证，这就需要写测试用例。python第三方库pytest提供了非常好的自动化测试的功能，配合html插件和覆盖率测试插件，还可以进行更多的测试以及更好的展示测试的结果。</p>
+<h1>量子计算产生随机数</h1>
+<p>量子计算是基于量子叠加与量子纠缠两种特性进行计算的方案，其结合量子算法的复杂性优势，在量子处理器上可以实现经典计算机无法在有效时间内完成的任务，一般称之为量子优越性。量子叠加是对量子比特重要特性的一个总结，如下图所示(图片来自于参考链接1)，区分于经典比特，量子比特不仅可以表示<code>0</code>和<code>1</code>，还可以表示处于<code>0</code>和<code>1</code>之间的状态，比如<code>0.5</code>，<code>0.2243</code>等等。这些状态我们不能直接读取，在硬件上我们只能够读取到<code>0</code>或者<code>1</code>两种状态，这跟经典比特是一样的。区别在于，即使我们不改变量子比特的状态，不同的测试却会给出不同的结果，而<code>0.5</code>等中间状态，则表示的是出现<code>0</code>或者<code>1</code>状态分别的概率。
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635734.png" alt="">
+由于量子测量会导致量子态的坍缩，也就是说，每一次测量之后，都需要重新制备量子态。而制备一个产生随机数的量子态，我们可以用如下所示的<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>H</mi></mrow><annotation encoding="application/x-tex">H</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.08125em;">H</span></span></span></span>量子门操作来实现。其具体的矩阵表述可以参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/circuit.html">这篇博客</a>，量子计算本质上就是用特殊的硬件方法，快速的实现大规模的矩阵运算，这也是其展现量子优势的来源。
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635771.png" alt="">
+这里我们直接使用开源量子计算框架ProjectQ来实现这个门操作，就省去了自己去模拟实习的繁琐操作：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># random_number.py</span><br><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, Measure<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">random_number_generator</span>():<br>    eng = MainEngine()<br>    qubit = eng.allocate_qubit()<br>    H | qubit<br>    eng.flush()<br>    Measure | qubit<br>    random_number = <span class="hljs-built_in">int</span>(qubit)<br>    eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br>    <span class="hljs-keyword">return</span> random_number<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    random_number = random_number_generator()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;Random number generated by quantum simulator is: &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(random_number))<br></code></pre></td></tr></table></figure>
+<p>这里顺带的介绍下ProjectQ的一些操作实现的方法，在ProjectQ中将众多的量子比特作为寄存器来进行调用，这些寄存器都在给定的engine下赋予了各种操作，如量子门操作、打印线路、编译优化等。编程框架与实际的量子比特并不在架构上的同一个层次，每次传送指令都是通过eng.flush()打包进行编译优化之后，再传送到后端去逐一执行。因此如果要测量量子比特(在ProjectQ模拟器中必须只能全部执行测量操作，不能只测量其中的某一个部分)，或者是读取某一个量子态的概率时，都需要先执行eng.flush()才行。接下来简单看下上述代码的执行效果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 random_number.py <br>Random number generated by quantum simulator is: 1<br>[dechin@dechin-manjaro pytest]$ python3 random_number.py <br>Random number generated by quantum simulator is: 1<br>[dechin@dechin-manjaro pytest]$ python3 random_number.py <br>Random number generated by quantum simulator is: 0<br>[dechin@dechin-manjaro pytest]$ python3 random_number.py <br>Random number generated by quantum simulator is: 0<br>[dechin@dechin-manjaro pytest]$ python3 random_number.py <br>Random number generated by quantum simulator is: 1<br></code></pre></td></tr></table></figure>
+<p>在这个案例中，每一次都会产生一个新的随机数0或者1，并且在量子比特使用结束之后，通过eng.flush(deallocate_qubits=True)可以初始化该寄存器，所有的振幅和测量结果都会被丢弃。</p>
+<h2 id="注意！！！">注意！！！</h2>
+<p>需要注意的是，由于这里我们是使用了模拟器来模拟量子计算机的行为，因此得到的随机数结果还是伪随机数。只有当这一串代码执行在量子处理器上时，我们才能得到真随机数。</p>
+<h1>pytest测试</h1>
+<h2 id="安装pytest库">安装pytest库</h2>
+<p>首先我们可以通过pip来更新安装pytest：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 -m pip install -U pytest<br>Collecting pytest<br>  Downloading pytest-6.2.2-py3-none-any.whl (280 kB)<br>     |████████████████████████████████| 280 kB 464 kB/s <br>Requirement already satisfied, skipping upgrade: iniconfig <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (1.1.1)<br>Requirement already satisfied, skipping upgrade: pluggy&lt;1.0.0a1,&gt;=0.12 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (0.13.1)<br>Requirement already satisfied, skipping upgrade: attrs&gt;=19.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (20.3.0)<br>Requirement already satisfied, skipping upgrade: toml <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (0.10.1)<br>Requirement already satisfied, skipping upgrade: packaging <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (20.4)<br>Requirement already satisfied, skipping upgrade: py&gt;=1.8.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest) (1.9.0)<br>Requirement already satisfied, skipping upgrade: pyparsing&gt;=2.0.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest) (2.4.7)<br>Requirement already satisfied, skipping upgrade: six <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest) (1.15.0)<br>Installing collected packages: pytest<br>  Attempting uninstall: pytest<br>    Found existing installation: pytest 6.2.1<br>    Uninstalling pytest-6.2.1:<br>      Successfully uninstalled pytest-6.2.1<br>Successfully installed pytest-6.2.2<br></code></pre></td></tr></table></figure>
+<p>安装完成后，可以通过如下指令来查看安装的pytest版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ pytest --version<br>pytest 6.2.2<br></code></pre></td></tr></table></figure>
+<h2 id="pytest单元测试用例撰写">pytest单元测试用例撰写</h2>
+<p>根据前面一个章节中的<code>random_number.py</code>文件，我们可以对照的写一个简单测试用例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs plaintext"># test_random_number.py<br>import pytest<br>from random_number import random_number_generator as rng<br><br>def test_random_number_generator():<br>    for i in range(10):<br>        random_number = rng()<br>        assert random_number == 0 or random_number == 1<br></code></pre></td></tr></table></figure>
+<p>该测试用例的含义为：导入rng函数之后，测试10次该函数的返回值，所返回的值必须是0或者1的随机数，如果输出了这两个数字以外的返回结果，那么说明这个随机数产生器功能上存在问题。基于pytest的测试代码可以通过如下的指令来运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-20n2s01200 pytest]$ py.test<br>=========================================== <span class="hljs-built_in">test</span> session starts ============================================<br>platform linux -- Python 3.8.5, pytest-6.2.2, py-1.9.0, pluggy-0.13.1<br>rootdir: /home/dechin/projects/2021-python/pytest<br>plugins: cov-2.11.1, metadata-1.11.0, html-3.1.1<br>collected 1 item                                                                                           <br><br>test_random_number.py .                                                                              [100%]<br><br>============================================= warnings summary =============================================<br>../../../anaconda3/lib/python3.8/site-packages/projectq/ops/_gates.py:118<br>  /home/dechin/anaconda3/lib/python3.8/site-packages/projectq/ops/_gates.py:118: PendingDeprecationWarning: the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.<br>    <span class="hljs-built_in">return</span> np.matrix([[1, 0], [0, 1j]])<br><br>../../../anaconda3/lib/python3.8/site-packages/projectq/ops/_gates.py:133<br>  /home/dechin/anaconda3/lib/python3.8/site-packages/projectq/ops/_gates.py:133: PendingDeprecationWarning: the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.<br>    <span class="hljs-built_in">return</span> np.matrix([[1, 0], [0, cmath.exp(1j * cmath.pi / 4)]])<br><br>test_random_number.py: 40 warnings<br>  /home/dechin/anaconda3/lib/python3.8/site-packages/projectq/ops/_gates.py:69: PendingDeprecationWarning: the matrix subclass is not the recommended way to represent matrices or deal with linear algebra (see https://docs.scipy.org/doc/numpy/user/numpy-for-matlab-users.html). Please adjust your code to use regular ndarray.<br>    <span class="hljs-built_in">return</span> 1. / cmath.sqrt(2.) * np.matrix([[1, 1], [1, -1]])<br><br>-- Docs: https://docs.pytest.org/en/stable/warnings.html<br>====================================== 1 passed, 42 warnings <span class="hljs-keyword">in</span> 0.50s ======================================<br></code></pre></td></tr></table></figure>
+<p>从返回的结果来看，出现了<code>1 passed</code>而没有failed，说明所有的测试用例都已经执行成功了，但是这里存在不少的告警<code>warnings</code>信息。</p>
+<h2 id="pytest初始化配置文件">pytest初始化配置文件</h2>
+<p>在上一节的测试结果中，我们发现有非常多的测试告警。假如我们确认这些告警信息可以忽略，那么我们可以通过在指令中配置忽略告警信息，或者直接使用这里介绍的<code>pytest.ini</code>来忽略相应的告警信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># pytest.ini</span><br>[pytest]<br>filterwarnings = <br>        ignore::PendingDeprecationWarning<br></code></pre></td></tr></table></figure>
+<p>在当前目录下的<code>ini</code>配置文件中，我们添加了<code>PendingDeprecationWarning</code>作为忽略项，然后我们再回头看一下上述用例的测试结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ py.test<br>=========================================== <span class="hljs-built_in">test</span> session starts ============================================<br>platform linux -- Python 3.8.5, pytest-6.2.2, py-1.9.0, pluggy-0.13.1<br>rootdir: /home/dechin/projects/2021-python/pytest, configfile: pytest.ini<br>plugins: cov-2.11.1, metadata-1.11.0, html-3.1.1<br>collected 1 item                                                                                           <br><br>test_random_number.py .                                                                              [100%]<br><br>============================================ 1 passed <span class="hljs-keyword">in</span> 0.50s =============================================<br></code></pre></td></tr></table></figure>
+<p>这里返回的结果中就没有告警信息了。</p>
+<h2 id="pytest生成html格式报告">pytest生成html格式报告</h2>
+<p>为了更好的展现测试的结果，这里我们需要先安装一个组件<code>pytest-html</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 -m pip install pytest-html<br>Collecting pytest-html<br>  Downloading pytest_html-3.1.1-py3-none-any.whl (14 kB)<br>Collecting pytest-metadata<br>  Downloading pytest_metadata-1.11.0-py2.py3-none-any.whl (10 kB)<br>Requirement already satisfied: pytest!=6.0.0,&gt;=5.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest-html) (6.2.1)<br>Requirement already satisfied: attrs&gt;=19.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (20.3.0)<br>Requirement already satisfied: py&gt;=1.8.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (1.9.0)<br>Requirement already satisfied: toml <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (0.10.1)<br>Requirement already satisfied: packaging <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (20.4)<br>Requirement already satisfied: pluggy&lt;1.0.0a1,&gt;=0.12 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (0.13.1)<br>Requirement already satisfied: iniconfig <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (1.1.1)<br>Requirement already satisfied: six <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (1.15.0)<br>Requirement already satisfied: pyparsing&gt;=2.0.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest!=6.0.0,&gt;=5.0-&gt;pytest-html) (2.4.7)<br>Installing collected packages: pytest-metadata, pytest-html<br>Successfully installed pytest-html-3.1.1 pytest-metadata-1.11.0<br></code></pre></td></tr></table></figure>
+<p>安装成功后，执行如下指令，可以在当前目录下生成一个指定文件名的html文件，如下图所示，就比较全面且美观的展示了测试中的信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ py.test --html=pytest_report.html<br>=========================================== <span class="hljs-built_in">test</span> session starts ============================================<br>platform linux -- Python 3.8.5, pytest-6.2.2, py-1.9.0, pluggy-0.13.1<br>rootdir: /home/dechin/projects/2021-python/pytest, configfile: pytest.ini<br>plugins: cov-2.11.1, metadata-1.11.0, html-3.1.1<br>collected 1 item                                                                                           <br><br>test_random_number.py .                                                                              [100%]<br><br>--------- generated html file: file:///home/dechin/projects/2021-python/pytest/pytest_report.html ----------<br>============================================ 1 passed <span class="hljs-keyword">in</span> 0.51s =============================================<br></code></pre></td></tr></table></figure>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635810.png" alt="">
+不过在问题数量并不是很多的情况下，直接看命令行输出也是比较方便的。</p>
+<h2 id="pytest覆盖率测试">pytest覆盖率测试</h2>
+<p>在一个python仓库中我们有可能有非常多的函数、类和文件等，为了保障结果的准确性，我们需要能够给出一个可信的覆盖率测试的结论，只有当覆盖率达到100%时，我们才能认为测试工作已经比较全面的考虑。当然，覆盖率100%的测试，其实并不能保障100%的不出问题，这就是另外的话题了。首先我们又需要补充安装一个组件<code>pytest-cov</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 -m pip install pytest-cov<br>Collecting pytest-cov<br>  Downloading pytest_cov-2.11.1-py2.py3-none-any.whl (20 kB)<br>Collecting coverage&gt;=5.2.1<br>  Downloading coverage-5.4-cp38-cp38-manylinux2010_x86_64.whl (245 kB)<br>     |████████████████████████████████| 245 kB 15 kB/s <br>Requirement already satisfied: pytest&gt;=4.6 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest-cov) (6.2.1)<br>Requirement already satisfied: attrs&gt;=19.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (20.3.0)<br>Requirement already satisfied: packaging <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (20.4)<br>Requirement already satisfied: iniconfig <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (1.1.1)<br>Requirement already satisfied: toml <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (0.10.1)<br>Requirement already satisfied: py&gt;=1.8.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (1.9.0)<br>Requirement already satisfied: pluggy&lt;1.0.0a1,&gt;=0.12 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from pytest&gt;=4.6-&gt;pytest-cov) (0.13.1)<br>Requirement already satisfied: six <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest&gt;=4.6-&gt;pytest-cov) (1.15.0)<br>Requirement already satisfied: pyparsing&gt;=2.0.2 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from packaging-&gt;pytest&gt;=4.6-&gt;pytest-cov) (2.4.7)<br>Installing collected packages: coverage, pytest-cov<br>Successfully installed coverage-5.4 pytest-cov-2.11.1<br></code></pre></td></tr></table></figure>
+<p>然后在当前目录下执行以下指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ py.test --cov=random_number ./ --cov-report=html<br>=========================================== <span class="hljs-built_in">test</span> session starts ============================================<br>platform linux -- Python 3.8.5, pytest-6.2.1, py-1.9.0, pluggy-0.13.1<br>rootdir: /home/dechin/projects/2021-python/pytest, configfile: pytest.ini<br>plugins: cov-2.11.1, metadata-1.11.0, html-3.1.1<br>collected 1 item                                                                                           <br><br>test_random_number.py .                                                                              [100%]<br><br>----------- coverage: platform linux, python 3.8.5-final-0 -----------<br>Coverage HTML written to <span class="hljs-built_in">dir</span> htmlcov<br><br><br>============================================ 1 passed <span class="hljs-keyword">in</span> 0.76s =============================================<br></code></pre></td></tr></table></figure>
+<p>这里会提示我们去<code>htmlcov</code>目录下找测试报告，我们打开相应的<code>index.html</code>文件，效果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635849.png" alt="">
+这里我们看到<code>random_number.py</code>文件的测试覆盖率为86%，我们可以点开链接查看剩下未覆盖的测试是什么内容：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635885.png" alt="">
+原来是main函数中的几行指令没有被测试到，一般我们在正式仓库中，是需要去掉main函数的，如果不是测试文件的话。</p>
+<h1>使用flake8进行python编码规范检查</h1>
+<p>首先我们还是使用pip来直接安装<code>flake8</code>组件，其集成了PEP8的python编码规范：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 -m pip install -U flake8<br>Requirement already up-to-date: flake8 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (3.8.4)<br>Requirement already satisfied, skipping upgrade: mccabe&lt;0.7.0,&gt;=0.6.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8) (0.6.1)<br>Requirement already satisfied, skipping upgrade: pyflakes&lt;2.3.0,&gt;=2.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8) (2.2.0)<br>Requirement already satisfied, skipping upgrade: pycodestyle&lt;2.7.0,&gt;=2.6.0a1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8) (2.6.0)<br></code></pre></td></tr></table></figure>
+<p>查看安装的flake8版本号：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ flake8 --version<br>3.8.4 (mccabe: 0.6.1, pycodestyle: 2.6.0, pyflakes: 2.2.0) CPython 3.8.5 on Linux<br></code></pre></td></tr></table></figure>
+<p>使用方式较为简单，在当前目录下直接执行flake8即可，检查项会以当前路径为rootdir，递归的进行检索：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ flake8<br>./test_random_number.py:2:1: F401 <span class="hljs-string">&#x27;pytest&#x27;</span> imported but unused<br>./test_random_number.py:5:1: E302 expected 2 blank lines, found 1<br>./random_number.py:5:1: E302 expected 2 blank lines, found 1<br>./random_number.py:15:1: E305 expected 2 blank lines after class or <span class="hljs-keyword">function</span> definition, found 1<br>./random_number.py:17:10: E211 whitespace before <span class="hljs-string">&#x27;(&#x27;</span><br>./random_number.py:17:80: E501 line too long (87 &gt; 79 characters)<br></code></pre></td></tr></table></figure>
+<p>假如我们不想包含测试用例的风格检查，我们可以在命令行中屏蔽相关文件，或者创建配置文件，在配置文件中屏蔽相关文件，这里介绍后者的使用方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># .flake8</span><br>[flake8]<br>exclude = ./test*<br></code></pre></td></tr></table></figure>
+<p>这个配置的意义在于，将当前目录下，所有以test开头的文件，都将会忽略python编码规范的检查，配置文件支持通配符的表达形式。接下来看下最新的执行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ flake8<br>./random_number.py:5:1: E302 expected 2 blank lines, found 1<br>./random_number.py:15:1: E305 expected 2 blank lines after class or <span class="hljs-keyword">function</span> definition, found 1<br>./random_number.py:17:10: E211 whitespace before <span class="hljs-string">&#x27;(&#x27;</span><br>./random_number.py:17:80: E501 line too long (87 &gt; 79 characters)<br></code></pre></td></tr></table></figure>
+<p>我们发现前面出现的关于测试用例中的编码规范，已经不在这个列表的范围了。这个列表中的问题我们一般最好是处理下，但是如果遇到一些判断不需要处理的规范，则同样可以在配置文件中添加相应的规范ID，这里仅作示例使用，前面显示的编码规范问题后面都会改。如下所示就是两个忽略：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># .flake8</span><br>[flake8]<br>exclude = ./test*<br>ignore = E302, E305<br></code></pre></td></tr></table></figure>
+<p>对应的执行结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ flake8<br>./random_number.py:17:10: E211 whitespace before <span class="hljs-string">&#x27;(&#x27;</span><br>./random_number.py:17:80: E501 line too long (87 &gt; 79 characters)<br></code></pre></td></tr></table></figure>
+<p>我们发现被忽略的问题已经没有显示了。flake8还有一个特点，是可以配置<code>max-complexity</code>，其采用的基本复杂性计算方法为McCabe度量法，可以参考<a target="_blank" rel="noopener" href="https://blog.csdn.net/t_1007/article/details/53034408">这篇博客</a>中的介绍内容，这里就不过多的赘述。为了更加美观简明的看到输出的结果，我们可以补充安装一个组件<code>flake8-html</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ python3 -m pip install flake8-html<br>Collecting flake8-html<br>  Downloading flake8_html-0.4.1-py2.py3-none-any.whl (13 kB)<br>Requirement already satisfied: pygments&gt;=2.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8-html) (2.7.2)<br>Requirement already satisfied: flake8&gt;=3.3.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8-html) (3.8.4)<br>Requirement already satisfied: jinja2&gt;=2.9.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8-html) (2.11.2)<br>Requirement already satisfied: importlib-metadata <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8-html) (2.0.0)<br>Requirement already satisfied: pycodestyle&lt;2.7.0,&gt;=2.6.0a1 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8&gt;=3.3.0-&gt;flake8-html) (2.6.0)<br>Requirement already satisfied: mccabe&lt;0.7.0,&gt;=0.6.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8&gt;=3.3.0-&gt;flake8-html) (0.6.1)<br>Requirement already satisfied: pyflakes&lt;2.3.0,&gt;=2.2.0 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from flake8&gt;=3.3.0-&gt;flake8-html) (2.2.0)<br>Requirement already satisfied: MarkupSafe&gt;=0.23 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from jinja2&gt;=2.9.0-&gt;flake8-html) (1.1.1)<br>Requirement already satisfied: zipp&gt;=0.5 <span class="hljs-keyword">in</span> /home/dechin/anaconda3/lib/python3.8/site-packages (from importlib-metadata-&gt;flake8-html) (3.4.0)<br>Installing collected packages: flake8-html<br>Successfully installed flake8-html-0.4.1<br></code></pre></td></tr></table></figure>
+<p>使用方法如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-20n2s01200 pytest]$ flake8 --format=html --htmldir=flake-report<br>./random_number.py has issues: medium: 4<br></code></pre></td></tr></table></figure>
+<p>在当前目录执行后，相关的规范的issue就不会在命令行里面逐一显示，都在flake-report目录下的index.html中可以查看：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635922.png" alt="">
+我们可以点击进入相应文件的issue清单中去查看：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170635963.png" alt="">
+可以点击每一个issue，展开内容中包含了issue所对应行的代码内容：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715170636002.png" alt="">
+经过一番修改之后，我们得到的flake8配置文件和源代码文件如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># .flake8</span><br>[flake8]<br>exclude = ./test*<br>ignore = W391<br></code></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># random_number.py</span><br><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, Measure<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">random_number_generator</span>():<br>    eng = MainEngine()<br>    qubit = eng.allocate_qubit()<br>    H | qubit<br>    eng.flush()<br>    Measure | qubit<br>    random_number = <span class="hljs-built_in">int</span>(qubit)<br>    eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br>    <span class="hljs-keyword">return</span> random_number<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    random_number = random_number_generator()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Random number generated by quantum simulator is:\</span><br><span class="hljs-string">            &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(random_number))<br><br></code></pre></td></tr></table></figure>
+<p>最终我们的目的是使得flake8执行的issue清零：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro pytest]$ flake8 --format=html --htmldir=flake-report<br>[dechin@dechin-manjaro pytest]$<br></code></pre></td></tr></table></figure>
+<h1>总结概要</h1>
+<p>本文通过引入一个随机数生成器的案例，介绍了在量子计算中产生真随机数的方案，同时给出了量子计算模拟实现。借此机会也同时介绍了python的单元测试库pytest的一些常规和扩展使用方法，以及python的编码规范测试库flake8的基本使用方法，希望能够对大家有所启发以及帮助。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/random_number_test.html">https://www.cnblogs.com/dechinphy/p/random_number_test.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://cn.bing.com/images/search?view=detailV2&amp;ccid=X1pIP1mm&amp;id=0CF2CDDD1C700A051F3FEB4701669068CE05B9FA&amp;thid=OIP.X1pIP1mmVKohO5UC1CvbuQHaED&amp;mediaurl=https%3a%2f%2fth.bing.com%2fth%2fid%2fR5f5a483f59a654aa213b9502d42bdbb9%3frik%3d%252brkFzmiQZgFH6w%26riu%3dhttp%253a%252f%252fwww.supernovapcrepair.co.uk%252fimages%252fquantum%2bsuperposition.png%26ehk%3dEt3zyrD9NqYgaMFwpPb%252bcZAohbR0ERpeRfCEkgKy6i0%253d%26risl%3d%26pid%3dImgRaw&amp;exph=199&amp;expw=363&amp;q=quantum+superposition&amp;simid=608026555008484117&amp;ck=E74E3E03947D89427ED1A5352402AADB&amp;selectedIndex=3&amp;FORM=IRPRST&amp;ajaxhist=0">https://cn.bing.com/images/search?view=detailV2&amp;ccid=X1pIP1mm&amp;id=0CF2CDDD1C700A051F3FEB4701669068CE05B9FA&amp;thid=OIP.X1pIP1mmVKohO5UC1CvbuQHaED&amp;mediaurl=https%3A%2F%2Fth.bing.com%2Fth%2Fid%2FR5f5a483f59a654aa213b9502d42bdbb9%3Frik%3D%252brkFzmiQZgFH6w%26riu%3Dhttp%253a%252f%252fwww.supernovapcrepair.co.uk%252fimages%252fquantum%2Bsuperposition.png%26ehk%3DEt3zyrD9NqYgaMFwpPb%252bcZAohbR0ERpeRfCEkgKy6i0%253d%26risl%3D%26pid%3DImgRaw&amp;exph=199&amp;expw=363&amp;q=quantum+superposition&amp;simid=608026555008484117&amp;ck=E74E3E03947D89427ED1A5352402AADB&amp;selectedIndex=3&amp;FORM=IRPRST&amp;ajaxhist=0</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/b379c8fc.html">https://dechin-phy.asia/posts/b379c8fc.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-02-28</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/d0cd8cc7.html">在博客园平台为博客自动化添加目录</a><a class="next" href="/posts/b8b90eef.html">使用python编写量子线路打印的简单项目，并使用Sphinx自动化生成API文档</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

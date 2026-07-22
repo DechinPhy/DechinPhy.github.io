@@ -1,0 +1,244 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/242877ac.html"><meta property="og:type" content="article"><meta property="og:title" content="使用pycallgraph分析python代码函数调用流程以及框架"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/242877ac.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-03-01T09:40:25.000Z"><meta property="article:modified_time" content="2021-03-01T11:01:00.000Z"><title>使用pycallgraph分析python代码函数调用流程以及框架 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用pycallgraph分析python代码函数调用流程以及框架</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用pycallgraph分析python代码函数调用流程以及框架</h1><div class="post-meta">2021-03-01<span> | </span><span class="category"><a href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.7k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Manjaro Linux平台安装graphviz</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">运行示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">补充示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文通过一个量子计算模拟器产生随机数的案例，介绍了python函数调用关系图绘制的工具pycallgraph的安装和使用。该工具可以帮助我们更快的梳理一个全新的python软件，从调用关系和架构图来入手对一个软件的分析，会使得我们事半功倍。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在上一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/random_number_test.html">博客</a>中，我们介绍了使用量子计算模拟器ProjectQ去生成一个随机数，也介绍了随机数的应用场景等。但是有些时候我们希望可以打开这里面实现的原理，去看看在产生随机数的过程中经历了哪些运算，调用了哪些模块。只有梳理清楚这些相关的内容，我们才能够更好的使用这个产生随机数的功能。这里我们就引入一个工具<code>pycallgraph</code>，可以根据执行的代码，给出这些代码背后所封装和调用的所有函数、类的关系图，让我们一起来了解下这个工具的安装和使用方法。</p>
+<h1>Manjaro Linux平台安装graphviz</h1>
+<p>首先用pip安装graphviz：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro callgraph]$ python3 -m pip install graphviz<br>Collecting graphviz<br>  Downloading graphviz-0.16-py2.py3-none-any.whl (19 kB)<br>Installing collected packages: graphviz<br>Successfully installed graphviz-0.16<br></code></pre></td></tr></table></figure>
+<p>然后再安装pycallgraph，这两者有先后的依赖关系：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro callgraph]$ python3 -m pip install pycallgraph<br>Collecting pycallgraph<br>  Downloading pycallgraph-1.0.1.tar.gz (36 kB)<br>Building wheels <span class="hljs-keyword">for</span> collected packages: pycallgraph<br>  Building wheel <span class="hljs-keyword">for</span> pycallgraph (setup.py) ... <span class="hljs-keyword">done</span><br>  Created wheel <span class="hljs-keyword">for</span> pycallgraph: filename=pycallgraph-1.0.1-py3-none-any.whl size=35943 sha256=d0ee9415d7c268f6964f4a0fd1dc6ec3e039b6bedfe4844de6c1eb8fd0a61389<br>  Stored <span class="hljs-keyword">in</span> directory: /home/dechin/.cache/pip/wheels/c1/6c/a0/22b61ff9ca89881bb8d030ecd019b84697a39e7b187bc57938<br>Successfully built pycallgraph<br>Installing collected packages: pycallgraph<br>Successfully installed pycallgraph-1.0.1<br></code></pre></td></tr></table></figure>
+<p>用<code>dot -v</code>指令验证一下graphviz是否安装成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro callgraph]$ dot -v<br>bash: dot：未找到命令<br></code></pre></td></tr></table></figure>
+<p>咦？明明参考的正确方法，<code>graphviz</code>咋没有装上呢？经过面向谷歌的编程技术，发现了原来在系统上需要先安装一个graphviz，这里展示的是Manjaro Linux平台的安装方法：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro callgraph]# pacman -S graphviz<br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (3) gts-0.7.6.121130-2  netpbm-10.73.33-1  graphviz-2.44.1-6<br><br>下载大小：   9.74 MiB<br>全部安装大小：  24.73 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> netpbm-10.73.33-1-x86_64           1867.1 KiB  6.51 MiB/s 00:00 [####################################] 100%<br> gts-0.7.6.121130-2-x86_64           211.0 KiB  12.1 MiB/s 00:00 [####################################] 100%<br>错误：无法从 mirrors.ustc.edu.cn : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>错误：无法从 mirrors.tuna.tsinghua.edu.cn : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>错误：无法从 mirrors.huaweicloud.com : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>错误：无法从 mirrors.sjtug.sjtu.edu.cn : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>错误：无法从 mirrors.tuna.tsinghua.edu.cn : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>错误：无法从 mirrors.aliyun.com : The requested URL returned error: 404 获取文件 <span class="hljs-string">&#x27;graphviz-2.44.1-6-x86_64.pkg.tar.zst&#x27;</span><br>警告：无法获取某些文件<br>错误：无法提交处理 (无法获取某些文件)<br>发生错误，没有软件包被更新。<br></code></pre></td></tr></table></figure>
+<p>咦？再一次遇到了问题，配置了这么多镜像源咋都安装不上？再经过一番面向谷歌的编程，发现更新一下源就可以用了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro callgraph]# pacman -Syy<br>:: 正在同步软件包数据库...<br> core                                165.3 KiB  1968 KiB/s 00:00 [####################################] 100%<br> extra                              1987.0 KiB  9.11 MiB/s 00:00 [####################################] 100%<br> community                             6.6 MiB  9.93 MiB/s 00:01 [####################################] 100%<br> multilib                            181.4 KiB  12.7 MiB/s 00:00 [####################################] 100%<br> archlinuxcn                        1596.1 KiB  1232 KiB/s 00:01 [####################################] 100%<br></code></pre></td></tr></table></figure>
+<p>再次尝试安装graphviz：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro callgraph]# pacman -S graphviz<br>:: Some packages should be upgraded first...<br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (2) archlinux-keyring-20210110-1  manjaro-system-20210217-1<br><br>下载大小：  0.95 MiB<br>全部安装大小：  1.31 MiB<br>净更新大小：  0.02 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> archlinux-keyring-20210110-1-any    950.2 KiB  4.96 MiB/s 00:00 [####################################] 100%<br> manjaro-system-20210217-1-any        21.4 KiB  0.00   B/s 00:00 [####################################] 100%<br>(2/2) 正在检查密钥环里的密钥                                     [####################################] 100%<br>(2/2) 正在检查软件包完整性                                       [####################################] 100%<br>(2/2) 正在加载软件包文件                                         [####################################] 100%<br>(2/2) 正在检查文件冲突                                           [####################################] 100%<br>(2/2) 正在检查可用存储空间                                       [####################################] 100%<br>:: 正在处理软件包的变化...<br>(1/2) 正在更新 archlinux-keyring                                 [####################################] 100%<br>==&gt; 正在从 archlinux.gpg 添加密匙...<br>gpg: 公钥 CF66D153D884358F 在其签名之后的 16 秒生成<br>==&gt; 正在本地签名密匙环中的可信密匙...<br>  -&gt; 正在本地签名密匙 AB19265E5D7D20687D303246BA1DFB64FFF979E7...<br>  -&gt; 正在本地签名密匙 DDB867B92AA789C165EEFA799B729B06A680C281...<br>  -&gt; 正在本地签名密匙 0E8B644079F599DFC1DDC3973348882F6AC6A4C2...<br>  -&gt; 正在本地签名密匙 D8AFDDA07A5B6EDFA7D8CCDAD6D055F927843F1C...<br>  -&gt; 正在本地签名密匙 91FFE0700E80619CEB73235CA88E23E377514E00...<br>==&gt; 正在导入拥有者信任值...<br>==&gt; 正在密匙环中禁用已激活密匙...<br>  -&gt; 正在禁用密匙 4A8B17E20B88ACA61860009B5CED81B7C2E5C0D2...<br>  -&gt; 正在禁用密匙 684148BB25B49E986A4944C55184252D824B18E8...<br>  -&gt; 正在禁用密匙 5357F3B111688D88C1D88119FCF2CB179205AC90...<br>  -&gt; 正在禁用密匙 50F33E2E5B0C3D900424ABE89BDCF497A4BBCC7F...<br>  -&gt; 正在禁用密匙 39F880E50E49A4D11341E8F939E4F17F295AFBF4...<br>  -&gt; 正在禁用密匙 F5A361A3A13554B85E57DDDAAF7EF7873CFD4BB6...<br>  -&gt; 正在禁用密匙 40440DC037C05620984379A6761FAD69BA06C6A9...<br>  -&gt; 正在禁用密匙 FB871F0131FEA4FB5A9192B4C8880A6406361833...<br>  -&gt; 正在禁用密匙 487EACC08557AD082088DABA1EB2638FF56C0C53...<br>  -&gt; 正在禁用密匙 76B4192E902C0A52642C63C273B8ED52F1D357C1...<br>  -&gt; 正在禁用密匙 40776A5221EF5AD468A4906D42A1DB15EC133BAD...<br>  -&gt; 正在禁用密匙 0B20CA1931F5DA3A70D0F8D2EA6836E1AB441196...<br>  -&gt; 正在禁用密匙 07DFD3A0BC213FA12EDC217559B3122E2FA915EC...<br>  -&gt; 正在禁用密匙 34C5D94FE7E7913E86DC427E7FB1A3800C84C0A5...<br>  -&gt; 正在禁用密匙 B1F2C889CB2CCB2ADA36D963097D629E437520BD...<br>  -&gt; 正在禁用密匙 D4DE5ABDE2A7287644EAC7E36D1A9E70E19DAA50...<br>  -&gt; 正在禁用密匙 44D4A033AC140143927397D47EFD567D4C7EA887...<br>  -&gt; 正在禁用密匙 8F76BEEA0289F9E1D3E229C05F946DED983D4366...<br>  -&gt; 正在禁用密匙 27FFC4769E19F096D41D9265A04F9397CDFD6BB0...<br>  -&gt; 正在禁用密匙 4FCF887689C41B09506BE8D5F3E1D5C5D30DB0AD...<br>  -&gt; 正在禁用密匙 5A2257D19FF7E1E0E415968CE62F853100F0D0F0...<br>  -&gt; 正在禁用密匙 7FA647CD89891DEDC060287BB9113D1ED21E1A55...<br>  -&gt; 正在禁用密匙 5E7585ADFF106BFFBBA319DC654B877A0864983E...<br>  -&gt; 正在禁用密匙 E7210A59715F6940CF9A4E36A001876699AD6E84...<br>  -&gt; 正在禁用密匙 5559BC1A32B8F76B3FCCD9555FA5E5544F010D48...<br>  -&gt; 正在禁用密匙 BFA1ECFEF1524EE4099CDE971F0CD4921ECAA030...<br>  -&gt; 正在禁用密匙 4D913AECD81726D9A6C74F0ADA6426DD215B37AD...<br>  -&gt; 正在禁用密匙 8840BD07FC24CB7CE394A07CCF7037A4F27FB7DA...<br>  -&gt; 正在禁用密匙 BC1FBE4D2826A0B51E47ED62E2539214C6C11350...<br>  -&gt; 正在禁用密匙 9515D8A8EAB88E49BB65EDBCE6B456CAF15447D5...<br>  -&gt; 正在禁用密匙 779CD2942629B7FA04AB8F172E89012331361F01...<br>  -&gt; 正在禁用密匙 D921CABED130A5690EF1896E81AF739EC0711BF1...<br>  -&gt; 正在禁用密匙 5696C003B0854206450C8E5BE613C09CB4440678...<br>  -&gt; 正在禁用密匙 8CF934E339CAD8ABF342E822E711306E3C4F88BC...<br>  -&gt; 正在禁用密匙 1A60DC44245D06FEF90623D6EEEEE2EEEE2EEEEE...<br>  -&gt; 正在禁用密匙 81D7F8241DB38BC759C80FCE3A726C6170E80477...<br>  -&gt; 正在禁用密匙 63F395DE2D6398BBE458F281F2DBB4931985A992...<br>  -&gt; 正在禁用密匙 65EEFE022108E2B708CBFCF7F9E712E59AF5F22A...<br>  -&gt; 正在禁用密匙 66BD74A036D522F51DD70A3C7F2A16726521E06D...<br>==&gt; 正在更新可信数据库...<br>gpg: 下次信任度数据库检查将于 2021-03-06 进行<br>(2/2) 正在更新 manjaro-system                                    [####################################] 100%<br>:: 正在运行事务后钩子函数...<br>(1/1) Arming ConditionNeedsUpdate...<br><br>正在解析依赖关系...<br>正在查找软件包冲突...<br><br>软件包 (3) gts-0.7.6.121130-2  netpbm-10.73.33-1  graphviz-2.46.0-1<br><br>下载大小：   6.80 MiB<br>全部安装大小：  23.32 MiB<br><br>:: 进行安装吗？ [Y/n] Y<br>:: 正在获取软件包......<br> graphviz-2.46.0-1-x86_64              6.8 MiB  7.03 MiB/s 00:01 [####################################] 100%<br>(3/3) 正在检查密钥环里的密钥                                     [####################################] 100%<br>(3/3) 正在检查软件包完整性                                       [####################################] 100%<br>(3/3) 正在加载软件包文件                                         [####################################] 100%<br>(3/3) 正在检查文件冲突                                           [####################################] 100%<br>(3/3) 正在检查可用存储空间                                       [####################################] 100%<br>:: 正在处理软件包的变化...<br>(1/3) 正在安装 netpbm                                            [####################################] 100%<br>(2/3) 正在安装 gts                                               [####################################] 100%<br>(3/3) 正在安装 graphviz                                          [####################################] 100%<br>graphviz 的可选依赖<br>    mono: sharp bindings<br>    guile: guile bindings<br>    lua: lua bindings<br>    ocaml: ocaml bindings<br>    perl: perl bindings [已安装]<br>    python: python bindings [已安装]<br>    r: r bindings<br>    tcl: tcl bindings [已安装]<br>    qt5-base: gvedit [已安装]<br>    gtk2: gtk output plugin [已安装]<br>    xterm: vimdot<br>:: 正在运行事务后钩子函数...<br>(1/2) Arming ConditionNeedsUpdate...<br>(2/2) Warn about old perl modules<br></code></pre></td></tr></table></figure>
+<p>Finally还是给我安装成功了，接下来再看看<code>dot</code>指令的执行情况：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin-manjaro callgraph]# dot -v<br>dot - graphviz version 2.46.0 (0)<br>libdir = <span class="hljs-string">&quot;/usr/lib/graphviz&quot;</span><br>Activated plugin library: libgvplugin_dot_layout.so.6<br>Using layout: dot:dot_layout<br>Activated plugin library: libgvplugin_core.so.6<br>Using render: dot:core<br>Using device: dot:dot:core<br>The plugin configuration file:<br>        /usr/lib/graphviz/config6<br>                was successfully loaded.<br>    render      :  cairo dot dot_json fig gd json json0 map mp pic pov ps svg tk visio vml vrml xdot xdot_json<br>    layout      :  circo dot fdp neato nop nop1 nop2 osage patchwork sfdp twopi<br>    textlayout  :  textlayout<br>    device      :  bmp canon cmap cmapx cmapx_np dot dot_json eps fig gd gd2 gif gtk gv ico imap imap_np ismap jpe jpeg jpg json json0 mp pdf pic plain plain-ext png pov ps ps2 svg svgz tif tiff tk vdx vml vmlz vrml wbmp webp x11 xdot xdot1.2 xdot1.4 xdot_json xlib<br>    loadimage   :  (lib) bmp eps gd gd2 gif ico jpe jpeg jpg png ps svg webp xbm<br></code></pre></td></tr></table></figure>
+<h1>运行示例</h1>
+<p>这里我们以上一篇博客<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/random_number_test.html">量子计算模拟器生成随机数</a>中的案例，来测试一下pycallgraph的功能。源代码可以参考源博客地址，这里我们直接展示下更改后的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># random_number.py</span><br><span class="hljs-keyword">from</span> projectq <span class="hljs-keyword">import</span> MainEngine<br><span class="hljs-keyword">from</span> projectq.ops <span class="hljs-keyword">import</span> H, Measure<br><span class="hljs-keyword">from</span> pycallgraph <span class="hljs-keyword">import</span> PyCallGraph<br><span class="hljs-keyword">from</span> pycallgraph.output <span class="hljs-keyword">import</span> GraphvizOutput<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">random_number_generator</span>():<br>    eng = MainEngine()<br>    qubit = eng.allocate_qubit()<br>    H | qubit<br>    eng.flush()<br>    Measure | qubit<br>    random_number = <span class="hljs-built_in">int</span>(qubit)<br>    eng.flush(deallocate_qubits=<span class="hljs-literal">True</span>)<br>    <span class="hljs-keyword">return</span> random_number<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    graphviz = GraphvizOutput()<br>    graphviz.output_file = <span class="hljs-string">&#x27;random_number_generator.png&#x27;</span><br>    <span class="hljs-keyword">with</span> PyCallGraph(output=graphviz):<br>        random_number = random_number_generator()<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Random number generated by quantum simulator is:\</span><br><span class="hljs-string">                &#123;&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(random_number))<br></code></pre></td></tr></table></figure>
+<p>其实pycallgraph的使用方法也非常的简单，只需要导入<code>PyCallGraph</code>和<code>GraphvizOutput</code>两个模块，然后把<code>main</code>函数中所有需要运行的正常流程的代码，放到<code>with PyCallGraph(output=graphviz)</code>里面即可。接下来运行该文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro callgraph]$ python3 random_number.py <br>Random number generated by quantum simulator is:                0<br></code></pre></td></tr></table></figure>
+<p>除了打印输出，我们会发现在当前目录下生成了一个名为<code>random_number_generator.png</code>的图形文件，具体内容打开如下图所示：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165734434.png" alt=""></p>
+<h1>补充示例</h1>
+<p>考虑到上面的运行示例结果比较庞大，这也是一个稍微大一些的软件项目所面临的重大困难。这里为了简明的展示<code>pycallgraph</code>的功能，我们再额外补充一个简单的示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># simple_calculation.py</span><br>from pycallgraph import PyCallGraph<br>from pycallgraph.output import GraphvizOutput<br><br>def multiply(a, b):<br>    <span class="hljs-built_in">return</span> a*b<br><br>def plus(a, b):<br>    <span class="hljs-built_in">return</span> a+b<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    graphviz = GraphvizOutput()<br>    graphviz.output_file = <span class="hljs-string">&#x27;simple_calculation.png&#x27;</span><br>    with PyCallGraph(output=graphviz):<br>        a = 10<br>        b = 2<br>        <span class="hljs-built_in">print</span> (<span class="hljs-string">&#x27;The value of a*b+b is: &#123;&#125;&#x27;</span>.format(plus(multiply(a, b), b)))<br></code></pre></td></tr></table></figure>
+<p>这个案例的功能，仅仅是把加法和乘法进行了函数的封装，再在<code>main</code>函数中调用，执行结果和pycallgraph生成的图片如下图所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro callgraph]$ python3 simple_calculation.py <br>The value of a*b+b is: 22<br></code></pre></td></tr></table></figure>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165734466.png" alt="">
+在这个示例中，我们就可以很清晰的看到这个执行的文件的调用关系，其实就只是调用了<code>multiply</code>和<code>plus</code>两个函数而已。</p>
+<h1>总结概要</h1>
+<p>使用<code>pycallgraph</code>这个工具，可以帮助我们更好的入手去分析一个全新的软件包。通过了解各个模块之间的调用关系，我们还可以比较直观的梳理出相关的架构图，带着架构的思维去逐层的分析相应的软件及其实现的方式。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pycallgraph.html">https://www.cnblogs.com/dechinphy/p/pycallgraph.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/242877ac.html">https://dechin-phy.asia/posts/242877ac.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-03-01</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-03-01</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/ce1fdc2a.html">使用python模块plotdigitizer抠取论文图片中的数据</a><a class="next" href="/posts/940a846.html">在博客园平台为代码添加行号显示</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

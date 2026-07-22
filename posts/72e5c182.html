@@ -1,0 +1,269 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/72e5c182.html"><meta property="og:type" content="article"><meta property="og:title" content="RMarkdown进阶操作"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/72e5c182.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-10-17T07:02:05.000Z"><meta property="article:modified_time" content="2022-10-17T07:56:00.000Z"><title>RMarkdown进阶操作 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">RMarkdown进阶操作</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">RMarkdown进阶操作</h1><div class="post-meta">2022-10-17<span> | </span><span class="category"><a href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">导入Latex宏包</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E5%9B%BE%E7%89%87%E5%B0%BA%E5%AF%B8"><span class="toc-number">2.1.</span> <span class="toc-text">修改图片尺寸</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RMarkdown%E5%8A%A0%E6%B3%A8%E9%87%8A"><span class="toc-number">2.2.</span> <span class="toc-text">RMarkdown加注释</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%95%BF%E5%85%AC%E5%BC%8F%E6%98%BE%E7%A4%BA"><span class="toc-number">2.3.</span> <span class="toc-text">长公式显示</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">公式居中和缩放</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">Beamer PDF中添加动图</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">并排放置多张图片</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文通过几个实际案例，介绍了RMarkdown在写Latex Beamer演示文档中有可能用到的一些进阶的操作。RMarkdown不仅仅继承了Markdown语言的简洁便利，还允许我们仍然使用Latex中的一些高级操作，甚至我们可以在生成的Beamer演示文档PDF中去展示一些动态的效果图，这是通过PPT等工具去生成PDF所不具备的功能（有可能有，只是我不了解，这里使用Latex Beamer来写演示文档仅仅是个人偏好）。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>Markdown大家都比较熟悉了，特别是在写程序文档和写数学公式时，拥有着无与伦比的便利性。同时在前面的一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/rmarkdown.html">博客</a>中我们介绍了使用RMarkdown去写Latex Beamer演示文档的方法，RMarkdown是由谢益辉等大神对Markdown、Latex和R语言等常用高级编程语言的结合，使得我们可以同时用这几种语言去构造一个Beamer风格的演示文档。本文主要介绍一些比较偏门的、但是经常可能用到的RMarkdown进阶操作。</p>
+<h1>导入Latex宏包</h1>
+<p>在RMarkdown标题处，我们可以自己写一个普通的Latex文档<code>mysty.tex</code>如下：</p>
+<figure class="highlight latex"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs latex"><span class="hljs-keyword">\usepackage</span>&#123;graphicx&#125;<br><span class="hljs-keyword">\usepackage</span>&#123;animate&#125;<br><span class="hljs-keyword">\usepackage</span>&#123;subfigure&#125;   <br><span class="hljs-keyword">\lstset</span>&#123;<br>  breaklines=true,<br>  basicstyle=<span class="hljs-keyword">\ttfamily</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>然后在RMarkdown的标题处引入该tex文件：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs Markdown">---<br>title: &quot;Your Title&quot;<br>author: &quot;Dechin&quot;<br>date: &quot;<span class="hljs-code">`2022.10.15`</span>&quot;<br>output: <br>  beamer<span class="hljs-emphasis">_presentation: </span><br><span class="hljs-emphasis">    pandoc_</span>args: --listings<br><span class="hljs-code">    includes:</span><br><span class="hljs-code">      in_header: mysty.tex</span><br><span class="hljs-code">    toc: true</span><br><span class="hljs-code">    number_sections: yes</span><br><span class="hljs-code">    slide_level: 2</span><br><span class="hljs-code">    theme: Dresden</span><br><span class="hljs-code">    colortheme: seagull</span><br><span class="hljs-code">---</span><br></code></pre></td></tr></table></figure>
+<p>注意这里我们导入了latex的动图animate模块和子图subfigure模块，都是后面要用到的功能。</p>
+<h2 id="修改图片尺寸">修改图片尺寸</h2>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>\begin&#123;figure&#125;<br>\centerline&#123;\includegraphics[width=1.0\textwidth]&#123;./1.png&#125;&#125;<br>\end&#123;figure&#125;<br></code></pre></td></tr></table></figure>
+<p>这里我们使用的是Latex的图片导入方法，默认居中，可以通过调整上述代码中的<code>width</code>参数来控制图片打印的大小。
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854133.png" alt=""></p>
+<h2 id="RMarkdown加注释">RMarkdown加注释</h2>
+<p>从来没想过在Markdown里面还可以加注释，但事实上确实可以操作的，可以在需要注释的行前加上<code>[comment]:</code>即可：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs Markdown">[<span class="hljs-symbol">comment</span>]:<span class="hljs-link"># Test1</span><br>[<span class="hljs-symbol">comment</span>]:<span class="hljs-link">## Test2</span><br>[<span class="hljs-symbol">comment</span>]:<span class="hljs-link">\begin&#123;figure&#125;</span><br>[<span class="hljs-symbol">comment</span>]:<span class="hljs-link">\centerline&#123;\includegraphics[width=1.0\textwidth]&#123;./1.png&#125;&#125;</span><br>[<span class="hljs-symbol">comment</span>]:<span class="hljs-link">\end&#123;figure&#125;</span><br></code></pre></td></tr></table></figure>
+<p>虽然编译过程中会出现一系列的告警，但是我们可以不管。</p>
+<h2 id="长公式显示">长公式显示</h2>
+<p>有时候我们的数学公式可能会比较长，这样在演示文档中可能会被自动截断：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>$$<br>[q<span class="hljs-emphasis">_1, q_</span>2]=q<span class="hljs-emphasis">_1q_</span>2-q<span class="hljs-emphasis">_2q_</span>1=(s<span class="hljs-emphasis">_1s_</span>2-x<span class="hljs-emphasis">_1x_</span>2-y<span class="hljs-emphasis">_1y_</span>2-z<span class="hljs-emphasis">_1z_</span>2)+i(s<span class="hljs-emphasis">_1x_</span>2+s<span class="hljs-emphasis">_2x_</span>1+y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+j(s<span class="hljs-emphasis">_1y_</span>2+s<span class="hljs-emphasis">_2y_</span>1+x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+k(s<span class="hljs-emphasis">_1z_</span>2+s<span class="hljs-emphasis">_2z_</span>1+x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)-(s<span class="hljs-emphasis">_2s_</span>1-x<span class="hljs-emphasis">_2x_</span>1-y<span class="hljs-emphasis">_2y_</span>1-z<span class="hljs-emphasis">_2z_</span>1)-i(s<span class="hljs-emphasis">_2x_</span>1+s<span class="hljs-emphasis">_1x_</span>2+y<span class="hljs-emphasis">_2z_</span>1-y<span class="hljs-emphasis">_1z_</span>2)-j(s<span class="hljs-emphasis">_2y_</span>1+s<span class="hljs-emphasis">_1y_</span>2+x<span class="hljs-emphasis">_1z_</span>2-x<span class="hljs-emphasis">_2z_</span>1)-k(s<span class="hljs-emphasis">_2z_</span>1+s<span class="hljs-emphasis">_1z_</span>2+x<span class="hljs-emphasis">_2y_</span>1-x<span class="hljs-emphasis">_1y_</span>2)=2i(y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+2j(x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+2k(x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)\neq0<br>$$<br></code></pre></td></tr></table></figure>
+<p>此时编译出来的演示文档显示效果非常不佳：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854180.png" alt=""></p>
+<p>这个时候可以选择使用行内公式，这样可以自动换行，很大概率是可以完整显示出来的：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>$[q<span class="hljs-emphasis">_1, q_</span>2]=q<span class="hljs-emphasis">_1q_</span>2-q<span class="hljs-emphasis">_2q_</span>1=(s<span class="hljs-emphasis">_1s_</span>2-x<span class="hljs-emphasis">_1x_</span>2-y<span class="hljs-emphasis">_1y_</span>2-z<span class="hljs-emphasis">_1z_</span>2)+i(s<span class="hljs-emphasis">_1x_</span>2+s<span class="hljs-emphasis">_2x_</span>1+y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+j(s<span class="hljs-emphasis">_1y_</span>2+s<span class="hljs-emphasis">_2y_</span>1+x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+k(s<span class="hljs-emphasis">_1z_</span>2+s<span class="hljs-emphasis">_2z_</span>1+x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)-(s<span class="hljs-emphasis">_2s_</span>1-x<span class="hljs-emphasis">_2x_</span>1-y<span class="hljs-emphasis">_2y_</span>1-z<span class="hljs-emphasis">_2z_</span>1)-i(s<span class="hljs-emphasis">_2x_</span>1+s<span class="hljs-emphasis">_1x_</span>2+y<span class="hljs-emphasis">_2z_</span>1-y<span class="hljs-emphasis">_1z_</span>2)-j(s<span class="hljs-emphasis">_2y_</span>1+s<span class="hljs-emphasis">_1y_</span>2+x<span class="hljs-emphasis">_1z_</span>2-x<span class="hljs-emphasis">_2z_</span>1)-k(s<span class="hljs-emphasis">_2z_</span>1+s<span class="hljs-emphasis">_1z_</span>2+x<span class="hljs-emphasis">_2y_</span>1-x<span class="hljs-emphasis">_1y_</span>2)=2i(y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+2j(x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+2k(x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)\neq0$<br></code></pre></td></tr></table></figure>
+<p>行内公式的显示效果如下所示：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854222.png" alt=""></p>
+<p>这样一来，我们就可以在演示文档上面看到完整的公式。</p>
+<h1>公式居中和缩放</h1>
+<p>续上一个章节内容，在公式使用行内显示之后，我们发现公式此时是居左显示的，而我们如果想要居中，在前面加一个<code>\center</code>标签即可：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>\center $[q<span class="hljs-emphasis">_1, q_</span>2]=q<span class="hljs-emphasis">_1q_</span>2-q<span class="hljs-emphasis">_2q_</span>1=(s<span class="hljs-emphasis">_1s_</span>2-x<span class="hljs-emphasis">_1x_</span>2-y<span class="hljs-emphasis">_1y_</span>2-z<span class="hljs-emphasis">_1z_</span>2)+i(s<span class="hljs-emphasis">_1x_</span>2+s<span class="hljs-emphasis">_2x_</span>1+y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+j(s<span class="hljs-emphasis">_1y_</span>2+s<span class="hljs-emphasis">_2y_</span>1+x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+k(s<span class="hljs-emphasis">_1z_</span>2+s<span class="hljs-emphasis">_2z_</span>1+x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)-(s<span class="hljs-emphasis">_2s_</span>1-x<span class="hljs-emphasis">_2x_</span>1-y<span class="hljs-emphasis">_2y_</span>1-z<span class="hljs-emphasis">_2z_</span>1)-i(s<span class="hljs-emphasis">_2x_</span>1+s<span class="hljs-emphasis">_1x_</span>2+y<span class="hljs-emphasis">_2z_</span>1-y<span class="hljs-emphasis">_1z_</span>2)-j(s<span class="hljs-emphasis">_2y_</span>1+s<span class="hljs-emphasis">_1y_</span>2+x<span class="hljs-emphasis">_1z_</span>2-x<span class="hljs-emphasis">_2z_</span>1)-k(s<span class="hljs-emphasis">_2z_</span>1+s<span class="hljs-emphasis">_1z_</span>2+x<span class="hljs-emphasis">_2y_</span>1-x<span class="hljs-emphasis">_1y_</span>2)=2i(y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+2j(x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+2k(x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)\neq0$<br></code></pre></td></tr></table></figure>
+<p>居中显示效果如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854269.png" alt=""></p>
+<p>在行内公式显示下，依然存在公式过长的问题，此时我们可以借鉴参考链接1中的方法，在公式前面再加一个<code>\tiny</code>的标签：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>\tiny \center $[q<span class="hljs-emphasis">_1, q_</span>2]=q<span class="hljs-emphasis">_1q_</span>2-q<span class="hljs-emphasis">_2q_</span>1=(s<span class="hljs-emphasis">_1s_</span>2-x<span class="hljs-emphasis">_1x_</span>2-y<span class="hljs-emphasis">_1y_</span>2-z<span class="hljs-emphasis">_1z_</span>2)+i(s<span class="hljs-emphasis">_1x_</span>2+s<span class="hljs-emphasis">_2x_</span>1+y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+j(s<span class="hljs-emphasis">_1y_</span>2+s<span class="hljs-emphasis">_2y_</span>1+x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+k(s<span class="hljs-emphasis">_1z_</span>2+s<span class="hljs-emphasis">_2z_</span>1+x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)-(s<span class="hljs-emphasis">_2s_</span>1-x<span class="hljs-emphasis">_2x_</span>1-y<span class="hljs-emphasis">_2y_</span>1-z<span class="hljs-emphasis">_2z_</span>1)-i(s<span class="hljs-emphasis">_2x_</span>1+s<span class="hljs-emphasis">_1x_</span>2+y<span class="hljs-emphasis">_2z_</span>1-y<span class="hljs-emphasis">_1z_</span>2)-j(s<span class="hljs-emphasis">_2y_</span>1+s<span class="hljs-emphasis">_1y_</span>2+x<span class="hljs-emphasis">_1z_</span>2-x<span class="hljs-emphasis">_2z_</span>1)-k(s<span class="hljs-emphasis">_2z_</span>1+s<span class="hljs-emphasis">_1z_</span>2+x<span class="hljs-emphasis">_2y_</span>1-x<span class="hljs-emphasis">_1y_</span>2)=2i(y<span class="hljs-emphasis">_1z_</span>2-y<span class="hljs-emphasis">_2z_</span>1)+2j(x<span class="hljs-emphasis">_2z_</span>1-x<span class="hljs-emphasis">_1z_</span>2)+2k(x<span class="hljs-emphasis">_1y_</span>2-x<span class="hljs-emphasis">_2y_</span>1)\neq0$<br></code></pre></td></tr></table></figure>
+<p>缩小后的公式显示效果如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854323.png" alt=""></p>
+<p>还有众多的大小范围可调（图片来自于参考链接1）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854370.png" alt=""></p>
+<h1>Beamer PDF中添加动图</h1>
+<p>在前面一篇<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/latex-gif.html">博客</a>中，我们介绍了在Latex生成PDF时我们也可以展示一些动态过程。这需要我们先用Python把一个动态图切割成很多个图片，放在一个指定文件夹下，然后调用Latex的animate宏包来构建这个动图。</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>\center \animategraphics[width=0.45\linewidth, autoplay=True, loop, controls]&#123;24&#125;&#123;gif-2/&#125;&#123;0&#125;&#123;65&#125;<br></code></pre></td></tr></table></figure>
+<p>这里<code>0</code>和<code>65</code>这两个参数表示切割图片的第一张的数字编号和最后一张的数字编号，加了<code>loop</code>参数之后会自动循环播放，同时我们还可以加上<code>controls</code>这个控件，用于控制动态图的进退等，非常的灵活方便。显示效果如下：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854407.png" alt=""></p>
+<h1>并排放置多张图片</h1>
+<p>我们可以用<code>subgraph</code>宏包的功能导入多张图片并排，这个默认都是在同一列显示的，但是子图就可以允许我们多张图片在同一行显示：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs Markdown"><span class="hljs-section"># Test1</span><br><span class="hljs-section">## Test2</span><br>\begin&#123;figure&#125;<br>  \centering<br>  \subfigure[]&#123;\includegraphics[width=1.2in]&#123;./13.png&#125;&#125;<br>  \subfigure[]&#123;\includegraphics[width=2.8in]&#123;./14.png&#125;&#125;<br>\end&#123;figure&#125;<br></code></pre></td></tr></table></figure>
+<p>显示效果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715164854462.png" alt=""></p>
+<h1>总结概要</h1>
+<p>本文通过几个实际案例，介绍了RMarkdown在写Latex Beamer演示文档中有可能用到的一些进阶的操作。RMarkdown不仅仅继承了Markdown语言的简洁便利，还允许我们仍然使用Latex中的一些高级操作，甚至我们可以在生成的Beamer演示文档PDF中去展示一些动态的效果图，这是通过PPT等工具去生成PDF所不具备的功能（有可能有，只是我不了解，这里使用Latex Beamer来写演示文档仅仅是个人偏好）。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/advanced-rmarkdown.html">https://www.cnblogs.com/dechinphy/p/advanced-rmarkdown.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.huwenqiang.cn/articles/2020/10/22/1603372559446.html">https://www.huwenqiang.cn/articles/2020/10/22/1603372559446.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/latex-gif.html">https://www.cnblogs.com/dechinphy/p/latex-gif.html</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/72e5c182.html">https://dechin-phy.asia/posts/72e5c182.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-10-17</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-10-17</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/2fee36b5.html">Ubuntu解决Github无法访问的问题</a><a class="next" href="/posts/e0e06549.html">Latex中也能展示动态图？</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

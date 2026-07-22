@@ -1,0 +1,248 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/60209023.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSponge分子动力学模拟——定义Collective Variables（2024.02）"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/60209023.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2023-09-07T09:49:28.000Z"><meta property="article:modified_time" content="2024-02-19T08:16:00.000Z"><title>MindSponge分子动力学模拟——定义Collective Variables（2024.02） | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSponge分子动力学模拟——定义Collective Variables（2024.02）</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSponge分子动力学模拟——定义Collective Variables（2024.02）</h1><div class="post-meta">2023-09-07<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.9k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 13</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">能量极小化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">定义Collective Variable</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">保存轨迹</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>随着分子动力学模拟技术的应用推广、AI软件的发展和硬件算力水平的提升，我们可以更快的在分子层面去观察和研究分子体系内的相互作用。但是分子模拟的性能再好，也不一定可以复现一些在自然宏观状态下有可能发生的化学反应或者是物质相变。因此我们需要通过定义一些对反应路径有决定性影响的物理量，然后结合增强采样技术，去更快的复现和推导我们所需要的反应机理。本文主要介绍分子动力学模拟软件MindSponge在这一领域的应用和代码实现。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>在前面的几篇博客中，我们介绍了<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ms-system.html">MindSponge分子动力学模拟框架的基本安装和使用</a>和<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/updater-md.html">MindSponge执行分子动力学模拟任务的方法</a>。这里我们介绍一个在增强采样领域非常常用的工具：Collective Variable（CV），或者我们也可以直接称呼其为一个物理量。因为像化学反应或者是蛋白质折叠等问题中，经常会存在一个“路径（Path）”，使得反应沿着这个路径来进行。其中最简单的一种形式，就是成键断键。换句话说，我们可以通过调控这根键的键长，进而去调控这其中的化学反应，这也是分子力学层面的增强采样的一个基本思想。而随着增强采样技术的发展，越来越多的形式的CV被应用在不同的领域和问题当中。本文将会介绍，如何在基于深度学习框架MindSpore的分子动力学模拟软件MindSponge中，去定义一个CV。</p>
+<h1>能量极小化</h1>
+<p>首先我们使用到前面文章中提到过的MindSponge的能量极小化这个案例作为示例，优化的是这样的一个体系：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163939466.png" alt="">
+对应的pdb文件为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">REMARK   Generated By Xponge (Molecule)<br>ATOM      1    N ALA     1      -0.095 -11.436  -0.780<br>ATOM      2   CA ALA     1      -0.171 -10.015  -0.507<br>ATOM      3   CB ALA     1       1.201  -9.359  -0.628<br>ATOM      4    C ALA     1      -1.107  -9.319  -1.485<br>ATOM      5    O ALA     1      -1.682  -9.960  -2.362<br>ATOM      6    N ARG     2      -1.303  -8.037  -1.397<br>ATOM      7   CA ARG     2      -2.194  -7.375  -2.328<br>ATOM      8   CB ARG     2      -3.606  -7.943  -2.235<br>ATOM      9   CG ARG     2      -4.510  -7.221  -3.228<br>ATOM     10   CD ARG     2      -5.923  -7.789  -3.136<br>ATOM     11   NE ARG     2      -6.831  -7.111  -4.087<br>ATOM     12   CZ ARG     2      -8.119  -7.421  -4.205<br>ATOM     13  NH1 ARG     2      -8.686  -8.371  -3.468<br>ATOM     14  NH2 ARG     2      -8.844  -6.747  -5.093<br>ATOM     15    C ARG     2      -2.273  -5.882  -2.042<br>ATOM     16    O ARG     2      -1.630  -5.388  -1.119<br>ATOM     17    N ALA     3      -3.027  -5.119  -2.777<br>ATOM     18   CA ALA     3      -3.103  -3.697  -2.505<br>ATOM     19   CB ALA     3      -1.731  -3.041  -2.625<br>ATOM     20    C ALA     3      -4.039  -3.001  -3.483<br>ATOM     21    O ALA     3      -4.614  -3.643  -4.359<br>ATOM     22    N ALA     4      -4.235  -1.719  -3.394<br>ATOM     23   CA ALA     4      -5.126  -1.057  -4.325<br>ATOM     24   CB ALA     4      -6.538  -1.625  -4.233<br>ATOM     25    C ALA     4      -5.205   0.436  -4.039<br>ATOM     26    O ALA     4      -4.561   0.930  -3.116<br>ATOM     27  OXT ALA     4      -5.915   1.166  -4.728<br>TER<br></code></pre></td></tr></table></figure>
+<p>那么我们就可以通过调控体系中每个原子的坐标，来使其能量达到一个最低值。相关代码如下所示，这里我们用的是一个MindSpore自带的Adam优化器：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD<br> <br><span class="hljs-comment"># 配置MindSpore的执行环境</span><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">1</span>)<br><span class="hljs-comment"># 配置全局单位</span><br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br> <br><span class="hljs-comment"># 定义一个基于case1.pdb的分子系统</span><br>system = Protein(<span class="hljs-string">&#x27;case1.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">True</span>)<br><span class="hljs-comment"># 定义一个amber.ff99sb的力场</span><br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF99SB&#x27;</span>])<br><span class="hljs-comment"># 定义一个学习率为1e-03的Adam优化器</span><br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br> <br><span class="hljs-comment"># 定义一个用于执行分子模拟的Sponge实例</span><br>md = Sponge(system, potential=energy, optimizer=min_opt)<br> <br><span class="hljs-comment"># RunInfo这个回调函数可以在屏幕上根据指定频次输出能量参数</span><br>run_info = RunInfo(<span class="hljs-number">200</span>)<br><span class="hljs-comment"># WriteH5MD回调函数，可以将轨迹、能量、力和速度等参数保留到一个hdf5文件中，文件后缀为h5md</span><br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>)<br><span class="hljs-comment"># 开始执行分子动力学模拟，运行2000次迭代</span><br>md.run(<span class="hljs-number">2000</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>运行结果是这样的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">[MindSPONGE] Adding 45 hydrogen atoms <span class="hljs-keyword">for</span> the protein molecule <span class="hljs-keyword">in</span> 0.003 seconds.<br>[MindSPONGE] Started simulation at 2023-09-04 15:14:29<br>[MindSPONGE] Step: 0, E_pot: 1200.4639<br>[MindSPONGE] Step: 200, E_pot: 7.763489<br>[MindSPONGE] Step: 400, E_pot: -70.34643<br>[MindSPONGE] Step: 600, E_pot: -96.88522<br>[MindSPONGE] Step: 800, E_pot: -109.98717<br>[MindSPONGE] Step: 1000, E_pot: -117.33747<br>[MindSPONGE] Step: 1200, E_pot: -121.95378<br>[MindSPONGE] Step: 1400, E_pot: -125.20764<br>[MindSPONGE] Step: 1600, E_pot: -127.72044<br>[MindSPONGE] Step: 1800, E_pot: -129.79828<br>[MindSPONGE] Finished simulation at 2023-09-04 15:15:16<br>[MindSPONGE] Simulation <span class="hljs-keyword">time</span>: 46.79 seconds.<br>--------------------------------------------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>除了在屏幕上输出每一步的能量，我们还通过<code>WriteH5MD</code>将整个轨迹写到了一个h5md的文件中，然后可以用silx这样的工具来简单的对h5md文件进行分析和可视化：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163939516.png" alt=""></p>
+<h1>定义Collective Variable</h1>
+<p>我们在这个体系分子中随便摘取两个原子<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathnormal">i</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>j</mi></mrow><annotation encoding="application/x-tex">j</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.85396em;vertical-align:-0.19444em;"></span><span class="mord mathnormal" style="margin-right:0.05724em;">j</span></span></span></span>作为计算CV的参量，首先我们使用一个<code>距离</code>作为CV：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>V</mi><mo>=</mo><mi mathvariant="normal">∣</mi><msub><mtext mathvariant="bold">r</mtext><mi>j</mi></msub><mo>−</mo><msub><mtext mathvariant="bold">r</mtext><mi>i</mi></msub><mi mathvariant="normal">∣</mi></mrow><annotation encoding="application/x-tex">V=|\textbf{r}_j-\textbf{r}_i|
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathnormal" style="margin-right:0.22222em;">V</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.036108em;vertical-align:-0.286108em;"></span><span class="mord">∣</span><span class="mord"><span class="mord text"><span class="mord textbf">r</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.311664em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord text"><span class="mord textbf">r</span></span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span></span></span></p>
+<p>如果用VMD来查看这个pdb文件，那么我们定义的CV就是如下图所示的两个原子之间的距离：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163939561.png" alt=""></p>
+<p>在代码侧，我们可以直接从<code>sponge.colvar</code>中调用包装好的<code>Distance</code>类来定义这个距离的CV。然后作为一个<code>metrics</code>传入到<code>Sponge</code>对象中，就可以对这个CV的值进行跟踪，作为轨迹的一部分。当然，其实MindSponge也是可以支持使用这个CV去计算一个Bias Energy偏置势的，这就涉及到不同的增强采样算法的不同定义，如Meta Dynamics等，这里暂不做介绍。另外我们还可以基于<code>sponge.colvar</code>中的<code>Colvar</code>基础类去定义一个我们自己所需要的CV，并传入到metrics中，具体定义形式可以参考<code>Distance</code>的写法。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;../..&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD<br><span class="hljs-keyword">from</span> sponge.colvar <span class="hljs-keyword">import</span> Distance<br><br><span class="hljs-comment"># 配置MindSpore的执行环境</span><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">1</span>)<br><span class="hljs-comment"># 配置全局单位</span><br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br><br><span class="hljs-comment"># 定义一个基于case1.pdb的分子系统</span><br>system = Protein(<span class="hljs-string">&#x27;../pdb/case1.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">True</span>)<br><span class="hljs-comment"># 定义一个amber.ff99sb的力场</span><br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF99SB&#x27;</span>])<br><span class="hljs-comment"># 定义一个学习率为1e-03的Adam优化器</span><br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br><br><span class="hljs-comment"># 定义CV</span><br>bond0 = Distance([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>])<br><span class="hljs-built_in">print</span>(system.atom_name)<br><span class="hljs-comment"># 定义一个用于执行分子模拟的Sponge实例</span><br>md = Sponge(system, potential=energy, optimizer=min_opt, metrics=&#123;<span class="hljs-string">&#x27;bond0&#x27;</span>: bond0&#125;)<br><br><span class="hljs-comment"># RunInfo这个回调函数可以在屏幕上根据指定频次输出能量参数</span><br>run_info = RunInfo(<span class="hljs-number">200</span>)<br><span class="hljs-comment"># WriteH5MD回调函数，可以将轨迹、能量、力和速度等参数保留到一个hdf5文件中，文件后缀为h5md</span><br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>)<br><span class="hljs-comment"># 开始执行分子动力学模拟，运行2000次迭代</span><br>md.run(<span class="hljs-number">2000</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>运行输出如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs bash">[MindSPONGE] Adding 45 hydrogen atoms <span class="hljs-keyword">for</span> the protein molecule <span class="hljs-keyword">in</span> 0.003 seconds.<br>[[<span class="hljs-string">&#x27;N&#x27;</span> <span class="hljs-string">&#x27;CA&#x27;</span> <span class="hljs-string">&#x27;CB&#x27;</span> <span class="hljs-string">&#x27;C&#x27;</span> <span class="hljs-string">&#x27;O&#x27;</span> <span class="hljs-string">&#x27;H1&#x27;</span> <span class="hljs-string">&#x27;H2&#x27;</span> <span class="hljs-string">&#x27;H3&#x27;</span> <span class="hljs-string">&#x27;HA&#x27;</span> <span class="hljs-string">&#x27;HB1&#x27;</span> <span class="hljs-string">&#x27;HB2&#x27;</span> <span class="hljs-string">&#x27;HB3&#x27;</span> <span class="hljs-string">&#x27;N&#x27;</span> <span class="hljs-string">&#x27;CA&#x27;</span><br>  <span class="hljs-string">&#x27;CB&#x27;</span> <span class="hljs-string">&#x27;CG&#x27;</span> <span class="hljs-string">&#x27;CD&#x27;</span> <span class="hljs-string">&#x27;NE&#x27;</span> <span class="hljs-string">&#x27;CZ&#x27;</span> <span class="hljs-string">&#x27;NH1&#x27;</span> <span class="hljs-string">&#x27;NH2&#x27;</span> <span class="hljs-string">&#x27;C&#x27;</span> <span class="hljs-string">&#x27;O&#x27;</span> <span class="hljs-string">&#x27;H&#x27;</span> <span class="hljs-string">&#x27;HA&#x27;</span> <span class="hljs-string">&#x27;HB2&#x27;</span> <span class="hljs-string">&#x27;HB3&#x27;</span> <span class="hljs-string">&#x27;HG2&#x27;</span><br>  <span class="hljs-string">&#x27;HG3&#x27;</span> <span class="hljs-string">&#x27;HD2&#x27;</span> <span class="hljs-string">&#x27;HD3&#x27;</span> <span class="hljs-string">&#x27;HE&#x27;</span> <span class="hljs-string">&#x27;HH11&#x27;</span> <span class="hljs-string">&#x27;HH12&#x27;</span> <span class="hljs-string">&#x27;HH21&#x27;</span> <span class="hljs-string">&#x27;HH22&#x27;</span> <span class="hljs-string">&#x27;N&#x27;</span> <span class="hljs-string">&#x27;CA&#x27;</span> <span class="hljs-string">&#x27;CB&#x27;</span> <span class="hljs-string">&#x27;C&#x27;</span><br>  <span class="hljs-string">&#x27;O&#x27;</span> <span class="hljs-string">&#x27;H&#x27;</span> <span class="hljs-string">&#x27;HA&#x27;</span> <span class="hljs-string">&#x27;HB1&#x27;</span> <span class="hljs-string">&#x27;HB2&#x27;</span> <span class="hljs-string">&#x27;HB3&#x27;</span> <span class="hljs-string">&#x27;N&#x27;</span> <span class="hljs-string">&#x27;CA&#x27;</span> <span class="hljs-string">&#x27;CB&#x27;</span> <span class="hljs-string">&#x27;C&#x27;</span> <span class="hljs-string">&#x27;O&#x27;</span> <span class="hljs-string">&#x27;OXT&#x27;</span> <span class="hljs-string">&#x27;H&#x27;</span> <span class="hljs-string">&#x27;HA&#x27;</span><br>  <span class="hljs-string">&#x27;HB1&#x27;</span> <span class="hljs-string">&#x27;HB2&#x27;</span> <span class="hljs-string">&#x27;HB3&#x27;</span>]]<br>[MindSPONGE] Started simulation at 2024-02-19 15:33:57<br>[MindSPONGE] Step: 200, E_pot: 8.525536, bond0: 1.4885269<br>[MindSPONGE] Step: 400, E_pot: -70.148384, bond0: 1.4816087<br>[MindSPONGE] Step: 600, E_pot: -96.796265, bond0: 1.4798437<br>[MindSPONGE] Step: 800, E_pot: -109.93948, bond0: 1.4798721<br>[MindSPONGE] Step: 1000, E_pot: -117.30916, bond0: 1.4806045<br>[MindSPONGE] Step: 1200, E_pot: -121.934845, bond0: 1.4812899<br>[MindSPONGE] Step: 1400, E_pot: -125.193565, bond0: 1.4817244<br>[MindSPONGE] Step: 1600, E_pot: -127.70915, bond0: 1.4819595<br>[MindSPONGE] Step: 1800, E_pot: -129.78864, bond0: 1.482085<br>[MindSPONGE] Step: 2000, E_pot: -131.60873, bond0: 1.4821533<br>[MindSPONGE] Finished simulation at 2024-02-19 15:34:44<br>[MindSPONGE] Simulation <span class="hljs-keyword">time</span>: 47.89 seconds.<br>--------------------------------------------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>可以看到，相比于之前纯粹的能量极小化版本代码，这里我们多打印了一个<code>bond0</code>的参数，这里就是每一步优化能量之后对应的CV的值。类似的，我们还可以用<code>Angle</code>，<code>Torsion</code>等MindSponge内置的CV类型去计算：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> nn, context<br><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;../..&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> ForceField, Sponge, set_global_units, Protein<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> RunInfo, WriteH5MD<br><span class="hljs-keyword">from</span> sponge.colvar <span class="hljs-keyword">import</span> Distance, Angle, Torsion<br><br><span class="hljs-comment"># 配置MindSpore的执行环境</span><br>context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>, device_id=<span class="hljs-number">1</span>)<br><span class="hljs-comment"># 配置全局单位</span><br>set_global_units(<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;kcal/mol&#x27;</span>)<br><br><span class="hljs-comment"># 定义一个基于case1.pdb的分子系统</span><br>system = Protein(<span class="hljs-string">&#x27;../pdb/case1.pdb&#x27;</span>, template=[<span class="hljs-string">&#x27;protein0.yaml&#x27;</span>], rebuild_hydrogen=<span class="hljs-literal">True</span>)<br><span class="hljs-comment"># 定义一个amber.ff99sb的力场</span><br>energy = ForceField(system, parameters=[<span class="hljs-string">&#x27;AMBER.FF99SB&#x27;</span>])<br><span class="hljs-comment"># 定义一个学习率为1e-03的Adam优化器</span><br>min_opt = nn.Adam(system.trainable_params(), <span class="hljs-number">1e-03</span>)<br><br><span class="hljs-comment"># 定义CV</span><br>cv_bond = Distance([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>])<br>cv_angle = Angle([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>])<br>cv_dihedral = Torsion([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>])<br><span class="hljs-comment"># 定义一个用于执行分子模拟的Sponge实例</span><br>md = Sponge(system, potential=energy, optimizer=min_opt, metrics=&#123;<span class="hljs-string">&#x27;bond&#x27;</span>: cv_bond, <span class="hljs-string">&#x27;angle&#x27;</span>: cv_angle,<br>                                                                  <span class="hljs-string">&#x27;dihedral&#x27;</span>: cv_dihedral&#125;)<br><br><span class="hljs-comment"># RunInfo这个回调函数可以在屏幕上根据指定频次输出能量参数</span><br>run_info = RunInfo(<span class="hljs-number">200</span>)<br><span class="hljs-comment"># WriteH5MD回调函数，可以将轨迹、能量、力和速度等参数保留到一个hdf5文件中，文件后缀为h5md</span><br>cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;test.h5md&#x27;</span>, save_freq=<span class="hljs-number">10</span>, write_image=<span class="hljs-literal">False</span>)<br><span class="hljs-comment"># 开始执行分子动力学模拟，运行2000次迭代</span><br>md.run(<span class="hljs-number">2000</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>运行输出如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs bash">[MindSPONGE] Adding 45 hydrogen atoms <span class="hljs-keyword">for</span> the protein molecule <span class="hljs-keyword">in</span> 0.004 seconds.<br>[MindSPONGE] Started simulation at 2024-02-19 15:43:11<br>[MindSPONGE] Step: 200, E_pot: 8.52552, bond: 1.4885279, angle: 1.9996612, dihedral: 2.14814<br>[MindSPONGE] Step: 400, E_pot: -70.14837, bond: 1.4816078, angle: 1.9796473, dihedral: 2.1302822<br>[MindSPONGE] Step: 600, E_pot: -96.796265, bond: 1.4798437, angle: 1.9628391, dihedral: 2.1359558<br>[MindSPONGE] Step: 800, E_pot: -109.939514, bond: 1.4798703, angle: 1.9526237, dihedral: 2.1443036<br>[MindSPONGE] Step: 1000, E_pot: -117.30916, bond: 1.4806036, angle: 1.9461793, dihedral: 2.1488183<br>[MindSPONGE] Step: 1200, E_pot: -121.93486, bond: 1.4812908, angle: 1.9418821, dihedral: 2.1499696<br>[MindSPONGE] Step: 1400, E_pot: -125.19357, bond: 1.4817244, angle: 1.9388888, dihedral: 2.1492646<br>[MindSPONGE] Step: 1600, E_pot: -127.70906, bond: 1.4819595, angle: 1.9367135, dihedral: 2.1476927<br>[MindSPONGE] Step: 1800, E_pot: -129.78867, bond: 1.4820842, angle: 1.9350405, dihedral: 2.1457095<br>[MindSPONGE] Step: 2000, E_pot: -131.60872, bond: 1.4821533, angle: 1.9336755, dihedral: 2.143513<br>[MindSPONGE] Finished simulation at 2024-02-19 15:44:03<br>[MindSPONGE] Simulation <span class="hljs-keyword">time</span>: 51.27 seconds.<br>--------------------------------------------------------------------------------<br></code></pre></td></tr></table></figure>
+<h1>保存轨迹</h1>
+<p>在上一步运行之后，会在本地生成一个h5md文件，我们可以用silx view查看这个文件。此时我们会发现，在代码中定义的metrics中几个CV物理量，也会被同步保存到h5md轨迹文件中：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163939602.png" alt=""></p>
+<h1>总结概要</h1>
+<p>随着分子动力学模拟技术的应用推广、AI软件的发展和硬件算力水平的提升，我们可以更快的在分子层面去观察和研究分子体系内的相互作用。但是分子模拟的性能再好，也不一定可以复现一些在自然宏观状态下有可能发生的化学反应或者是物质相变。因此我们需要通过定义一些对反应路径有决定性影响的物理量，然后结合增强采样技术，去更快的复现和推导我们所需要的反应机理。本文主要介绍分子动力学模拟软件MindSponge在这一领域的应用和代码实现。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/cv.html">https://www.cnblogs.com/dechinphy/p/cv.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.mindspore.cn/mindsponge/docs/zh-CN/r1.0.0-rc2/user/simulation.html">https://www.mindspore.cn/mindsponge/docs/zh-CN/r1.0.0-rc2/user/simulation.html</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/60209023.html">https://dechin-phy.asia/posts/60209023.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2023-09-07</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2024-02-19</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/85e4afd2.html">MindSpore简要性能分析</a><a class="next" href="/posts/35c2ce3c.html">MindSponge分子动力学模拟——Constraint约束（2023.09）</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

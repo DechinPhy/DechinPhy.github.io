@@ -1,0 +1,255 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/ed39662b.html"><meta property="og:type" content="article"><meta property="og:title" content="使用Python调用SMTP服务自动发送Email"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/ed39662b.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2021-02-06T14:42:58.000Z"><meta property="article:modified_time" content="2021-02-06T14:47:00.000Z"><title>使用Python调用SMTP服务自动发送Email | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">使用Python调用SMTP服务自动发送Email</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">使用Python调用SMTP服务自动发送Email</h1><div class="post-meta">2021-02-06<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 1.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 6</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">需求背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">QQ邮箱的SMTP服务配置流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">使用授权码登录SMTP并发送邮件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">使用crontab添加Linux系统定时任务</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">一个定时任务+SMTP广播的示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>通过python可以调用smtp第三方邮件服务接口，这使得我们可以通过python直接来发送邮件。在这个功能基础上，我们可以结合Linux的定时任务服务Crontab，来开发一些有意思的项目，比如爬虫等。这里我们就只简单演示一个定时播报随机数的任务示例，很好的结合了crontab定时任务、python任务、smtp播报任务三者的特点，读者可以进行参考。</p>
+<span id="more"></span>
+<h1>需求背景</h1>
+<p>假设我们想设计一个定时任务，比如每天定时的用python来测试服务是否在正常运行，但是又不希望每天登录到系统后台去查看服务状态。这里我们就可以采取python的smtp模块进行任务结果广播，申请一个公共邮箱，每次python执行完定时的测试任务后，调用smtp的接口将测试结果广播给需要接收的人的邮箱中。这就使得，我们可以在移动端就能按照我们的意愿实时监测系统的状态。</p>
+<h1>QQ邮箱的SMTP服务配置流程</h1>
+<ol>
+<li>浏览器登录进入<a target="_blank" rel="noopener" href="https://mail.qq.com/">QQ邮箱</a></li>
+<li>进入设置-账户
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745818.png" alt=""></li>
+<li>找到POP3-SMTP服务的位置，点击开启
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745847.png" alt=""></li>
+<li>进行一些验证程序
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745877.png" alt=""></li>
+<li>开启成功后，系统会给出一串长度为16的随机口令，用来替代密码进行第三方登录</li>
+<li>配置smtp服务器地址和端口号
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745908.png" alt=""></li>
+</ol>
+<h1>使用授权码登录SMTP并发送邮件</h1>
+<p>这里我们直接展示成果代码，其中一些隐私信息做了处理：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># smtp_test.py</span><br><span class="hljs-comment">#!/usr/bin/python</span><br><span class="hljs-comment"># -*- coding: UTF-8 -*-</span><br> <br><span class="hljs-keyword">import</span> smtplib<br><span class="hljs-keyword">from</span> email.mime.text <span class="hljs-keyword">import</span> MIMEText<br><span class="hljs-keyword">from</span> email.header <span class="hljs-keyword">import</span> Header<br> <br><span class="hljs-comment"># 第三方 SMTP 服务</span><br>mail_host=<span class="hljs-string">&quot;smtp.qq.com&quot;</span>  <span class="hljs-comment">#设置服务器</span><br>mail_user=<span class="hljs-string">&quot;your_name@qq.com&quot;</span>    <span class="hljs-comment">#用户名</span><br>mail_pass=<span class="hljs-string">&quot;passpasspasspass&quot;</span>   <span class="hljs-comment">#口令 </span><br> <br> <br>sender = <span class="hljs-string">&#x27;your_name@qq.com&#x27;</span><br>receivers = [<span class="hljs-string">&#x27;your_target@qq.com&#x27;</span>]  <span class="hljs-comment"># 接收邮件，可设置为你的QQ邮箱或者其他邮箱</span><br> <br>message = MIMEText(<span class="hljs-string">&#x27;Python SMTP 邮件发送测试...&#x27;</span>, <span class="hljs-string">&#x27;plain&#x27;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>message[<span class="hljs-string">&#x27;From&#x27;</span>] = Header(<span class="hljs-string">&quot;SMTP EMAIL&quot;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>message[<span class="hljs-string">&#x27;To&#x27;</span>] =  Header(<span class="hljs-string">&quot;TEST MESSAGE&quot;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br> <br>subject = <span class="hljs-string">&#x27;Python SMTP 邮件测试&#x27;</span><br>message[<span class="hljs-string">&#x27;Subject&#x27;</span>] = Header(subject, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br> <br> <br><span class="hljs-keyword">try</span>:<br>    smtpObj = smtplib.SMTP() <br>    smtpObj.connect(mail_host, <span class="hljs-number">25</span>)    <span class="hljs-comment"># 25 为 SMTP 端口号</span><br>    smtpObj.login(mail_user,mail_pass)  <br>    smtpObj.sendmail(sender, receivers, message.as_string())<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&quot;邮件发送成功&quot;</span>)<br><span class="hljs-keyword">except</span> smtplib.SMTPException:<br>    <span class="hljs-keyword">import</span> traceback<br>    traceback.print_exc()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&quot;无法发送邮件&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>这里的服务器配置的SMTP的服务器<code>smtp.qq.com</code>，对应端口号配置为25，这里的口令和帐号应替换为读者自己的授权口令和帐号。该程序的正常结果如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro smtp]$ python3 smtp_test.py <br>邮件发送成功<br></code></pre></td></tr></table></figure>
+<p>另外由于这里采用了<code>tracback</code>做错误日志采集，因此即使有报错程序也能继续执行，但是会广播错误日志。</p>
+<p>最后通过查询邮箱里面的邮件(有时候可能会被放到垃圾箱里面)，正常情况下可以看到一份这样的邮件：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745942.png" alt=""></p>
+<h1>使用crontab添加Linux系统定时任务</h1>
+<p>crontab是Linux系统下自带的定时任务配置服务，基本使用方法就是通过<code>crontab -l</code>来查看定时任务，以及通过<code>crontab -e</code>来编辑定时任务。但是由于自带的编辑器为<code>nano</code>，使用起来非常的不顺手，所以我们可以将其编辑器配置为<code>vim</code>再进行使用，相关指令为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro smtp]$ <span class="hljs-built_in">export</span> EDITOR=<span class="hljs-string">&quot;/usr/bin/vim&quot;</span> ; crontab -e<br></code></pre></td></tr></table></figure>
+<p>当然，在当前用户登录界面下，只需要临时配置一次即可一直直接使用<code>crontab -e</code>进行配置，持久生效需要修改配置文件，这里不展开介绍。<code>crontab</code>的任务配置可以参考如下介绍(图片来自于参考链接2)：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165745978.png" alt=""></p>
+<h1>一个定时任务+SMTP广播的示例</h1>
+<p>这里我们首先创建一个简单的打印随机数的任务，这样如果我们在<code>crontab</code>中添加一个执行该程序的定时任务，就可以每次产生一个不同的随机数并且将其输出到一个指定的文件中，再通过另外一个<code>smtp</code>的定时任务进行读取和广播。以下是打印随机数的任务内容：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">[dechin@dechin-manjaro smtp]$ cat random_job.py <br><span class="hljs-keyword">import</span> random<br><span class="hljs-built_in">print</span> (random.random())<br></code></pre></td></tr></table></figure>
+<p>我们将前面用到的smtp的任务稍作修改，将随机数读取到邮件标题中：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># smtp_test.py</span><br><span class="hljs-comment">#!/usr/bin/python</span><br><span class="hljs-comment"># -*- coding: UTF-8 -*-</span><br> <br><span class="hljs-keyword">import</span> smtplib<br><span class="hljs-keyword">from</span> email.mime.text <span class="hljs-keyword">import</span> MIMEText<br><span class="hljs-keyword">from</span> email.header <span class="hljs-keyword">import</span> Header<br> <br><span class="hljs-comment"># 第三方 SMTP 服务</span><br>mail_host=<span class="hljs-string">&quot;smtp.qq.com&quot;</span>  <span class="hljs-comment">#设置服务器</span><br>mail_user=<span class="hljs-string">&quot;your_email@qq.com&quot;</span>    <span class="hljs-comment">#用户名</span><br>mail_pass=<span class="hljs-string">&quot;passpasspasspass&quot;</span>   <span class="hljs-comment">#口令 </span><br> <br> <br>sender = <span class="hljs-string">&#x27;your_email@qq.com&#x27;</span><br>receivers = [<span class="hljs-string">&#x27;your_target@qq.com&#x27;</span>]  <span class="hljs-comment"># 接收邮件，可设置为你的QQ邮箱或者其他邮箱</span><br> <br>message = MIMEText(<span class="hljs-string">&#x27;Python SMTP 邮件发送测试...&#x27;</span>, <span class="hljs-string">&#x27;plain&#x27;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>message[<span class="hljs-string">&#x27;From&#x27;</span>] = Header(<span class="hljs-string">&quot;SMTP EMAIL&quot;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>message[<span class="hljs-string">&#x27;To&#x27;</span>] =  Header(<span class="hljs-string">&quot;TEST MESSAGE&quot;</span>, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br><br>random_number = <span class="hljs-number">1</span><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;/home/dechin/projects/2021-python/smtp/random_number.txt&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> file:<br>    random_number = <span class="hljs-built_in">float</span>(file.readlines()[<span class="hljs-number">0</span>])<br><br>subject = <span class="hljs-string">&#x27;The random number generated is: &#x27;</span> + <span class="hljs-built_in">str</span>(random_number)<br>message[<span class="hljs-string">&#x27;Subject&#x27;</span>] = Header(subject, <span class="hljs-string">&#x27;utf-8&#x27;</span>)<br> <br> <br><span class="hljs-keyword">try</span>:<br>    smtpObj = smtplib.SMTP() <br>    smtpObj.connect(mail_host, <span class="hljs-number">25</span>)    <span class="hljs-comment"># 25 为 SMTP 端口号</span><br>    smtpObj.login(mail_user,mail_pass)  <br>    smtpObj.sendmail(sender, receivers, message.as_string())<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&quot;邮件发送成功&quot;</span>)<br><span class="hljs-keyword">except</span> smtplib.SMTPException:<br>    <span class="hljs-keyword">import</span> traceback<br>    traceback.print_exc()<br>    <span class="hljs-built_in">print</span> (<span class="hljs-string">&quot;无法发送邮件&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>最后，再配置好<code>crontab</code>定时任务如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">[dechin@dechin-manjaro smtp]$ crontab -l<br>* * * * * python3 /home/dechin/projects/2021-python/smtp/random_job.py &gt; /home/dechin/projects/2021-python/smtp/random_number.txt<br>* * * * * python3 /home/dechin/projects/2021-python/smtp/smtp_test.py<br></code></pre></td></tr></table></figure>
+<p>上面由于为了尽快的展示定时任务效果因此我们设置为每分钟都执行一次任务，实际场景中不需要这么高频率的定时任务测试。</p>
+<p>最后查看邮箱收件箱，我们发现了一系列的定时任务的内容反馈如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165746017.png" alt="">
+到这里我们的定时监测任务+smtp广播的示例就演示完毕了，如果使用完该定时任务不想再启动，可以关闭crontab服务或者删除相关的crontab条目。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/smtp.html">https://www.cnblogs.com/dechinphy/p/smtp.html</a>
+作者ID：DechinPhy
+更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/python/python-email.html">https://www.runoob.com/python/python-email.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.runoob.com/linux/linux-comm-crontab.html">https://www.runoob.com/linux/linux-comm-crontab.html</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/ed39662b.html">https://dechin-phy.asia/posts/ed39662b.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2021-02-06</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2021-02-06</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/4b49494.html">使用开源量子编程框架ProjectQ进行量子计算资源估计与绘制量子线路图</a><a class="next" href="/posts/a884aba2.html">Python实现量子态采样</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

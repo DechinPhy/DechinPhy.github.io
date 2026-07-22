@@ -1,0 +1,286 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/fd1eadd0.html"><meta property="og:type" content="article"><meta property="og:title" content="Win11+Docker+qwen3.5本地化养虾"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/fd1eadd0.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2026-03-11T08:20:34.000Z"><meta property="article:modified_time" content="2026-03-17T07:01:00.000Z"><title>Win11+Docker+qwen3.5本地化养虾 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">Win11+Docker+qwen3.5本地化养虾</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">Win11+Docker+qwen3.5本地化养虾</h1><div class="post-meta">2026-03-11<span> | </span><span class="category"><a href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.2k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">Ollama环境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E5%85%A8%E6%8F%90%E9%86%92"><span class="toc-number">2.1.</span> <span class="toc-text">安全提醒</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">安装npm和pnpm环境</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">WSL2环境下的OpenClaw环境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#docker-image%E6%8A%A5%E9%94%99"><span class="toc-number">4.1.</span> <span class="toc-text">docker-image报错</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BD%91%E7%BB%9C%E8%BF%9E%E6%8E%A5TimeOut%E9%97%AE%E9%A2%98"><span class="toc-number">4.2.</span> <span class="toc-text">网络连接TimeOut问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#frozen-lockfile%E6%8A%A5%E9%94%99"><span class="toc-number">4.3.</span> <span class="toc-text">frozen-lockfile报错</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E5%88%87%E5%B0%B1%E7%BB%AA"><span class="toc-number">4.4.</span> <span class="toc-text">一切就绪</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">本地大模型配置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文介绍了一种在Win11操作系统下，使用Docker部署OpenClaw的一种方案，并且Token由本地部署的Ollama加载开源的qwen3.5模型产生，实现零成本、相对安全可控的一种部署方案。当然，目前OpenClaw和Ollama的安全性还是有待提升，结合自己的情况，慎重部署！！！</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>从语言对话，到本地小助手，人工智能大模型在这几年的时间里有了质的飞跃。本文主要介绍一下OpenClaw的Docker本地化部署方案，因其非常高的操作、读写权限，因此它的本地化的最终形态，必然是封装在一个虚拟化的环境里，通过容器或者虚拟机来对其权限进行约束，以此来加强其安全性。这里我们使用的环境是Win11+WSL2+Docker，本地显卡为3080系列。</p>
+<h1>Ollama环境部署</h1>
+<p>关于Ollama的部署问题，可以参考之前的<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18702523/deepseek2#%E5%AE%89%E8%A3%85ollama">这篇文章</a>，在大模型部署篇已经讲过，这里不再赘述。需要提醒的是，已经安装过Ollama的童鞋，需要把Ollama升级到最新版。安装完成后，通过Ollama配置好本地模型，我个人比较推荐的是qwen3.5（<code>带tools的版本</code>）：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142218.png" alt=""></p>
+<p>这个模型在Ollama运行阶段，大概会消耗10GB左右的显存/内存。具体指令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">&gt; ollama pull qwen3.5:latest<br></code></pre></td></tr></table></figure>
+<p>大家可以针对自己本地的硬件条件做模型的选择，如果是8GB显存的GPU卡，建议可以选择再小一些的模型。或则按照之前的方案，<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18719866/ktransformer">部署一个KTransformer</a>用于推理，理论上也是可行的，不过这里暂时使用Ollama作为示例。</p>
+<h2 id="安全提醒">安全提醒</h2>
+<p>需要说明的是，这里我们的安装方案，是图方便把Ollama直接安装在宿主机了，理论上应该像KTransformer一样装在Docker里边，通过虚拟化进行管理，会更合适。</p>
+<h1>安装npm和pnpm环境</h1>
+<p>需要在Ubuntu的Linux子系统中建立一个空目录，然后依照如下顺序安装一个<code>pnpm</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">mkdir</span> nodejs<br>$ <span class="hljs-built_in">cd</span> nodejs/<br>$ curl -fsSL https://deb.nodesource.com/setup_20.x | <span class="hljs-built_in">sudo</span> -E bash -<br>$ <span class="hljs-built_in">sudo</span> apt-get install -y nodejs<br>$ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash<br></code></pre></td></tr></table></figure>
+<p>安装成功后可以看到版本号：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ node --version<br>v20.20.1<br>$ npm --version<br>11.8.0<br></code></pre></td></tr></table></figure>
+<p>然后用<code>npm</code>安装我们所需的<code>pnpm</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ npm install -g pnpm<br>$ pnpm --version<br>10.31.0<br>$ pnpm install<br></code></pre></td></tr></table></figure>
+<p>安装完成后，就可以正式开始部署OpenClaw了。</p>
+<h1>WSL2环境下的OpenClaw环境部署</h1>
+<p>在Win11上打开一个Ubuntu Linux的子系统窗口，下载openclaw的仓库源代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://github.com/openclaw/openclaw.git<br>$ <span class="hljs-built_in">cd</span> openclaw/<br></code></pre></td></tr></table></figure>
+<p>直接运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ./docker-setup.sh<br></code></pre></td></tr></table></figure>
+<p>理论上来说，如果环境配置的没有问题，&lt;<code>网络也很通畅</code>&gt;的话，是可以直接运行成功的。所以如果这一步运行没有问题，本章节后面的内容就不用看了。如果有遇到一些报错信息，这里逐个排查。</p>
+<h2 id="docker-image报错">docker-image报错</h2>
+<p>如果发生报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">=&gt; ERROR resolve image config <span class="hljs-keyword">for</span> docker-image://docker.io/docker/dockerfile:1.7<br></code></pre></td></tr></table></figure>
+<p>那就把Dockerfile中的第一行内容删掉：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># syntax=docker/dockerfile:1.7</span><br></code></pre></td></tr></table></figure>
+<h2 id="网络连接TimeOut问题">网络连接TimeOut问题</h2>
+<p>如果因为网络问题，导致下载过程报错，可以在Docker的配置文件<code>daemon.json</code>中添加如下配置：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-string">&quot;registry-mirrors&quot;</span>: [<span class="hljs-string">&quot;https://docker.1ms.run&quot;</span>]<br></code></pre></td></tr></table></figure>
+<h2 id="frozen-lockfile报错">frozen-lockfile报错</h2>
+<p>如果遇到<code>frozen-lockfile</code>的报错：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">ERR_PNPM_OUTDATED_LOCKFILE  Cannot install with <span class="hljs-string">&quot;frozen-lockfile&quot;</span> because pnpm-lock.yaml is not up to <span class="hljs-built_in">date</span> with &lt;ROOT&gt;/package.json<br></code></pre></td></tr></table></figure>
+<p>这个问题是由于npm和pnpm的环境没有配置好，需要按照上一个章节中的配置命令进行相应的模块安装。</p>
+<h2 id="一切就绪">一切就绪</h2>
+<p>如果一切都没有问题，执行Docker的构建，你会得到：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs bash">==&gt; Starting gateway<br>[+] Running 1/0<br> ✔ Container openclaw-openclaw-gateway-1  Running                                                        0.0s<br>[+] Creating 1/0<br> ✔ Container openclaw-openclaw-gateway-1  Running0.0s<br>(node:7) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.<br>(Use `node --trace-deprecation ...` to show <span class="hljs-built_in">where</span> the warning was created)<br>Config overwrite: /home/node/.openclaw/openclaw.json (sha256 65de -&gt; edbd, backup=/home/node/.openclaw/openclaw.json.bak)<br><br>Gateway running with host port mapping.<br>Access from tailnet devices via the host<span class="hljs-string">&#x27;s tailnet IP.</span><br><span class="hljs-string">Config: /home/xxx/.openclaw</span><br><span class="hljs-string">Workspace: /home/xxx/.openclaw/workspace</span><br><span class="hljs-string">Token: fbf6</span><br><span class="hljs-string"></span><br><span class="hljs-string">Commands:</span><br><span class="hljs-string">  docker compose -f /mnt/k/openclaw/docker-compose.yml logs -f openclaw-gateway</span><br><span class="hljs-string">  docker compose -f /mnt/k/openclaw/docker-compose.yml exec openclaw-gateway node dist/index.js health --token &quot;819e&quot;</span><br></code></pre></td></tr></table></figure>
+<p>到这一步，OpenClaw的界面就可以打开了：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142262.png" alt=""></p>
+<p>不过这里界面上还是会有一些报错，这是因为我们还没有完成本地模型的配置，所以会话窗口无法识别到本地的大模型。我们在下一个章节中，继续介绍一下这个问题的解决方案。</p>
+<h1>本地大模型配置</h1>
+<p>然后按照上述启动的指令，就完成了Docker镜像的启动，然后可以通过<code>docker attach</code>或者VSCode的插件进入到容器内部。然后查看openclaw的版本：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ openclaw --version<br>OpenClaw 2026.3.8<br></code></pre></td></tr></table></figure>
+<p>根据需求，配置一下<code>openclaw.json</code>的内容，以下是我的配置清单，比较重点的就是本地模型部分的配置参数：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;meta&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;lastTouchedVersion&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026.3.8&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;lastTouchedAt&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-03-10T07:12:39.442Z&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;wizard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;lastRunAt&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-03-10T07:12:39.438Z&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;lastRunVersion&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026.3.8&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;lastRunCommand&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;onboard&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;lastRunMode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;local&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;models&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;providers&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;ollama&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;baseUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;http://127.0.0.1:xxxxx/v1&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;apiKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ollama-local&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;api&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;openai-completions&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;models&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>          <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;your_model&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;your_model&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;reasoning&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;input&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;cost&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>              <span class="hljs-attr">&quot;input&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span><br>              <span class="hljs-attr">&quot;output&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span><br>              <span class="hljs-attr">&quot;cacheRead&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span><br>              <span class="hljs-attr">&quot;cacheWrite&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><br>            <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;contextWindow&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">32768</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;maxTokens&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">32768</span><br>          <span class="hljs-punctuation">&#125;</span><br>        <span class="hljs-punctuation">]</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;agents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;primary&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ollama/your_model&quot;</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;models&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;ollama/your_model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;workspace&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/home/node/.openclaw/workspace&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;compaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;safeguard&quot;</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;maxConcurrent&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">4</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;subagents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;maxConcurrent&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;sandbox&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;off&quot;</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;tools&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;profile&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;coding&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;messages&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;ackReactionScope&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;group-mentions&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;commands&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;native&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;auto&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;nativeSkills&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;auto&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;restart&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;ownerDisplay&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;raw&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;session&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;dmScope&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;per-channel-peer&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;gateway&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;port&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">18789</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;local&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;bind&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;auto&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;controlUi&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;allowedOrigins&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-string">&quot;http://localhost:xxx&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;http://127.0.0.1:xxx&quot;</span><br>      <span class="hljs-punctuation">]</span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;auth&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;password&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;c9b9&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;xxx&quot;</span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;tailscale&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;mode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;off&quot;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;resetOnExit&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;nodes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;denyCommands&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-string">&quot;camera.snap&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;camera.clip&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;screen.record&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;contacts.add&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;calendar.add&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;reminders.add&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-string">&quot;sms.send&quot;</span><br>      <span class="hljs-punctuation">]</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<p>重启Docker容器，可以查看到相应的openclaw容器：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ docker ps -a<br>CONTAINER ID   IMAGE                                   COMMAND                  CREATED         STATUS                       PORTS                                  NAMES<br>xxxx    openclaw:<span class="hljs-built_in">local</span>                          <span class="hljs-string">&quot;docker-entrypoint.s…&quot;</span>   18 hours ago    Up 18 hours (healthy)        xxx:xxx-xxx-&gt;xxx-xxx/tcp   openclaw-openclaw-gateway-1<br></code></pre></td></tr></table></figure>
+<p>如果继续使用<code>docker attach</code>或者vscode插件进入到容器内部，可以查看到openclaw现已加载的模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ openclaw models list<br><br>🦞 OpenClaw 2026.3.8 (unknown) — Like having a senior engineer on call, except I don<span class="hljs-string">&#x27;t bill hourly or sigh audibly.</span><br><span class="hljs-string"></span><br><span class="hljs-string">Model                                      Input      Ctx      Local Auth  Tags</span><br><span class="hljs-string">ollama/qwen3.5:latest                      text       32k      no    yes   default,configured</span><br></code></pre></td></tr></table></figure>
+<p>这里链接到模型后，还会有一个本地配对的请求授权：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142314.png" alt=""></p>
+<p>这个直接按照操作指引配置一下即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ openclaw devices list<br><br>🦞 OpenClaw 2026.3.8 (unknown) — Say <span class="hljs-string">&quot;stop&quot;</span> and I<span class="hljs-string">&#x27;ll stop—say &quot;ship&quot; and we&#x27;</span>ll both learn a lesson.<br><br>│<br>◇  <br>Pending (1)<br>┌──────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────┬──────────┬────────────┬──────────┬────────┐<br>│ Request                              │ Device                                                                      │ Role     │ IP         │ Age      │ Flags  │<br>├──────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────┼──────────┼────────────┼──────────┼────────┤<br>│ e6dc │ 177f            │ operator │ 172.18.0.1 │ just now │        │<br>└──────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────┴──────────┴────────────┴──────────┴────────┘<br>Paired (1)<br>┌───────────────────────────────────────────────────┬────────────┬─────────────────────────────────────────────────────────────────────┬────────────┬────────────┐<br>│ Device                                            │ Roles      │ Scopes                                                              │ Tokens     │ IP         │<br>├───────────────────────────────────────────────────┼────────────┼─────────────────────────────────────────────────────────────────────┼────────────┼────────────┤<br>│ 250c │ operator   │ operator.read, operator.admin, operator.write, operator.approvals,  │ operator   │            │<br>│ 5958                                   │            │ operator.pairing                                                    │            │            │<br>└───────────────────────────────────────────────────┴────────────┴─────────────────────────────────────────────────────────────────────┴────────────┴────────────┘<br>$ openclaw devices 177f<br><br>🦞 OpenClaw 2026.3.8 (unknown) — Making <span class="hljs-string">&#x27;I&#x27;</span>ll automate that later<span class="hljs-string">&#x27; happen now.</span><br><span class="hljs-string"></span><br><span class="hljs-string">│</span><br><span class="hljs-string">◇  </span><br><span class="hljs-string">Approved 177f)</span><br></code></pre></td></tr></table></figure>
+<p>再回到主界面，就可以正常对话了：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142361.png" alt=""></p>
+<p>例如简单点的任务，可以让他自己切换本地时区到北京时间：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142416.png" alt=""></p>
+<p>甚至可以让它自己在本地配置一个Anaconda的环境：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142470.png" alt=""></p>
+<p>配置完成后进入容器就可以看到安装的环境：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">node@xxx:~/.openclaw$ /home/node/.conda/bin/conda <span class="hljs-built_in">env</span> list<br><br><span class="hljs-comment"># conda environments:</span><br><span class="hljs-comment">#</span><br><span class="hljs-comment"># * -&gt; active</span><br><span class="hljs-comment"># + -&gt; frozen</span><br>base                     /home/node/.conda<br>python39_env             /home/node/.conda/envs/python39_env<br></code></pre></td></tr></table></figure>
+<p>在容器内，基础的读写权限也是有的：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142530.png" alt=""></p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165142589.png" alt=""></p>
+<h1>总结概要</h1>
+<p>本文介绍了一种在Win11操作系统下，使用Docker部署OpenClaw的一种方案，并且Token由本地部署的Ollama加载开源的qwen3.5模型产生，实现零成本、相对安全可控的一种部署方案。当然，目前OpenClaw和Ollama的安全性还是有待提升，结合自己的情况，慎重部署！！！</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/openclaw.html">https://www.cnblogs.com/dechinphy/p/openclaw.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>请博主喝咖啡：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/2004187601276540473">https://zhuanlan.zhihu.com/p/2004187601276540473</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/2013622369059623797">https://zhuanlan.zhihu.com/p/2013622369059623797</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/18702523/deepseek2">https://www.cnblogs.com/dechinphy/p/18702523/deepseek2</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/fd1eadd0.html">https://dechin-phy.asia/posts/fd1eadd0.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2026-03-11</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2026-03-17</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a><a class="next" href="/posts/f1396013.html">解决Error 500: named symbol not found报错问题</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/c991bb75.html"><meta property="og:type" content="article"><meta property="og:title" content="MindSponge分子动力学模拟——安装与使用（2023.08）"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/c991bb75.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2023-08-11T09:16:43.000Z"><meta property="article:modified_time" content="2023-08-28T01:56:00.000Z"><title>MindSponge分子动力学模拟——安装与使用（2023.08） | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MindSponge分子动力学模拟——安装与使用（2023.08）</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">MindSponge分子动力学模拟——安装与使用（2023.08）</h1><div class="post-meta">2023-08-11<span> | </span><span class="category"><a href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.3k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 10</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">免安装MindSponge</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">编译安装MindSponge</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">版权声明</span></a></li></ol></div></div><div class="post-content"><p>本文主要介绍MindSponge框架的免安装使用和编译构建使用这两种使用方法，MindSponge是一款可以在MindSpore上进行分子动力学模拟的，模块化、高通量、端到端可微的下一代智能分子模拟程序库。通过MindSponge，我们可以在GPU上更加便捷的开发分子动力学模拟算法和应用，并且原生的支持神经网络力场和增强采样，使得我们可以用一个框架就完成绝大部分的分子模拟工作。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>昇思MindSpore是由华为主导的一个，面向全场景构建最佳昇腾匹配、支持多处理器架构的开放AI框架。MindSpore不仅仅是软件层面的工具，更重要的是可以协同华为自研的昇腾Ascend平台，做到软硬件一体的行业解决方案。基于MindSpore的高通量、自动微分和自动并行等高级特性，以及对于python第三方库numpy的友好支持，我们开发了一款可以在MindSpore上进行分子动力学模拟的，模块化、高通量、端到端可微的下一代智能分子模拟程序库——<code>MindSponge</code>。该程序库最新的开发版，可以参考这个<a target="_blank" rel="noopener" href="https://gitee.com/helloyesterday/mindsponge">仓库地址</a>的develop分支。而MindSponge的最新稳定版，会最终协同另外几个基于MindSpore开发的软件库，集成到这个<a target="_blank" rel="noopener" href="https://gitee.com/mindspore/mindscience">仓库地址</a>里面。</p>
+<p>本文我们的重点，是介绍如何安装与使用python语言和mindsponge分子动力学模拟框架。</p>
+<h1>免安装MindSponge</h1>
+<p>MindSponge是基于python和MindSpore框架来做的，因此更新迭代的频率会比较高。如果在本地工作空间用MindSponge源代码来构建一个项目，这样项目内的开发会相对更加的稳定，这是第一种建议的开发模式。首先，如果我们的项目只涉及到MindSponge的使用，用户可以在Gitee上先Fork一个<a target="_blank" rel="noopener" href="https://gitee.com/helloyesterday/mindsponge">MindSponge纯净版</a>到自己的项目路径下。然后clone到自己本地的一个工作空间：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://gitee.com/helloyesterday/mindsponge.git -b develop<br>正克隆到 <span class="hljs-string">&#x27;mindsponge&#x27;</span>...<br>remote: Enumerating objects: 8691, <span class="hljs-keyword">done</span>.<br>remote: Counting objects: 100% (5565/5565), <span class="hljs-keyword">done</span>.<br>remote: Compressing objects: 100% (3164/3164), <span class="hljs-keyword">done</span>.<br>remote: Total 8691 (delta 4144), reused 3107 (delta 2390), pack-reused 3126<br>接收对象中: 100% (8691/8691), 18.14 MiB | 1007.00 KiB/s, 完成.<br>处理 delta 中: 100% (6197/6197), 完成.<br></code></pre></td></tr></table></figure>
+<p>clone结束之后，会在workspace这个目录下生成一个mindsponge目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cd</span> mindsponge/<br>$ ll<br>总用量 76<br>drwxrwxr-x  8 dechin dechin  4096 8月  16 10:20 ./<br>drwxrwxr-x  3 dechin dechin  4096 8月  16 10:20 ../<br>-rwxrwxr-x  1 dechin dechin  3644 8月  16 10:20 build.sh*<br>drwxrwxr-x  2 dechin dechin  4096 8月  16 10:20 docs/<br>drwxrwxr-x  8 dechin dechin  4096 8月  16 10:20 .git/<br>drwxrwxr-x  2 dechin dechin  4096 8月  16 10:20 .gitee/<br>-rw-rw-r--  1 dechin dechin  2208 8月  16 10:20 .gitignore<br>-rw-rw-r--  1 dechin dechin 11357 8月  16 10:20 LICENSE<br>drwxrwxr-x 14 dechin dechin  4096 8月  16 10:20 mindsponge/<br>-rw-rw-r--  1 dechin dechin    79 8月  16 10:20 pytest.ini<br>-rw-rw-r--  1 dechin dechin  2043 8月  16 10:20 README.en.md<br>-rw-rw-r--  1 dechin dechin  2486 8月  16 10:20 README.md<br>-rw-rw-r--  1 dechin dechin   128 8月  16 10:20 requirements.txt<br>-rw-rw-r--  1 dechin dechin  3323 8月  16 10:20 setup.py<br>drwxrwxr-x  3 dechin dechin  4096 8月  16 10:20 tests/<br>drwxrwxr-x  5 dechin dechin  4096 8月  16 10:20 tutorials/<br>-rw-rw-r--  1 dechin dechin     5 8月  16 10:20 version.txt<br></code></pre></td></tr></table></figure>
+<p>这样一来，我们就可以在这个路径下进行一些比较灵活的开发，比如新建一个workspace目录，然后在这个路径下开发：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">mkdir</span> workspace<br>$ <span class="hljs-built_in">touch</span> water.py<br></code></pre></td></tr></table></figure>
+<p>例如，我们可以写一个这样的案例（因为是本地免安装的开发，因此需要用sys.path的方法，把mindsponge目录添加到系统路径中）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mindspore <span class="hljs-keyword">import</span> context<br><span class="hljs-keyword">from</span> mindspore.nn <span class="hljs-keyword">import</span> Adam<br><br><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;..&#x27;</span>)<br><br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> Sponge, Molecule, ForceField, set_global_units<br><span class="hljs-keyword">from</span> sponge.callback <span class="hljs-keyword">import</span> WriteH5MD, RunInfo<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    set_global_units(<span class="hljs-string">&#x27;nm&#x27;</span>, <span class="hljs-string">&#x27;kj/mol&#x27;</span>)<br>    context.set_context(mode=context.GRAPH_MODE, device_target=<span class="hljs-string">&#x27;GPU&#x27;</span>)<br>    system = Molecule(template=<span class="hljs-string">&#x27;water.spce.yaml&#x27;</span>)<br><br>    system.reduplicate([<span class="hljs-number">0.3</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>])<br>    new_sys = system.copy([<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, -<span class="hljs-number">0.3</span>])<br>    system.append(new_sys)<br><br>    potential = ForceField(system, parameters=<span class="hljs-string">&#x27;SPCE&#x27;</span>)<br>    opt = Adam(system.trainable_params(), <span class="hljs-number">1e-3</span>)<br>    mini = Sponge(system, potential, opt)<br><br>    run_info = RunInfo(<span class="hljs-number">50</span>)<br>    cb_h5md = WriteH5MD(system, <span class="hljs-string">&#x27;tutorial_c01.h5md&#x27;</span>, save_freq=<span class="hljs-number">50</span>, write_velocity=<span class="hljs-literal">True</span>, write_force=<span class="hljs-literal">True</span>)<br>    mini.run(<span class="hljs-number">500</span>, callbacks=[run_info, cb_h5md])<br></code></pre></td></tr></table></figure>
+<p>这些代码的具体内容，我们都会在后面的文章中逐一讲解。这个案例运行的结果如下所示：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 water.py<br>[MindSPONGE] Started simulation at 2023-08-16 10:35:59<br>Warning! The optimizer <span class="hljs-string">&quot;Adam&lt;&gt;&quot;</span> does not has the attribute <span class="hljs-string">&quot;velocity&quot;</span>.<br>[MindSPONGE] Step: 0, E_pot: 110.0423<br>[MindSPONGE] Step: 50, E_pot: 46.740437<br>[MindSPONGE] Step: 100, E_pot: -31.139118<br>[MindSPONGE] Step: 150, E_pot: -61.45553<br>[MindSPONGE] Step: 200, E_pot: -138.1261<br>[MindSPONGE] Step: 250, E_pot: -148.34193<br>[MindSPONGE] Step: 300, E_pot: -148.40369<br>[MindSPONGE] Step: 350, E_pot: -148.40425<br>[MindSPONGE] Step: 400, E_pot: -148.40425<br>[MindSPONGE] Step: 450, E_pot: -148.40456<br>[MindSPONGE] Finished simulation at 2023-08-16 10:36:05<br>[MindSPONGE] Simulation <span class="hljs-keyword">time</span>: 5.86 seconds.<br>--------------------------------------------------------------------------------<br></code></pre></td></tr></table></figure>
+<p>简单来说，这个案例就是通过MindSponge构建了4个水分子这样的一个体系，然后用MindSpore内置的Adam优化器，做了一个能量极小化的操作。</p>
+<h1>编译安装MindSponge</h1>
+<p>编译构建版本的MindSponge，这里建议使用mindscience库上的内容，其主页地址为：<a target="_blank" rel="noopener" href="https://gitee.com/mindspore/mindscience%E3%80%82%E5%85%B7%E4%BD%93%E7%9A%84%E5%AE%89%E8%A3%85%E6%96%B9%E6%B3%95%E5%A6%82%E4%B8%8B%EF%BC%8C%E9%A6%96%E5%85%88%E6%88%91%E4%BB%AC%E4%B9%9F%E9%9C%80%E8%A6%81%E6%8A%8A%E8%BF%99%E4%B8%AA%E4%BB%A3%E7%A0%81%E4%BB%93clone%E5%88%B0%E6%9C%AC%E5%9C%B0%EF%BC%8C%E8%BF%99%E9%87%8C%E6%88%91%E4%BB%AC%E4%B8%80%E8%88%AC%E4%BD%BF%E7%94%A8dev-md%E5%88%86%E6%94%AF%EF%BC%9A">https://gitee.com/mindspore/mindscience。具体的安装方法如下，首先我们也需要把这个代码仓clone到本地，这里我们一般使用dev-md分支：</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ git <span class="hljs-built_in">clone</span> https://gitee.com/mindspore/mindscience.git -b dev-md<br>正克隆到 <span class="hljs-string">&#x27;mindscience&#x27;</span>...<br>remote: Enumerating objects: 17524, <span class="hljs-keyword">done</span>.<br>remote: Counting objects: 100% (1093/1093), <span class="hljs-keyword">done</span>.<br>remote: Compressing objects: 100% (767/767), <span class="hljs-keyword">done</span>.<br>remote: Total 17524 (delta 506), reused 645 (delta 316), pack-reused 16431<br>接收对象中: 100% (17524/17524), 322.82 MiB | 2.59 MiB/s, 完成.<br>处理 delta 中: 100% (10766/10766), 完成.<br>正在更新文件: 100% (2121/2121), 完成.<br>$ <span class="hljs-built_in">cd</span> mindscience/MindSPONGE/<br>$ ll<br>总用量 100<br>drwxrwxr-x 6 dechin dechin  4096 8月  16 16:24 ./<br>drwxrwxr-x 9 dechin dechin  4096 8月  16 16:24 ../<br>drwxrwxr-x 5 dechin dechin  4096 8月  16 16:24 applications/<br>-rw-rw-r-- 1 dechin dechin  4949 8月  16 16:24 build.sh<br>-rw-rw-r-- 1 dechin dechin   793 8月  16 16:24 CMakeLists.txt<br>drwxrwxr-x 6 dechin dechin  4096 8月  16 16:24 docs/<br>-rw-rw-r-- 1 dechin dechin 11357 8月  16 16:24 LICENSE<br>-rw-rw-r-- 1 dechin dechin    69 8月  16 16:24 NOTICE<br>-rw-rw-r-- 1 dechin dechin   110 8月  16 16:24 OWNERS<br>-rw-rw-r-- 1 dechin dechin 10972 8月  16 16:24 README_CN.md<br>-rw-rw-r-- 1 dechin dechin 12128 8月  16 16:24 README.md<br>-rw-rw-r-- 1 dechin dechin  2384 8月  16 16:24 RELEASE_CN.md<br>-rw-rw-r-- 1 dechin dechin  2555 8月  16 16:24 RELEASE.md<br>-rw-rw-r-- 1 dechin dechin   171 8月  16 16:24 requirements.txt<br>-rw-rw-r-- 1 dechin dechin  3323 8月  16 16:24 setup.py<br>drwxrwxr-x 5 dechin dechin  4096 8月  16 16:24 src/<br>drwxrwxr-x 8 dechin dechin  4096 8月  16 16:24 tutorials/<br>-rw-rw-r-- 1 dechin dechin     6 8月  16 16:24 version.txt<br></code></pre></td></tr></table></figure>
+<p>关于具体的编译构建流程，都已经打包成了一个bash脚本，我们直接运行这个bash脚本即可完成编译：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ bash build.sh -e gpu<br></code></pre></td></tr></table></figure>
+<p>构建完成后，会生成一个output目录，其中就有编译好的whl文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ll output/<br>总用量 1252<br>drwxrwxr-x 2 dechin dechin    4096 8月  17 09:10 ./<br>drwxrwxr-x 8 dechin dechin    4096 8月  17 09:10 ../<br>-rw-rw-r-- 1 dechin dechin 1267915 8月  17 09:10 mindsponge-1.0.0-py3-none-any.whl<br>-rw-rw-r-- 1 dechin dechin     100 8月  17 09:10 mindsponge-1.0.0-py3-none-any.whl.sha256<br></code></pre></td></tr></table></figure>
+<p>然后就可以进到目录，用pip进行安装：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">cd</span> output/<br>$ python3 -m pip install mindsponge-1.0.0-py3-none-any.whl<br></code></pre></td></tr></table></figure>
+<p>这里需要对应的调整版本号。安装完成后，可以查看到相应的软件版本信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ python3 -m pip show mindsponge<br>Name: mindsponge<br>Version: 1.0.0<br>Summary: simulation package of next generation molecular modeling <span class="hljs-keyword">in</span> mindspore<br>Home-page: https://www.mindspore.cn/<br>Author: The MindSpore Authors<br>Author-email: contact@mindspore.cn<br>License: Apache 2.0<br>Location: /home/dechin/anaconda3/envs/mindspore-latest/lib/python3.7/site-packages<br>Requires: descriptastorus, scipy, absl-py, pyyaml, dataclasses, biotite, h5py, biopython, numpy, glob2<br>Required-by: <br></code></pre></td></tr></table></figure>
+<p>这样就基本完成安装了，我们就可以在同一个环境下的任何位置直接调用到mindsponge的包。不过需要注意的是，mindscience仓库和MindSponge仓库这两者的调用方式略有区别，在代码中只是需要调整引用的方式。其实使用编译安装的方法，引用也会更加快捷，不需要使用sys.path来添加路径，具体调整如下所示：</p>
+<ul>
+<li>免安装方法</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> sys<br>sys.path.insert(<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;your/mindsponge/path&#x27;</span>)<br><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> Sponge<br></code></pre></td></tr></table></figure>
+<ul>
+<li>编译构建方法</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> sponge <span class="hljs-keyword">import</span> Sponge<br></code></pre></td></tr></table></figure>
+<p>如下所示是一个使用MindSponge模拟一段时间的水溶液中的多肽：</p>
+<p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715163934494.png" alt=""></p>
+<h1>总结概要</h1>
+<p>本文主要介绍MindSponge框架的免安装使用和编译构建使用这两种使用方法，MindSponge是一款可以在MindSpore上进行分子动力学模拟的，模块化、高通量、端到端可微的下一代智能分子模拟程序库。通过MindSponge，我们可以在GPU上更加便捷的开发分子动力学模拟算法和应用，并且原生的支持神经网络力场和增强采样，使得我们可以用一个框架就完成绝大部分的分子模拟工作。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/ms-system.html">https://www.cnblogs.com/dechinphy/p/ms-system.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<p>CSDN同步链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343">https://blog.csdn.net/baidu_37157624?spm=1008.2028.3001.5343</a></p>
+<p>51CTO同步链接：<a target="_blank" rel="noopener" href="https://blog.51cto.com/u_15561675">https://blog.51cto.com/u_15561675</a></p>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/c991bb75.html">https://dechin-phy.asia/posts/c991bb75.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2023-08-11</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2023-08-28</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/f1146459.html">MindSponge分子动力学模拟——软件架构（2023.08）</a><a class="next" href="/posts/14fc2133.html">在Python中使用LooseVersion进行软件版本号比对</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>

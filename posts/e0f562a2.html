@@ -1,0 +1,249 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta name="keywords" content="Python,CUDA,分子动力学,MindSpore,量子计算,DeepSeek,AI,机器学习,科学计算"><meta name="author" content="Dechin"><link rel="canonical" href="https://dechin-phy.asia/posts/e0f562a2.html"><meta property="og:type" content="article"><meta property="og:title" content="乒乓球之弧圈理论"><meta property="og:description" content="Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结"><meta property="og:url" content="https://dechin-phy.asia/posts/e0f562a2.html"><meta property="og:site_name" content="Dechin's Blog"><meta property="article:author" content="Dechin"><meta property="article:published_time" content="2022-02-12T02:57:42.000Z"><meta property="article:modified_time" content="2022-02-12T04:17:00.000Z"><title>乒乓球之弧圈理论 | Dechin's Blog</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.17.0/dist/katex.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" type="image/png" sizes="32x32" href="/images/avatar.png"><link rel="icon" type="image/png" sizes="16x16" href="/images/avatar.png"><link rel="apple-touch-icon" href="/images/avatar.png"><link rel="alternate" type="application/atom+xml" href="/atom.xml"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><div class="darkmode-toggle">🌓</div><script>var prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+var toggle = document.querySelector('.darkmode-toggle');
+var html = document.querySelector('html');
+
+html.dataset.dark = localStorage.dark || prefersDarkMode.matches;
+
+var sendGiscusTheme = function() {
+  var giscusFrame = document.querySelector('iframe.giscus-frame');
+  if (giscusFrame) {
+    giscusFrame.contentWindow.postMessage(
+      { giscus: { setConfig: { theme: html.dataset.dark == 'true' ? 'dark' : 'light' } } },
+      'https://giscus.app'
+    );
+  }
+};
+
+var observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(mutation) {
+    if (mutation.attributeName === 'data-dark') {
+      sendGiscusTheme();
+    }
+  });
+});
+observer.observe(html, { attributes: true });
+
+toggle.addEventListener('click', () => {
+  localStorage.dark = !(html.dataset.dark == 'true');
+  html.dataset.dark = localStorage.dark;
+});</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">乒乓球之弧圈理论</h1><a id="logo" href="/.">Dechin's Blog</a></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/categories/"><i class="fa fa-folder"> 分类</i></a><a href="/tools/"><i class="fa fa-wrench"> 工具</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">乒乓球之弧圈理论</h1><div class="post-meta">2022-02-12<span> | </span><span class="category"><a href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a></span><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><span id="busuanzi_container_page_pv"> | <span id="busuanzi_value_page_pv"></span><span> 阅读</span></span><span class="post-time"><span class="post-meta-item-text"> | </span><span class="post-meta-item-icon"><i class="fa fa-keyboard-o"></i><span class="post-count"> 2.6k</span><span class="post-meta-item-text"> 字</span></span></span><span class="post-time"> | <span class="post-meta-item-icon"><i class="fa fa-clock-o"></i><span class="post-count"> 11</span><span class="post-meta-item-text"> 分钟</span></span></span></div><div class="clear"><div class="toc-article" id="toc"><div class="toc-title">文章目录</div><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">技术背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">模拟马格努斯力</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">初始速度的大小对弧圈有什么影响？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">角速度对弧圈有多大影响？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">小球改大球的影响</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">6.</span> <span class="toc-text">总结概要</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">7.</span> <span class="toc-text">版权声明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">8.</span> <span class="toc-text">参考链接</span></a></li></ol></div></div><div class="post-content"><p>本文通过对马格努斯力的模拟，来理解乒乓球的弧圈原理。并且在这个理论基础之上对比了几种场景下的乒乓球轨迹，比如乒乓球的运动速度，或者日常所说的撞击对乒乓球轨迹的影响。还有乒乓球的角速度，也就是日常我们所说的摩擦对乒乓球轨迹的影响。还有一个在乒乓球界堪称变革的小球改大球对乒乓球这项运动可能带来的影响。由于这方面读过的理论文章较少，本文仅仅作为一个娱乐参考即可。</p>
+<span id="more"></span>
+<h1>技术背景</h1>
+<p>首先我们来看一下一个比赛画面，这是人民艺术家、弧圈大师许昕的一场比赛：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165431916.gif" alt="">
+在这个视角下，我们可以很明显的看到乒乓球在空中划出来一道优美的弧线，这就是许昕拉出来的正手弧圈球。在其他的球类运动中，比如足球运动，也存在类似的现象，叫香蕉球或者弧旋球。关于这一现象的原理，我们一般解释为马格努斯效应。就是在球体的运动过程中，如果球体不仅仅是带有前进的速度，如果再加上一个球体自身的旋转，就会在流体中产生一个与角动量和速度平面相互垂直的作用力。具体公式可以参考如下由NASA提供的Kutta-Joukowski理论：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165431952.jpg" alt="">
+虽然Kutta-Joukowski理论一般是用来计算圆柱体的上升力的，但是相应的参数在计算球体的马格努斯力时也有非常好的效果。由于作者对流体力学领域知之甚少，如有错误欢迎流体力学领域大佬指正。</p>
+<h1>模拟马格努斯力</h1>
+<p>根据Kutta-Joukowski理论，我们可以写一个Python程序用来迭代乒乓球运动的过程，给乒乓球一个向前运动的初始速度，再给其一个适当的旋转角速度。这里我们先不考虑空气阻尼等问题，并且为了明显的看到弧圈效果，这里我们是采用了一个俯视图的二维视角。关于乒乓球的一些参数，比如半径是用的20mm，对应于当下的40+大球。重量的话不同的厂家和有缝球无缝球、训练球和比赛球等都有些许重量差异，一般在2.53g~2.70g之间，在模拟的时候我们使用了最轻的重量来模拟。由于马格努斯力会随着乒乓球运动轨迹的改变而改变，因此这里采用了一个迭代计算的过程，具体代码如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br>r = <span class="hljs-number">0.02</span><br>rho = <span class="hljs-number">1.29</span><br>mass_min = <span class="hljs-number">2.53e-03</span><br>mass_max = <span class="hljs-number">2.70e-03</span><br><br><span class="hljs-comment"># Equation for force of lift</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">F</span>(<span class="hljs-params">vel, omega</span>):<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">4</span>*(<span class="hljs-number">4</span>*np.pi**<span class="hljs-number">2</span>*r**<span class="hljs-number">3</span>*omega*vel*rho)/<span class="hljs-number">3</span><br><br>vel0 = np.array([-<span class="hljs-number">3.</span>,<span class="hljs-number">10.</span>])<br>omega0 = <span class="hljs-number">10</span><br>s0 = np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>])<br>f0 = <span class="hljs-number">0.</span><br>steps = <span class="hljs-number">100</span><br>dt = <span class="hljs-number">0.01</span><br><br>s = [s0.copy()]<br><span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> trange(steps):<br>    s0 += vel0*dt+<span class="hljs-number">0.5</span>*f0*dt**<span class="hljs-number">2</span>/mass_min<br>    s.append(s0.copy())<br>    vel0 += np.array([np.sqrt(vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>*(f0*dt/mass_min)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>)),<br>                      -np.sqrt(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>*(f0*dt/mass_min)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>))])<br>    f0 = F(np.linalg.norm(vel0), np.<span class="hljs-built_in">abs</span>(omega0))<br><br>s = np.array(s)<br>plt.figure()<br>plt.plot(s[:,<span class="hljs-number">0</span>], s[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;orange&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;pingpong.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>运行完成后我们可以看到这样的一个效果：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165431985.png" alt="">
+需要提醒和注意的是，在这个模拟过程中我们给定的初速度是向左前方的，并不是向正前方。可以看到，在马格努斯力的作用下，乒乓球的弧圈效果是非常明显的。</p>
+<h1>初始速度的大小对弧圈有什么影响？</h1>
+<p>为了方便测试，我们将上一个章节中用到的代码进行了模块化：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br>r = <span class="hljs-number">0.02</span><br>rho = <span class="hljs-number">1.29</span><br>mass_min = <span class="hljs-number">2.53e-03</span><br>mass_max = <span class="hljs-number">2.70e-03</span><br>vel0 = np.array([-<span class="hljs-number">3.</span>, <span class="hljs-number">10.</span>])<br>omega0 = <span class="hljs-number">10</span><br>s0 = np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>])<br>f0 = <span class="hljs-number">0.</span><br>steps = <span class="hljs-number">100</span><br>dt = <span class="hljs-number">0.01</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">F</span>(<span class="hljs-params">vel, omega, r, rho</span>):<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">4</span>*(<span class="hljs-number">4</span>*np.pi**<span class="hljs-number">2</span>*r**<span class="hljs-number">3</span>*omega*vel*rho)/<span class="hljs-number">3</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">Trace</span>(<span class="hljs-params">steps, s0, vel0, f0, dt, mass, omega0, r, rho</span>):<br>    s = [s0.copy()]<br>    tmps = s0.copy()<br>    <span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> trange(steps):<br>        tmps += vel0*dt+<span class="hljs-number">0.5</span>*f0*dt**<span class="hljs-number">2</span>/mass<br>        s.append(tmps.copy())<br>        vel0 += np.array([np.sqrt(vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>)),<br>                          -np.sqrt(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>))])<br>        f0 = F(np.linalg.norm(vel0), np.<span class="hljs-built_in">abs</span>(omega0), r, rho)<br>    <span class="hljs-keyword">return</span> np.array(s)<br><br>s = Trace(steps, s0, vel0, f0, dt, mass_min, omega0, r, rho)<br>vel1 = np.array([-<span class="hljs-number">4.5</span>, <span class="hljs-number">15.</span>])<br>s1 = Trace(steps, s0, vel1, f0, dt, mass_min, omega0, r, rho)<br>vel2 = np.array([-<span class="hljs-number">1.5</span>, <span class="hljs-number">5.</span>])<br>s2 = Trace(steps, s0, vel2, f0, dt, mass_min, omega0, r, rho)<br>plt.figure()<br>plt.plot(s[:,<span class="hljs-number">0</span>], s[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;orange&#x27;</span>)<br>plt.plot(s1[:,<span class="hljs-number">0</span>], s1[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;blue&#x27;</span>)<br>plt.plot(s2[:,<span class="hljs-number">0</span>], s2[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;black&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;pingpong.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>在这段代码中我们测试了两个新的变量：将速度放大1.5倍（用蓝色表示）和将速度缩小到原来的0.5倍（用黑色表示），在不改变其角速度的情况下，得到的结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165432021.png" alt="">
+从这个结果来看，弧圈的弧度大小主要还是取决于角速度，跟乒乓球向前运动的速度本身没有太大的联系，但是如果只看局部的话，速度越快偏移越不明显。</p>
+<h1>角速度对弧圈有多大影响？</h1>
+<p>这次我们不改变速度和其他的变量，只调整角速度，来看看会有什么样的变化：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br>r = <span class="hljs-number">0.02</span><br>rho = <span class="hljs-number">1.29</span><br>mass_min = <span class="hljs-number">2.53e-03</span><br>mass_max = <span class="hljs-number">2.70e-03</span><br>vel0 = np.array([-<span class="hljs-number">3.</span>, <span class="hljs-number">10.</span>])<br>omega0 = <span class="hljs-number">10</span><br>s0 = np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>])<br>f0 = <span class="hljs-number">0.</span><br>steps = <span class="hljs-number">100</span><br>dt = <span class="hljs-number">0.01</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">F</span>(<span class="hljs-params">vel, omega, r, rho</span>):<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">4</span>*(<span class="hljs-number">4</span>*np.pi**<span class="hljs-number">2</span>*r**<span class="hljs-number">3</span>*omega*vel*rho)/<span class="hljs-number">3</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">Trace</span>(<span class="hljs-params">steps, s0, vel0, f0, dt, mass, omega0, r, rho</span>):<br>    s = [s0.copy()]<br>    tmps = s0.copy()<br>    <span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> trange(steps):<br>        tmps += vel0*dt+<span class="hljs-number">0.5</span>*f0*dt**<span class="hljs-number">2</span>/mass<br>        s.append(tmps.copy())<br>        vel0 += np.array([np.sqrt(vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>)),<br>                          -np.sqrt(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>))])<br>        f0 = F(np.linalg.norm(vel0), np.<span class="hljs-built_in">abs</span>(omega0), r, rho)<br>    <span class="hljs-keyword">return</span> np.array(s)<br><br>s = Trace(steps, s0, vel0.copy(), f0, dt, mass_min, omega0, r, rho)<br>omega1 = <span class="hljs-number">12.</span><br>s1 = Trace(steps, s0, vel0.copy(), f0, dt, mass_min, omega1, r, rho)<br>omega2 = <span class="hljs-number">8.</span><br>s2 = Trace(steps, s0, vel0.copy(), f0, dt, mass_min, omega2, r, rho)<br>plt.figure()<br>plt.plot(s[:,<span class="hljs-number">0</span>], s[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;orange&#x27;</span>)<br>plt.plot(s1[:,<span class="hljs-number">0</span>], s1[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;blue&#x27;</span>)<br>plt.plot(s2[:,<span class="hljs-number">0</span>], s2[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;black&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;pingpong.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>这里我们将角速度也分别放大（蓝色轨迹）和缩小（黑色轨迹）来查看其中的差异，得到的结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165432063.png" alt="">
+这个图中所得到的结论也是比较符合我们的预期结果的，也就是说，角速度越大，球就越拐。</p>
+<h1>小球改大球的影响</h1>
+<p>我们网上一直有很多人在说大球改小球是对中国队的极大打击，这里面的影响其实可以分为两个部分来考虑：一是大球本身的旋球能力是否变弱了，二是制造大球的旋转是否比制造小球的旋转困难。其实第二问的回答几乎是肯定的，因为半径和重量发生了变化，在大球上要制造出跟小球相同的角速度和初始速度必然是更加困难的。而对于打法和姿势相对固定的运动员来说，绝对是一个巨大的打击。接下来我们通过程序来看看结果：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">from</span> tqdm <span class="hljs-keyword">import</span> trange<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br>r = <span class="hljs-number">0.02</span><br>rho = <span class="hljs-number">1.29</span><br>mass_min = <span class="hljs-number">2.53e-03</span><br>mass_max = <span class="hljs-number">2.70e-03</span><br>vel0 = np.array([-<span class="hljs-number">3.</span>, <span class="hljs-number">10.</span>])<br>omega0 = <span class="hljs-number">10</span><br>s0 = np.array([<span class="hljs-number">0.</span>,<span class="hljs-number">0.</span>])<br>f0 = <span class="hljs-number">0.</span><br>steps = <span class="hljs-number">100</span><br>dt = <span class="hljs-number">0.01</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">F</span>(<span class="hljs-params">vel, omega, r, rho</span>):<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">4</span>*(<span class="hljs-number">4</span>*np.pi**<span class="hljs-number">2</span>*r**<span class="hljs-number">3</span>*omega*vel*rho)/<span class="hljs-number">3</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">Trace</span>(<span class="hljs-params">steps, s0, vel0, f0, dt, mass, omega0, r, rho</span>):<br>    s = [s0.copy()]<br>    tmps = s0.copy()<br>    <span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> trange(steps):<br>        tmps += vel0*dt+<span class="hljs-number">0.5</span>*f0*dt**<span class="hljs-number">2</span>/mass<br>        s.append(tmps.copy())<br>        vel0 += np.array([np.sqrt(vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>)),<br>                          -np.sqrt(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>*(f0*dt/mass)**<span class="hljs-number">2</span>/(vel0[<span class="hljs-number">0</span>]**<span class="hljs-number">2</span>+vel0[<span class="hljs-number">1</span>]**<span class="hljs-number">2</span>))])<br>        f0 = F(np.linalg.norm(vel0), np.<span class="hljs-built_in">abs</span>(omega0), r, rho)<br>    <span class="hljs-keyword">return</span> np.array(s)<br><br>s = Trace(steps, s0, vel0.copy(), f0, dt, mass_min, omega0, r, rho)<br>r = <span class="hljs-number">0.019</span><br>mass = <span class="hljs-number">2.5e-03</span><br>s1 = Trace(steps, s0, vel0.copy(), f0, dt, mass, omega0, r, rho)<br>r = <span class="hljs-number">0.019</span><br>mass = <span class="hljs-number">2.5e-03</span><br>omega0 = <span class="hljs-number">12</span><br>s2 = Trace(steps, s0, vel0.copy(), f0, dt, mass_min, omega0, r, rho)<br>plt.figure()<br>plt.plot(s[:,<span class="hljs-number">0</span>], s[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;orange&#x27;</span>)<br>plt.plot(s1[:,<span class="hljs-number">0</span>], s1[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;blue&#x27;</span>)<br>plt.plot(s2[:,<span class="hljs-number">0</span>], s2[:,<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;o&#x27;</span>, color=<span class="hljs-string">&#x27;black&#x27;</span>)<br>plt.savefig(<span class="hljs-string">&#x27;pingpong.png&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>在这次的测试中，我们采用了这样的两种对比方案：一是直接调整乒乓球的参数，而不改变速度与角速度的参数（蓝色轨迹），另一方面是调整乒乓球到小球，同时增大角速度（黑色轨迹），对比结果如下：
+<img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260715165432103.png" alt="">
+这个结果给我们传递的信息是，如果只是改了大球，但是能通过训练保持跟原本小球同等的初始速度和角速度的话，其实大球的轨迹曲率会更高，或者说轨迹更加的诡异。而就算是现在从大球换回小球，也需要在大球的角速度基础上增加20%的角速度，才有可能在小球上达到比大球下更拐的旋转。当然这些对比可能相对比较片面，仅仅可以作为一个效果参考。</p>
+<h1>总结概要</h1>
+<p>本文通过对马格努斯力的模拟，来理解乒乓球的弧圈原理。并且在这个理论基础之上对比了几种场景下的乒乓球轨迹，比如乒乓球的运动速度，或者日常所说的撞击对乒乓球轨迹的影响。还有乒乓球的角速度，也就是日常我们所说的摩擦对乒乓球轨迹的影响。还有一个在乒乓球界堪称变革的小球改大球对乒乓球这项运动可能带来的影响。由于这方面读过的理论文章较少，本文仅仅作为一个娱乐参考即可。</p>
+<h1>版权声明</h1>
+<p>本文首发链接为：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/p/pingpong.html">https://www.cnblogs.com/dechinphy/p/pingpong.html</a></p>
+<p>作者ID：DechinPhy</p>
+<p>更多原著文章请参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p>
+<p>打赏专用链接：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>
+<p>腾讯云专栏同步：<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/column/91958">https://cloud.tencent.com/developer/column/91958</a></p>
+<h1>参考链接</h1>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://www1.grc.nasa.gov/beginners-guide-to-aeronautics/ideal-lift-of-a-spinning-ball/">www1.grc.nasa.gov/beginners-guide-to-aeronautics/ideal-lift-of-a-spinning-ball/</a></li>
+</ol>
+</div><footer class="post-copyright"><style>.post-copyright {
+  margin: 2em 0 0;
+  padding: 20px;
+  background-color: #f6f8fa;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #586069;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #e6e6e6;
+}
+.post-copyright::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background-image: 
+    linear-gradient(90deg, transparent 0%, rgba(79, 157, 255, 0.03) 100%),
+    linear-gradient(135deg, rgba(79, 157, 255, 0.05) 0%, transparent 50%),
+    linear-gradient(45deg, transparent 45%, rgba(79, 157, 255, 0.03) 45%, rgba(79, 157, 255, 0.03) 55%, transparent 55%);
+  background-size: 100% 100%, 60px 60px, 20px 20px;
+  background-position: 0 0, 0 0, 0 0;
+  pointer-events: none;
+}
+.post-copyright .copyright-left {
+  position: relative;
+  z-index: 1;
+}
+.post-copyright .author-section {
+  margin-bottom: 16px;
+}
+.post-copyright .info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.post-copyright .info-row:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .info-icon {
+  margin-right: 6px;
+  color: #8c959f;
+  font-size: 14px;
+}
+.post-copyright .info-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .info-value {
+  color: #24292f;
+  word-break: break-all;
+}
+.post-copyright .info-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .info-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-divider {
+  margin: 0 0 16px;
+  height: 1px;
+  background-color: #e6e6e6;
+  border: none;
+}
+.post-copyright .copyright-section {
+  line-height: 1.7;
+}
+.post-copyright .copyright-section p {
+  margin: 0 0 8px;
+}
+.post-copyright .copyright-section p:last-child {
+  margin-bottom: 0;
+}
+.post-copyright .copyright-section .section-label {
+  font-weight: bold;
+  color: #6e7173;
+  margin-right: 4px;
+}
+.post-copyright .copyright-section .section-value {
+  color: #3c4146;
+}
+.post-copyright .copyright-section .section-value a {
+  color: #0969da;
+  text-decoration: none;
+}
+.post-copyright .copyright-section .section-value a:hover {
+  text-decoration: underline;
+}
+.post-copyright .copyright-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-left: 1px solid #e6e6e6;
+}
+.post-copyright .qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.post-copyright .qrcode-img {
+  width: 160px;
+  height: auto;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  object-fit: cover;
+  display: block;
+}
+.post-copyright .qrcode-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c959f;
+  text-align: center;
+}
+@media (max-width: 768px) {
+  .post-copyright {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .post-copyright .copyright-right {
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid #e6e6e6;
+    padding-top: 16px;
+  }
+}</style><script type="text/javascript" src="/js/copyright.js?v=1.0.0" successtext="复制成功！"></script><div class="copyright-left"><div class="author-section"><div class="info-row"><i class="fa fa-user-circle info-icon"></i><span class="info-label">本文作者：</span><span class="info-value">Dechin</span></div><div class="info-row"><i class="fa fa-link info-icon"></i><span class="info-label">本文链接：</span><span class="info-value"><a href="/posts/e0f562a2.html">https://dechin-phy.asia/posts/e0f562a2.html</a></span></div><div class="info-row"><i class="fa fa-calendar info-icon"></i><span class="info-label">发布时间：</span><span class="info-value">2022-02-12</span></div><div class="info-row"><i class="fa fa-refresh info-icon"></i><span class="info-label">最后修改：</span><span class="info-value">2022-02-12</span></div></div><hr class="copyright-divider"><div class="copyright-section"><p><span class="section-label">版权声明：</span><span class="section-value">本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议。转载请注明出处！</span></p></div></div><div class="copyright-right"><div class="qrcode-item"><img class="qrcode-img" src="/images/qrcode_donate.png" alt=""><span class="qrcode-label">微信打赏</span></div></div></footer><div class="tags"></div><div class="post-nav"><a class="pre" href="/posts/ce0062d.html">空气阻力对乒乓球运动轨迹的影响</a><a class="next" href="/posts/b80ced0c.html">分子动力学模拟之基于自动微分的LINCS约束</a></div><div class="giscus"></div><script id="giscus-script" src="https://giscus.app/client.js" data-repo="DechinPhy/DechinPhy.github.io" data-repo-id="R_kgDOTWw20w" data-category="Announcements" data-category-id="DIC_kwDOTWw2084DBXZV" data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="preferred_color_scheme" data-lang="zh-CN" crossorigin="anonymous" async></script></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><div class="search-form-wrapper"><div class="search-input-group"><i class="fa fa-search"></i><input id="local-search-input" placeholder="搜索" type="text" name="q" results="0"/></div><div id="local-search-result"></div></div></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="关于"><img class="nofancybox" src="/images/avatar.png"/></a><p>Dechin's Blog</p><p class="email-text">dechin.phy@gmail.com</p><a class="info-icon" href="https://github.com/DechinPhy" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> 分类</i><span class="widget-title-count">（301）</span></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/C-%E7%BC%96%E7%A8%8B/">C++编程</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/CUDA%E7%BC%96%E7%A8%8B/">CUDA编程</a><span class="category-list-count">5</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Julia%E7%BC%96%E7%A8%8B/">Julia编程</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/python%E7%BC%96%E7%A8%8B/">python编程</a><span class="category-list-count">101</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/">分子动力学</a><span class="category-list-count">63</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%A5%BD%E7%89%A9%E6%8E%A8%E8%8D%90/">好物推荐</a><span class="category-list-count">17</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%B9%E5%99%A8/">容器</a><span class="category-list-count">6</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><span class="category-list-count">48</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%95%B0%E5%AD%A6/">数学</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span class="category-list-count">37</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E9%87%8F%E5%AD%90%E8%AE%A1%E7%AE%97/">量子计算</a><span class="category-list-count">14</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> 最近文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/posts/75aab8ab.html">mdcompress的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cc379be8.html">基于Github Discussion的个人博客评论区板块实现</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bd1ef4d3.html">关闭360划词</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bfe06f02.html">SPONGE-2.0的安装与使用</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/ef4b3f0f.html">博客园博客图片批量迁移</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/1fd53be5.html">基于Picgo的图床实现方案</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/4edf83e7.html">用Zettlr写Latex Beamer风格的演示文档</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/bb3a6b8f.html">SGLang本地大模型服务缓存清理</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/6d2cef5.html">基于Qwen3-Code-Next+KTransformer的本地Vibe Coding</a></li><li class="post-list-item"><a class="post-list-link" href="/posts/cda9b9fe.html">Docker部署Ollama模型</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-comment-o"> 最近评论</i></div><div id="giscus-recent-comments"></div><script type="text/javascript">(async function() {
+  const container = document.getElementById('giscus-recent-comments');
+  
+  try {
+    const response = await fetch('/data/recent_comments.json');
+    const comments = await response.json();
+    
+    if (!comments || comments.length === 0) {
+      container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">暂无评论</p>';
+      return;
+    }
+    
+    function truncateText(text, maxLength) {
+      if (!text) return '';
+      text = text.replace(/\s+/g, ' ').trim();
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+    
+    let html = '<ul class="giscus-recent-comments-list">';
+    comments.forEach((comment) => {
+      html += '<li class="giscus-recent-comment-item">';
+      html += '<strong class="giscus-comment-author">' + comment.author + '</strong>';
+      html += '<p class="giscus-comment-text"><a href="' + comment.postUrl + '">' + truncateText(comment.body, 50) + '</a></p>';
+      html += '</li>';
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Failed to fetch recent comments:', error);
+    container.innerHTML = '<p style="color: #999; font-size: 12px; text-align: center; padding: 10px 0;">加载评论失败</p>';
+  }
+})();</script></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2026 <a href="/." rel="nofollow">Dechin's Blog.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><link rel="stylesheet" type="text/css" href="/css/search.css?v=1.0.0"><script type="text/javascript" src="/js/search.js?v=1.0.0"></script><script>var search_path = 'search.xml';
+if (search_path.length == 0) {
+  search_path = 'search.xml';
+}
+var path = '/' + search_path;
+searchFunc(path, 'local-search-input', 'local-search-result');
+</script><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="复制成功！"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
