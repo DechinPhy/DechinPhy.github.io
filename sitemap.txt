@@ -1,4 +1,5 @@
 https://dechin-phy.asia/data/recent_comments.json
+https://dechin-phy.asia/posts/24fd101f.html
 https://dechin-phy.asia/posts/75aab8ab.html
 https://dechin-phy.asia/posts/cc379be8.html
 https://dechin-phy.asia/posts/bd1ef4d3.html
