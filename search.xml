@@ -4,6 +4,25 @@
   
     
     <entry>
+      <title>蛋白质SASA生成</title>
+      <link href="/posts/25ad784b.html"/>
+      <url>/posts/25ad784b.html</url>
+      
+        <content type="html"><![CDATA[<p>SASA（Solvent Accessible Surface Area）是一种用于计算蛋白质表面面积的方法，它考虑了蛋白质与溶剂之间的相互作用。通过滚球法，可以算得给定蛋白质体系的溶剂可及表面。在生物体分子动力学中，蛋白表面的构型会对配体结合产生非常重要的影响。</p><span id="more"></span><h1>工具准备</h1><p>计算蛋白质的溶剂可及表面，我们主要用到两个工具：MDAnalysis和Xponge：</p><ul><li>MDAnalysis</li><li>Xponge两者都可以通过pip来安装和管理：</li></ul><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ pip install MDAnalysis<br>$ pip install Xponge<br></code></pre></td></tr></table></figure><p>然后自行准备一个pdb文件，作为输入，例如我这里使用的蛋白体系为3fc1：</p><p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260803170850511.png" alt=""></p><h1>蛋白表面生成</h1><p>接下来用一个简单的Python脚本，构建出SASA表面：</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> MDAnalysis <span class="hljs-keyword">as</span> mda<br><span class="hljs-keyword">from</span> Xponge.analysis.sasa <span class="hljs-keyword">import</span> SASA<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    pdb_name = <span class="hljs-string">&quot;xxx/3fc1.pdb&quot;</span><br>    u = mda.Universe(pdb_name)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-built_in">len</span>(u.atoms))<br>    protein = u.select_atoms(<span class="hljs-string">&quot;protein&quot;</span>)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-built_in">len</span>(protein.atoms))<br><br>    surface = SASA(protein)<br>    surface.main()<br>    surface.write_surface_xyz(<span class="hljs-string">&quot;3fc1_surface.xyz&quot;</span>)<br>    <span class="hljs-comment"># 2837</span><br>    <span class="hljs-comment"># 2675</span><br></code></pre></td></tr></table></figure><p>需要注意的是，因为这里原始体系中自带了一些溶剂和离子，因此这里我们需要使用MDAanalysis的select_atoms方法摘选出蛋白质的部分，最后使用Xponge输出的SASA表面如下：</p><p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260803170900309.png" alt=""></p><h1>总结概要</h1><p>本文介绍了一种通过MDAnalysis和Xponge来计算蛋白质的溶剂可及表面的方法，通过对溶剂可及表面的利用和处理，可以进一步分析蛋白质表面与配体相结合的特性。</p><h1>版权声明</h1><p>本文首发链接为：<a href="https://dechinphy.github.io/posts/25ad784b.html">https://dechinphy.github.io/posts/25ad784b.html</a></p><p>作者ID：DechinPhy</p><p>更多原著文章请参考：<a href="https://dechinphy.github.io/">https://dechinphy.github.io/</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 分子动力学 </category>
+          
+      </categories>
+      
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>斐波那契晶格生成</title>
       <link href="/posts/b185330b.html"/>
       <url>/posts/b185330b.html</url>

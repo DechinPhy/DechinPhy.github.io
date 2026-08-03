@@ -11,7 +11,24 @@
   <rights>All rights reserved 2026, Dechin</rights>
   <subtitle>Dechin的技术博客，分享Python、CUDA、分子动力学模拟、量子计算等领域的技术文章和经验总结</subtitle>
   <title>Dechin's Blog</title>
-  <updated>2026-07-28T09:16:00.000Z</updated>
+  <updated>2026-08-03T08:18:00.000Z</updated>
+  <entry>
+    <author>
+      <name>Dechin</name>
+    </author>
+    <category term="分子动力学" scheme="https://dechin-phy.asia/categories/%E5%88%86%E5%AD%90%E5%8A%A8%E5%8A%9B%E5%AD%A6/"/>
+    <content>
+      <![CDATA[<p>SASA（Solvent Accessible Surface Area）是一种用于计算蛋白质表面面积的方法，它考虑了蛋白质与溶剂之间的相互作用。通过滚球法，可以算得给定蛋白质体系的溶剂可及表面。在生物体分子动力学中，蛋白表面的构型会对配体结合产生非常重要的影响。</p><span id="more"></span><h1>工具准备</h1><p>计算蛋白质的溶剂可及表面，我们主要用到两个工具：MDAnalysis和Xponge：</p><ul><li>MDAnalysis</li><li>Xponge两者都可以通过pip来安装和管理：</li></ul><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ pip install MDAnalysis<br>$ pip install Xponge<br></code></pre></td></tr></table></figure><p>然后自行准备一个pdb文件，作为输入，例如我这里使用的蛋白体系为3fc1：</p><p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260803170850511.png" alt=""></p><h1>蛋白表面生成</h1><p>接下来用一个简单的Python脚本，构建出SASA表面：</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> MDAnalysis <span class="hljs-keyword">as</span> mda<br><span class="hljs-keyword">from</span> Xponge.analysis.sasa <span class="hljs-keyword">import</span> SASA<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    pdb_name = <span class="hljs-string">&quot;xxx/3fc1.pdb&quot;</span><br>    u = mda.Universe(pdb_name)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-built_in">len</span>(u.atoms))<br>    protein = u.select_atoms(<span class="hljs-string">&quot;protein&quot;</span>)<br>    <span class="hljs-built_in">print</span> (<span class="hljs-built_in">len</span>(protein.atoms))<br><br>    surface = SASA(protein)<br>    surface.main()<br>    surface.write_surface_xyz(<span class="hljs-string">&quot;3fc1_surface.xyz&quot;</span>)<br>    <span class="hljs-comment"># 2837</span><br>    <span class="hljs-comment"># 2675</span><br></code></pre></td></tr></table></figure><p>需要注意的是，因为这里原始体系中自带了一些溶剂和离子，因此这里我们需要使用MDAanalysis的select_atoms方法摘选出蛋白质的部分，最后使用Xponge输出的SASA表面如下：</p><p><img src="https://cdn.jsdelivr.net/gh/DechinPhy/img-bed/blog/2026/20260803170900309.png" alt=""></p><h1>总结概要</h1><p>本文介绍了一种通过MDAnalysis和Xponge来计算蛋白质的溶剂可及表面的方法，通过对溶剂可及表面的利用和处理，可以进一步分析蛋白质表面与配体相结合的特性。</p><h1>版权声明</h1><p>本文首发链接为：<a href="https://dechinphy.github.io/posts/25ad784b.html">https://dechinphy.github.io/posts/25ad784b.html</a></p><p>作者ID：DechinPhy</p><p>更多原著文章请参考：<a href="https://dechinphy.github.io/">https://dechinphy.github.io/</a></p>]]>
+    </content>
+    <id>https://dechin-phy.asia/posts/25ad784b.html</id>
+    <link href="https://dechin-phy.asia/posts/25ad784b.html"/>
+    <published>2026-08-03T08:18:00.000Z</published>
+    <summary>
+      <![CDATA[<p>SASA（Solvent Accessible Surface Area）是一种用于计算蛋白质表面面积的方法，它考虑了蛋白质与溶剂之间的相互作用。通过滚球法，可以算得给定蛋白质体系的溶剂可及表面。在生物体分子动力学中，蛋白表面的构型会对配体结合产生非常重要的影响。</p>]]>
+    </summary>
+    <title>蛋白质SASA生成</title>
+    <updated>2026-08-03T08:18:00.000Z</updated>
+  </entry>
   <entry>
     <author>
       <name>Dechin</name>
@@ -334,22 +351,5 @@
     </summary>
     <title>使用conda安装gcc和g++</title>
     <updated>2025-11-03T08:38:00.000Z</updated>
-  </entry>
-  <entry>
-    <author>
-      <name>Dechin</name>
-    </author>
-    <category term="操作系统" scheme="https://dechin-phy.asia/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"/>
-    <content>
-      <![CDATA[<p>本文介绍了一个Ubuntu操作系统下如何挂载新硬盘，并配置重启开机默认挂载的流程和方法。</p><span id="more"></span><h1>技术背景</h1><p>本文将简单的介绍一下，如果在Ubuntu操作系统的服务器或者电脑上加新硬盘之后，如何挂载的问题。</p><h1>硬盘挂载流程</h1><p>首先我们查看硬盘列表：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ fdisk -l<br><span class="hljs-comment"># 找到我们需要挂载的硬盘</span><br>Disk /dev/sda：7.28 TiB，8001563222016 字节，15628053168 个扇区<br></code></pre></td></tr></table></figure><p>创建或者选择一个路径作为挂载点，最好是空路径：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">mkdir</span> /data<br></code></pre></td></tr></table></figure><p>接下来需要考虑<code>是否分区</code>的问题，因为我这里的场景是需要大容量数据存储，所以这里不做分区，<code>直接格式化整个硬盘</code>。但是如果需要分区，那流程就应该是先分区，再做格式化（需要注意一下的是，这一步中得到的UUID信息需要保存一下）：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ mkfs.ext4 /dev/sda<br>mke2fs 1.46.5 (30-Dec-2021)<br>创建含有 xxx 个块（每块 4k）和 xxx 个 inode 的文件系统<br>文件系统 UUID：xxx<br>超级块的备份存储于下列块：<br>        xxx<br><br>正在分配组表： 完成<br>正在写入 inode表： 完成<br>创建日志（xxx个块）： 完成<br>写入超级块和文件系统账户统计信息： 已完成<br></code></pre></td></tr></table></figure><p>格式化成功之后，就可以将硬盘挂载到我们所创建的路径下：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ mount /dev/sda /data/<br></code></pre></td></tr></table></figure><p>挂载之后，理论上到这一步就可以直接使用新硬盘空间了。但是有个问题是，<code>如果只操作到这一步，后续重启电脑之后，又会需要重新挂载</code>。那么有一个方法便是，使用UUID或者硬盘地址来进行自动挂载。如果上上一步的操作中没有保存UUID的信息，也可以通过如下指令进行查询：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ blkid<br><span class="hljs-comment"># 找到指定的硬盘</span><br>/dev/sda: UUID=<span class="hljs-string">&quot;xxx&quot;</span> BLOCK_SIZE=<span class="hljs-string">&quot;4096&quot;</span> TYPE=<span class="hljs-string">&quot;ext4&quot;</span><br></code></pre></td></tr></table></figure><p>虽然可以用UUID也可以用硬盘地址，但我个人比较建议使用UUID来做mount。用vim编辑<code>/etc/fstab</code>文件，在最下方按照如下格式插入：</p><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">UUID=xxx                 /data           ext4    defaults        0       2<br></code></pre></td></tr></table></figure><p>需要特别声明的是，如果为了安全考虑，需要使得挂载硬盘上面不能直接执行二进制文件，可以将上述配置中的<code>defaults</code>修改为<code>noexec</code>。最后两个数字分别是备份选项和文件系统检查顺序，一般设置为<code>0 2</code>或者<code>0 0</code>都可以。编辑保存之后，需要运行如下指令使其生效：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ mount -a<br></code></pre></td></tr></table></figure><p>这样就完成了硬盘的挂载。那么如果是使用了root权限来创建的这个路径，需要让其他的所有用户都能够访问到，并且用户和用户之间互相不干扰，可以配置路径权限为：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">chmod</span> 1777 /data<br></code></pre></td></tr></table></figure><p>这样所有用户都能在该路径下创建和修改自己的文件和目录了，可以按照自己的需求场景选择具体权限配置参数。</p><h1>总结概要</h1><p>本文介绍了一个Ubuntu操作系统下如何挂载新硬盘，并配置重启开机默认挂载的流程和方法。</p><h1>版权声明</h1><p>本文首发链接为：<a href="https://www.cnblogs.com/dechinphy/p/disk.html">https://www.cnblogs.com/dechinphy/p/disk.html</a></p><p>作者ID：DechinPhy</p><p>更多原著文章：<a href="https://www.cnblogs.com/dechinphy/">https://www.cnblogs.com/dechinphy/</a></p><p>请博主喝咖啡：<a href="https://www.cnblogs.com/dechinphy/gallery/image/379634.html">https://www.cnblogs.com/dechinphy/gallery/image/379634.html</a></p>]]>
-    </content>
-    <id>https://dechin-phy.asia/posts/7b759c72.html</id>
-    <link href="https://dechin-phy.asia/posts/7b759c72.html"/>
-    <published>2025-10-16T01:15:44.000Z</published>
-    <summary>
-      <![CDATA[<p>本文介绍了一个Ubuntu操作系统下如何挂载新硬盘，并配置重启开机默认挂载的流程和方法。</p>]]>
-    </summary>
-    <title>Ubuntu挂载新硬盘</title>
-    <updated>2025-10-16T02:23:00.000Z</updated>
   </entry>
 </feed>
