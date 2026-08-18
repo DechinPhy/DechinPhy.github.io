@@ -129,7 +129,7 @@
       <![CDATA[<p>Gromacs所使用的分子动力学模拟轨迹存储格式xtc，是一种压缩率较高的二进制格式，由于分子动力学模拟的轨迹本身就非常大，所以成倍数的压缩比可以极大程度上节约存储成本。</p>]]>
     </summary>
     <title>Gromacs轨迹存储格式xtc解析</title>
-    <updated>2026-07-16T06:50:40.000Z</updated>
+    <updated>2026-08-18T03:20:40.000Z</updated>
   </entry>
   <entry>
     <author>
